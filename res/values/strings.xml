@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Label for this package -->
+    <string name="label">Capsules</string>
+    
+    <string name="app_name">Capsules</string>
+    <string name="title_section1">Section 1</string>
+    <string name="title_section2">Section 2</string>
+    <string name="title_section3">Section 3</string>
+    <string name="action_settings">Settings</string>
+    
+    <!-- AuthenticatorActivity -->
+    <!-- Title string for Login activity-->
+    <string name="ui_activity_title">Login</string>
+    <!-- Message shown in progress dialog while app connects to the server -->
+    <string name="ui_activity_authenticating">Authenticating\u2026</string>
+    <!-- Label above username EditText -->
+    <string name="login_activity_username_label">Username</string>
+    <!-- Label above password EditText -->
+    <string name="login_activity_password_label">Password</string>
+    <!-- Button to sign in after entering username and password -->
+    <string name="login_activity_ok_button">Login</string>
+    <!-- Message shown in dialog if the username or password is invalid. -->
+	<string name="login_activity_loginfail_text_both">Incorrect credentials.</string>
+	<!-- Message shown in dialog if the password is invalid -->
+	<string name="login_activity_loginfail_text_pwonly">Incorrect password.</string>
+	<!-- Message shown in dialog to prompt the user for their password -->
+	<string name="login_activity_loginfail_text_pwmissing">Please enter your password.</string>
+	<!-- Message shown if the provided account doesn't support the current activity. -->
+	<string name="login_activity_newaccount_text">Please login.</string>
+
+</resources>
