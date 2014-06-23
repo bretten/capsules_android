@@ -34,6 +34,11 @@ public class Constants {
     public static final String AUTH_URI = "/users/authenticate";
 
     /**
+     * The URI for getting nearby undiscovered capsules.
+     */
+    public static final String UNDISCOVERED_CAPSULES_URI = "/capsules/ping";
+
+    /**
      * HTTP Authorization header.
      */
     public static final String AUTH_HEADER = "Authorization";
