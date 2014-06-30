@@ -88,7 +88,8 @@ public class RequestHandler {
      * @throws IOException
      * @throws JSONException
      */
-    public JSONArray getUndiscoveredCapsules(String authToken, double lat, double lng) throws ClientProtocolException, IOException, JSONException {
+    public JSONArray requestUndiscoveredCapsules(String authToken, double lat, double lng)
+            throws ClientProtocolException, IOException, JSONException {
         // POST
         HttpPost request = new HttpPost(Constants.BASE_URL + Constants.UNDISCOVERED_CAPSULES_URI);
 

@@ -17,6 +17,9 @@ import android.content.AbstractThreadedSyncAdapter;
 import android.content.ContentProviderClient;
 import android.content.Context;
 import android.content.SyncResult;
+import android.location.Location;
+import android.location.LocationListener;
+import android.location.LocationManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
@@ -56,6 +59,16 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
     private final RequestHandler mHttpHandler;
 
     /**
+     * Reference to the LocationManager.
+     */
+    private final LocationManager mLocationManager;
+
+    /**
+     * Reference to the LocationListener.
+     */
+    private final LocationListener mLocationListener;
+
+    /**
      * The tag used for logging.
      */
     private static final String TAG = "SyncAdapter";
@@ -66,9 +79,12 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
      * @param Context context
      * @param boolean autoInitialize
      * @param boolean allowParallelSyncs
+     * @param LocationManager locationManager
+     * @param LocationListener locationListener
      */
     @TargetApi(Build.VERSION_CODES.HONEYCOMB)
-    public SyncAdapter(Context context, boolean autoInitialize, boolean allowParallelSyncs) {
+    public SyncAdapter(Context context, boolean autoInitialize, boolean allowParallelSyncs,
+            LocationManager locationManager, LocationListener locationListener) {
         super(context, autoInitialize, allowParallelSyncs);
         mContext = context;
         mAccountManager = AccountManager.get(context);
@@ -77,6 +93,9 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
         mHttpClient = HttpFactory.getInstance();
         // Get the HTTP request handler
         mHttpHandler = new RequestHandler(mHttpClient);
+        // LocationManager and LocationListener
+        mLocationManager = locationManager;
+        mLocationListener = locationListener;
     }
 
     /**
@@ -84,8 +103,10 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
      * 
      * @param Context context
      * @param boolean autoInitialize
+     * @param LocationManager locationManager
+     * @param LocationListener locationListener
      */
-    public SyncAdapter(Context context, boolean autoInitialize) {
+    public SyncAdapter(Context context, boolean autoInitialize, LocationManager locationManager, LocationListener locationListener) {
         super(context, autoInitialize);
         mContext = context;
         mAccountManager = AccountManager.get(context);
@@ -94,6 +115,9 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
         mHttpClient = HttpFactory.getInstance();
         // Get the HTTP request handler
         mHttpHandler = new RequestHandler(mHttpClient);
+        // LocationManager and LocationListener
+        mLocationManager = locationManager;
+        mLocationListener = locationListener;
     }
 
     /**
@@ -123,21 +147,9 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
-        
-        // Send a request to the server for the undiscovered capsules
-        JSONArray capsules = null;
-        try {
-            capsules = mHttpHandler.getUndiscoveredCapsules(authToken, 47.533119, -122.162415);
-        } catch (ClientProtocolException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        } catch (IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        } catch (JSONException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
+
+        // Get the undiscovered capsules
+        JSONArray capsules = this.getUndiscoveredCapsules(authToken, mLocationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER));
         for (int i = 0; i < capsules.length(); i++) {
             JSONObject item = null;
             try {
@@ -154,6 +166,34 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
                 e.printStackTrace();
             }
         }
+    }
+
+    /**
+     * Sends request to server for the undiscovered capsules via the HTTPClient.
+     * 
+     * @param authToken
+     * @param lastLocation
+     * @return JSONArray
+     */
+    private JSONArray getUndiscoveredCapsules(String authToken, Location lastLocation) {
+        // Send a request to the server for the undiscovered capsules
+        JSONArray capsules = null;
+        if (lastLocation != null) {
+            try {
+                capsules = mHttpHandler.requestUndiscoveredCapsules(authToken, lastLocation.getLatitude(), lastLocation.getLongitude());
+            } catch (ClientProtocolException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            } catch (IOException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            } catch (JSONException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
+        }
+
+        return capsules;
     }
 
 }
