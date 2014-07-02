@@ -1,69 +1,88 @@
 package com.brettnamba.capsules;
 
-import android.support.v7.app.ActionBarActivity;
-import android.support.v7.app.ActionBar;
-import android.support.v4.app.Fragment;
-import android.content.Context;
-import android.os.Build;
+import android.location.Location;
 import android.os.Bundle;
-import android.view.Gravity;
-import android.view.LayoutInflater;
+import android.support.v4.app.FragmentActivity;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.View;
-import android.view.ViewGroup;
-import android.widget.ArrayAdapter;
-import android.widget.TextView;
 
-public class MainActivity extends ActionBarActivity implements
-		ActionBar.OnNavigationListener {
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.GooglePlayServicesClient.ConnectionCallbacks;
+import com.google.android.gms.common.GooglePlayServicesClient.OnConnectionFailedListener;
+import com.google.android.gms.location.LocationClient;
+import com.google.android.gms.location.LocationListener;
+import com.google.android.gms.location.LocationRequest;
+import com.google.android.gms.maps.CameraUpdateFactory;
+import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.LatLng;
 
-	/**
-	 * The serialization (saved instance state) Bundle key representing the
-	 * current dropdown position.
-	 */
-	private static final String STATE_SELECTED_NAVIGATION_ITEM = "selected_navigation_item";
+public class MainActivity extends FragmentActivity
+    implements
+    ConnectionCallbacks,
+    OnConnectionFailedListener,
+    LocationListener {
+
+    /**
+     * Reference to the GoogleMap.
+     */
+    private GoogleMap mMap;
+
+    /**
+     * Reference to the LocationClient.
+     */
+    private LocationClient mLocationClient;
+
+    /**
+     * The default zoom level.
+     */
+    private static final int ZOOM = 20;
+
+    /**
+     * Quality of Location service settings.
+     */
+    private static final LocationRequest REQUEST = LocationRequest.create()
+            .setInterval(5000)
+            .setFastestInterval(16)
+            .setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
+
+    /**
+     * The tag used for logging.
+     */
+    private static final String TAG = "MainActivity";
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
+	    Log.i(TAG, "onCreate()");
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
 
-		// Set up the action bar to show a dropdown list.
-		final ActionBar actionBar = getSupportActionBar();
-		actionBar.setDisplayShowTitleEnabled(false);
-		actionBar.setNavigationMode(ActionBar.NAVIGATION_MODE_LIST);
-
-		// Set up the dropdown list navigation in the action bar.
-		actionBar.setListNavigationCallbacks(
-		// Specify a SpinnerAdapter to populate the dropdown list.
-				new ArrayAdapter<String>(actionBar.getThemedContext(),
-						android.R.layout.simple_list_item_1,
-						android.R.id.text1, new String[] {
-								getString(R.string.title_section1),
-								getString(R.string.title_section2),
-								getString(R.string.title_section3), }), this);
+		this.getMap();
+		this.getLocationClient();
 	}
 
 	@Override
-	public void onRestoreInstanceState(Bundle savedInstanceState) {
-		// Restore the previously serialized current dropdown position.
-		if (savedInstanceState.containsKey(STATE_SELECTED_NAVIGATION_ITEM)) {
-			getSupportActionBar().setSelectedNavigationItem(
-					savedInstanceState.getInt(STATE_SELECTED_NAVIGATION_ITEM));
-		}
+	protected void onResume() {
+	    Log.i(TAG, "onResume()");
+	    super.onResume();
+	    this.getMap();
+	    this.getLocationClient();
+	    mLocationClient.connect();
 	}
 
 	@Override
-	public void onSaveInstanceState(Bundle outState) {
-		// Serialize the current dropdown position.
-		outState.putInt(STATE_SELECTED_NAVIGATION_ITEM, getSupportActionBar()
-				.getSelectedNavigationIndex());
+	public void onPause() {
+	    Log.i(TAG, "onPause()");
+	    super.onPause();
+	    if (mLocationClient != null) {
+	        mLocationClient.disconnect();
+	    }
 	}
 
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
-
+	    Log.i(TAG, "onCreateOptionsMenu()");
 		// Inflate the menu; this adds items to the action bar if it is present.
 		getMenuInflater().inflate(R.menu.main, menu);
 		return true;
@@ -71,6 +90,7 @@ public class MainActivity extends ActionBarActivity implements
 
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
+	    Log.i(TAG, "onOptionsItemSelected()");
 		// Handle action bar item clicks here. The action bar will
 		// automatically handle clicks on the Home/Up button, so long
 		// as you specify a parent activity in AndroidManifest.xml.
@@ -81,52 +101,60 @@ public class MainActivity extends ActionBarActivity implements
 		return super.onOptionsItemSelected(item);
 	}
 
-	@Override
-	public boolean onNavigationItemSelected(int position, long id) {
-		// When the given dropdown item is selected, show its contents in the
-		// container view.
-		getSupportFragmentManager()
-				.beginTransaction()
-				.replace(R.id.container,
-						PlaceholderFragment.newInstance(position + 1)).commit();
-		return true;
-	}
+    @Override
+    public void onConnectionFailed(ConnectionResult result) {
+        Log.i(TAG, "onConnectionFailed()");
+    }
 
-	/**
-	 * A placeholder fragment containing a simple view.
-	 */
-	public static class PlaceholderFragment extends Fragment {
-		/**
-		 * The fragment argument representing the section number for this
-		 * fragment.
-		 */
-		private static final String ARG_SECTION_NUMBER = "section_number";
+    @Override
+    public void onConnected(Bundle connectionHint) {
+        Log.i(TAG, "onConnected()");
+        mLocationClient.requestLocationUpdates(REQUEST, this);
+    }
 
-		/**
-		 * Returns a new instance of this fragment for the given section number.
-		 */
-		public static PlaceholderFragment newInstance(int sectionNumber) {
-			PlaceholderFragment fragment = new PlaceholderFragment();
-			Bundle args = new Bundle();
-			args.putInt(ARG_SECTION_NUMBER, sectionNumber);
-			fragment.setArguments(args);
-			return fragment;
-		}
+    @Override
+    public void onDisconnected() {
+        Log.i(TAG, "onDisconnected()");
+    }
 
-		public PlaceholderFragment() {
-		}
+    @Override
+    public void onLocationChanged(Location location) {
+        Log.i(TAG, "onLocationChanged()");
+        this.focusMyLocation(location);
+    }
 
-		@Override
-		public View onCreateView(LayoutInflater inflater, ViewGroup container,
-				Bundle savedInstanceState) {
-			View rootView = inflater.inflate(R.layout.fragment_main, container,
-					false);
-			TextView textView = (TextView) rootView
-					.findViewById(R.id.section_label);
-			textView.setText(Integer.toString(getArguments().getInt(
-					ARG_SECTION_NUMBER)));
-			return rootView;
-		}
-	}
+    /**
+     * Gets a reference (if necessary) to the map Fragment.
+     */
+    private void getMap() {
+        // Only get the map if it is not already set
+        if (mMap == null) {
+            mMap = ((SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map)).getMap();
+            // Specify map settings
+            if (mMap != null) {
+                mMap.setMyLocationEnabled(true);
+            }
+        }
+    }
 
+    /**
+     * Gets a reference (if necessary) to the LocationClient.
+     */
+    private void getLocationClient() {
+        // Only get the client if it is not already set
+        if (mLocationClient == null) {
+            mLocationClient = new LocationClient(getApplicationContext(), this, this);
+        }
+    }
+
+    /**
+     * Focuses the GoogleMap on user's location.
+     * 
+     * @param location
+     */
+    private void focusMyLocation(Location location) {
+        if (location != null && mMap != null) {
+            mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(location.getLatitude(), location.getLongitude()), ZOOM));
+        }
+    }
 }
