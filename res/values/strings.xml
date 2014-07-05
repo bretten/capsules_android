@@ -1,13 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Label for this package -->
+    <!-- General -->
     <string name="label">Capsules</string>
-    
     <string name="app_name">Capsules</string>
-    <string name="title_section1">Section 1</string>
-    <string name="title_section2">Section 2</string>
-    <string name="title_section3">Section 3</string>
+
+    <!-- Action Bar Menu -->
     <string name="action_settings">Settings</string>
+    <string name="action_created">My Capsules</string>
+    <string name="action_discovered">My Discoveries</string>
+    <string name="action_satellite">Show Satellite</string>
     
     <!-- AuthenticatorActivity -->
     <!-- Title string for Login activity-->

@@ -17,7 +17,7 @@ import android.accounts.OperationCanceledException;
 import android.location.Location;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.support.v4.app.FragmentActivity;
+import android.support.v7.app.ActionBarActivity;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -43,7 +43,7 @@ import com.google.android.gms.maps.model.MarkerOptions;
  * @author Brett
  *
  */
-public class MainActivity extends FragmentActivity
+public class MainActivity extends ActionBarActivity
     implements
     ConnectionCallbacks,
     OnConnectionFailedListener,
@@ -151,12 +151,35 @@ public class MainActivity extends FragmentActivity
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
 	    Log.i(TAG, "onOptionsItemSelected()");
-		// Handle action bar item clicks here. The action bar will
-		// automatically handle clicks on the Home/Up button, so long
-		// as you specify a parent activity in AndroidManifest.xml.
 		int id = item.getItemId();
 		if (id == R.id.action_settings) {
 			return true;
+		} else if (item.isCheckable()) {
+		    item.setChecked(!item.isChecked());
+		    // The toggle for displaying capsules created by the user
+		    if (id == R.id.action_created) {
+		        if (item.isChecked()) {
+		            // TODO Add created capsule markers
+		        } else {
+		            // TODO Remove created capsule markers
+		        }
+		    }
+		    // The toggle for displaying the user's discovered capsules
+		    if (id == R.id.action_discovered) {
+		        if (item.isChecked()) {
+		            // TODO Add discovered capsule markers
+		        } else {
+		            // TODO Remove discovered capsule markers
+		        }
+		    }
+		    // The toggle for showing satellite view
+		    if (id == R.id.action_satellite) {
+	            if (item.isChecked()) {
+	                mMap.setMapType(GoogleMap.MAP_TYPE_SATELLITE);
+	            } else {
+	                mMap.setMapType(GoogleMap.MAP_TYPE_NORMAL);
+	            }
+		    }
 		}
 		return super.onOptionsItemSelected(item);
 	}
