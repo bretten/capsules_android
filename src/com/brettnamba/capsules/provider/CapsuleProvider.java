@@ -189,7 +189,7 @@ public class CapsuleProvider extends ContentProvider {
                 null,
                 DATABASE_VERSION
         );
-        return false;
+        return true;
     }
 
     @Override
