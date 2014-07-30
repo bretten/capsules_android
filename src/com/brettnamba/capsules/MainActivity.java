@@ -14,6 +14,9 @@ import android.accounts.Account;
 import android.accounts.AccountManager;
 import android.accounts.AuthenticatorException;
 import android.accounts.OperationCanceledException;
+import android.app.Activity;
+import android.app.ProgressDialog;
+import android.graphics.Color;
 import android.location.Location;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -33,6 +36,8 @@ import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.Circle;
+import com.google.android.gms.maps.model.CircleOptions;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
@@ -53,6 +58,11 @@ public class MainActivity extends ActionBarActivity
      * Reference to the GoogleMap.
      */
     private GoogleMap mMap;
+
+    /**
+     * Reference to the Circle that surrounds the user's location, designating their "discovery" radius.
+     */
+    private Circle mUserCircle;
 
     /**
      * Reference to the LocationClient.
@@ -90,6 +100,21 @@ public class MainActivity extends ActionBarActivity
     private Map<String, String> mMarkers;
 
     /**
+     * Flag to determine if the map needs centering on the user's location during onCreate or onResume.
+     */
+    private boolean mNeedsCentering = true;
+
+    /**
+     * The radius around the user's location in which capsules can be opened (meters).
+     */
+    private static final int DISCOVERY_RADIUS = 161;
+
+    /**
+     * The color of the user's location circle.
+     */
+    private static final int USER_CIRCLE_COLOR = Color.argb(60, 153, 204, 0);
+
+    /**
      * The default zoom level.
      */
     private static final int ZOOM = 15;
@@ -98,8 +123,8 @@ public class MainActivity extends ActionBarActivity
      * Quality of Location service settings.
      */
     private static final LocationRequest REQUEST = LocationRequest.create()
-            .setInterval(5000)
-            .setFastestInterval(16)
+            .setInterval(10000)
+            .setFastestInterval(5000)
             .setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
 
     /**
@@ -112,7 +137,8 @@ public class MainActivity extends ActionBarActivity
         Log.i(TAG, "onCreate()");
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        
+
+        // Initialize
         this.getMap();
         this.getLocationClient();
         mAccountManager = AccountManager.get(this);
@@ -126,6 +152,8 @@ public class MainActivity extends ActionBarActivity
 	protected void onResume() {
 	    Log.i(TAG, "onResume()");
 	    super.onResume();
+
+	    // Re-initialize
 	    this.getMap();
 	    this.getLocationClient();
 	    mLocationClient.connect();
@@ -135,9 +163,12 @@ public class MainActivity extends ActionBarActivity
 	public void onPause() {
 	    Log.i(TAG, "onPause()");
 	    super.onPause();
+        // Disconnect from the location client
 	    if (mLocationClient != null) {
 	        mLocationClient.disconnect();
 	    }
+	    // To re-center the map onResume, set the flag
+	    mNeedsCentering = true;
 	}
 
 	@Override
@@ -203,11 +234,22 @@ public class MainActivity extends ActionBarActivity
     @Override
     public void onLocationChanged(Location location) {
         Log.i(TAG, "onLocationChanged()");
-        this.focusMyLocation(location);
+        // Update the circle around the user location
+        if (mUserCircle != null) {
+            mUserCircle.setCenter(new LatLng(location.getLatitude(), location.getLongitude()));
+        }
+
+        // Center the map
+        if (mNeedsCentering) {
+            this.focusMyLocation(location);
+            mNeedsCentering = false;
+        }
+
+        // Refresh the undiscovered capsules
         if (mAuthToken != null) {
             new CapsuleRequestTask().execute(mAuthToken);
         } else {
-            new AuthTask().execute();
+            new AuthTask(this).execute();
         }
     }
 
@@ -221,6 +263,13 @@ public class MainActivity extends ActionBarActivity
             // Specify map settings
             if (mMap != null) {
                 mMap.setMyLocationEnabled(true);
+                // Create the circle
+                mUserCircle = mMap.addCircle(new CircleOptions()
+                    .center(new LatLng(0, 0))
+                    .radius(DISCOVERY_RADIUS)
+                    .strokeWidth(0)
+                    .fillColor(USER_CIRCLE_COLOR)
+                );
             }
         }
     }
@@ -291,9 +340,6 @@ public class MainActivity extends ActionBarActivity
 
     /**
      * Background task for sending a HTTP request to the server to get undiscovered capsules.
-     * 
-     * @author Brett Namba
-     *
      */
     public class CapsuleRequestTask extends AsyncTask<String, Void, JSONArray> {
 
@@ -324,6 +370,7 @@ public class MainActivity extends ActionBarActivity
         @Override
         protected void onPostExecute(final JSONArray capsules) {
             Log.i(TAG, "CapsuleRequestTask.onPostExecute()");
+            // Add the markers to the map
             MainActivity.this.addMarkers(capsules);
         }
 
@@ -331,11 +378,23 @@ public class MainActivity extends ActionBarActivity
 
     /**
      * Background task for getting the current Account's authentication token.
-     * 
-     * @author Brett Namba
-     *
      */
     public class AuthTask extends AsyncTask<Void, Void, String> {
+
+        /**
+         * Dialog to notify the user of the authentication process.
+         */
+        private ProgressDialog dialog;
+
+        public AuthTask(Activity activity) {
+            this.dialog = new ProgressDialog(activity);
+        }
+
+        @Override
+        protected void onPreExecute() {
+            this.dialog.setMessage(getText(R.string.ui_activity_authenticating));
+            this.dialog.show();
+        }
 
         @Override
         protected String doInBackground(Void... params) {
@@ -359,6 +418,11 @@ public class MainActivity extends ActionBarActivity
         @Override
         protected void onPostExecute(final String authToken) {
             Log.i(TAG, "AuthTask.onPostExecute()");
+            // Hide the dialog
+            if (this.dialog.isShowing()) {
+                this.dialog.hide();
+            }
+            // Set the auth token on the corresponding activity property
             mAuthToken = authToken;
         }
 
