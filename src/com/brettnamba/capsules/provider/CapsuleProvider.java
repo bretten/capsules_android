@@ -1,5 +1,8 @@
 package com.brettnamba.capsules.provider;
 
+import java.util.List;
+import java.util.Map;
+
 import android.content.ContentProvider;
 import android.content.ContentUris;
 import android.content.ContentValues;
@@ -303,31 +306,23 @@ public class CapsuleProvider extends ContentProvider {
         @Override
         public void onCreate(SQLiteDatabase db) {
             // Create the capsules table
-            db.execSQL("CREATE TABLE " + CapsuleContract.Capsules.TABLE_NAME + "("
-                    + CapsuleContract.Capsules._ID + " INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,"
-                    + CapsuleContract.Capsules.NAME + " TEXT NOT NULL,"
-                    + CapsuleContract.Capsules.LATITUDE + " REAL NOT NULL,"
-                    + CapsuleContract.Capsules.LONGITUDE + " REAL NOT NULL"
-                    + ");"
-            );
+            db.execSQL(this.buildCreateSql(
+                    CapsuleContract.Capsules.TABLE_NAME,
+                    CapsuleContract.Capsules.COLUMN_INDEX_LIST,
+                    CapsuleContract.Capsules.COLUMN_TYPE_MAP
+            ));
             // Create the ownerships table
-            db.execSQL("CREATE TABLE " + CapsuleContract.Ownerships.TABLE_NAME + "("
-                    + CapsuleContract.Ownerships._ID + " INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,"
-                    + CapsuleContract.Ownerships.CAPSULE_ID + " INTEGER NOT NULL,"
-                    + CapsuleContract.Ownerships.ACCOUNT_NAME + " TEXT NOT NULL,"
-                    + CapsuleContract.Ownerships.DIRTY + " INTEGER NOT NULL DEFAULT 0"
-                    + ");"
-            );
+            db.execSQL(this.buildCreateSql(
+                    CapsuleContract.Ownerships.TABLE_NAME,
+                    CapsuleContract.Ownerships.COLUMN_INDEX_LIST,
+                    CapsuleContract.Ownerships.COLUMN_TYPE_MAP
+            ));
             // Create the discoveries table
-            db.execSQL("CREATE TABLE " + CapsuleContract.Discoveries.TABLE_NAME + "("
-                    + CapsuleContract.Discoveries._ID + " INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,"
-                    + CapsuleContract.Discoveries.CAPSULE_ID + " INTEGER NOT NULL,"
-                    + CapsuleContract.Discoveries.ACCOUNT_NAME + " TEXT NOT NULL,"
-                    + CapsuleContract.Discoveries.DIRTY + " INTEGER NOT NULL DEFAULT 0,"
-                    + CapsuleContract.Discoveries.FAVORITE + " INTEGER NOT NULL DEFAULT 0,"
-                    + CapsuleContract.Discoveries.RATING + " INTEGER NOT NULL"
-                    + ");"
-            );
+            db.execSQL(this.buildCreateSql(
+                    CapsuleContract.Discoveries.TABLE_NAME,
+                    CapsuleContract.Discoveries.COLUMN_INDEX_LIST,
+                    CapsuleContract.Discoveries.COLUMN_TYPE_MAP
+            ));
         }
 
         @Override
@@ -338,6 +333,28 @@ public class CapsuleProvider extends ContentProvider {
 
             // Recreate the database
             this.onCreate(db);
+        }
+
+        /**
+         * Builds a CREATE TABLE statement given the table name, columns and column types.
+         * 
+         * @param tableName
+         * @param columnIndexList
+         * @param columnTypeMap
+         * @return String
+         */
+        private String buildCreateSql(String tableName, List<String> columnIndexList, Map<String, String> columnTypeMap) {
+            String sql = "CREATE TABLE " + tableName + "(";
+            // Append each column and its corresponding data type
+            for (int i = 0; i < columnIndexList.size(); i++) {
+                sql += columnIndexList.get(i) + " " + columnTypeMap.get(columnIndexList.get(i));
+                if (i < columnIndexList.size() - 1) {
+                    sql += ",";
+                }
+            }
+            sql += ");";
+
+            return sql;
         }
 
     }
