@@ -18,34 +18,4 @@ public class Constants {
      */
     public static final String AUTH_TOKEN_TYPE = "com.brettnamba.capsules";
 
-    /**
-     * The HTTP Host.
-     */
-    public static final String HOST = "192.168.0.120";
-
-    /**
-     * The base URL of the API.
-     */
-    public static final String BASE_URL = "http://" + Constants.HOST;
-
-    /**
-     * The URI for user authentication.
-     */
-    public static final String AUTH_URI = "/users/authenticate";
-
-    /**
-     * The URI for getting nearby undiscovered capsules.
-     */
-    public static final String UNDISCOVERED_CAPSULES_URI = "/capsules/ping";
-
-    /**
-     * HTTP Authorization header.
-     */
-    public static final String AUTH_HEADER = "Authorization";
-
-    /**
-     * The name of the field storing the authentication token in the authentication response JSON body.
-     */
-    public static final String AUTH_TOKEN_RESPONSE_FIELD = "token";
-
 }

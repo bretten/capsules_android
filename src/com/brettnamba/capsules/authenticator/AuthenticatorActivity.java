@@ -1,6 +1,10 @@
 package com.brettnamba.capsules.authenticator;
 
+import java.io.IOException;
+
+import org.apache.http.ParseException;
 import org.apache.http.client.HttpClient;
+import org.json.JSONException;
 
 import android.accounts.Account;
 import android.accounts.AccountAuthenticatorActivity;
@@ -23,6 +27,7 @@ import com.brettnamba.capsules.Constants;
 import com.brettnamba.capsules.R;
 import com.brettnamba.capsules.http.HttpFactory;
 import com.brettnamba.capsules.http.RequestHandler;
+import com.brettnamba.capsules.util.JSONParser;
 
 public class AuthenticatorActivity extends AccountAuthenticatorActivity {
     /** The Intent flag to confirm credentials. */
@@ -291,15 +296,25 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity {
         @Override
         protected String doInBackground(Void... params) {
             Log.i(TAG, "doInBackground()");
-            // We do the actual work of authenticating the user
-            // in the NetworkUtilities class.
+            // Request the auth token
+            String response = null;
             try {
-                return mRequestHandler.authenticate(mUsername, mPassword);
-            } catch (Exception ex) {
-                Log.e(TAG, "UserLoginTask.doInBackground: failed to authenticate");
-                Log.i(TAG, ex.toString());
-                return null;
+                response = mRequestHandler.authenticate(mUsername, mPassword);
+            } catch (ParseException | IOException e) {
+                e.printStackTrace();
+                this.cancel(true);
             }
+
+            // Parse the response
+            String authToken = null;
+            try {
+                authToken = JSONParser.parseAuthenticationToken(response);
+            } catch (JSONException e) {
+                e.printStackTrace();
+                this.cancel(true);
+            }
+
+            return authToken;
         }
 
         @Override

@@ -2,13 +2,12 @@ package com.brettnamba.capsules;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
-import org.apache.http.client.ClientProtocolException;
+import org.apache.http.ParseException;
 import org.apache.http.client.HttpClient;
-import org.json.JSONArray;
 import org.json.JSONException;
-import org.json.JSONObject;
 
 import android.accounts.Account;
 import android.accounts.AccountManager;
@@ -25,8 +24,10 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 
+import com.brettnamba.capsules.dataaccess.Capsule;
 import com.brettnamba.capsules.http.HttpFactory;
 import com.brettnamba.capsules.http.RequestHandler;
+import com.brettnamba.capsules.util.JSONParser;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesClient.ConnectionCallbacks;
 import com.google.android.gms.common.GooglePlayServicesClient.OnConnectionFailedListener;
@@ -97,7 +98,7 @@ public class MainActivity extends ActionBarActivity
     /**
      * Maintains a reference to all the markers added to the map.
      */
-    private Map<String, String> mMarkers;
+    private Map<String, Long> mMarkers;
 
     /**
      * Flag to determine if the map needs centering on the user's location during onCreate or onResume.
@@ -145,7 +146,7 @@ public class MainActivity extends ActionBarActivity
         mAccount = mAccountManager.getAccountsByType(Constants.ACCOUNT_TYPE)[0];
         mHttpClient = HttpFactory.getInstance();
         mRequestHandler = new RequestHandler(mHttpClient);
-        mMarkers = new HashMap<String, String>();
+        mMarkers = new HashMap<String, Long>();
 	}
 
 	@Override
@@ -300,40 +301,21 @@ public class MainActivity extends ActionBarActivity
      * 
      * Will keep track of Markers using a data structure so duplicates are not added.
      * 
-     * @param JSONArray capsules
+     * @param List<Capsule> capsules
      */
-    private void addMarkers(JSONArray capsules) {
-        for (int i = 0; i < capsules.length(); i++) {
-            JSONObject capsule = null;
-            try {
-                capsule = capsules.getJSONObject(i).getJSONObject("Capsule");
-            } catch (JSONException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            }
+    private void addMarkers(List<Capsule> capsules) {
+        for (int i = 0; i < capsules.size(); i++) {
+            // Current capsule
+            Capsule capsule = capsules.get(i);
 
-            // Add the marker if it is new
-            try {
-                if (!mMarkers.containsKey(capsule.getString("id"))) {
-                    try {
-                        Marker marker = mMap.addMarker(new MarkerOptions()
-                            .position(new LatLng(Double.parseDouble(capsule.getString("lat")), Double.parseDouble(capsule.getString("lng"))))
-                            .title(capsule.getString("name"))
-                            .snippet(capsule.getString("created"))
-                            .draggable(true)
-                        );
-                        mMarkers.put(capsule.getString("id"), marker.getId());
-                    } catch (NumberFormatException e) {
-                        // TODO Auto-generated catch block
-                        e.printStackTrace();
-                    } catch (JSONException e) {
-                        // TODO Auto-generated catch block
-                        e.printStackTrace();
-                    }
-                }
-            } catch (JSONException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
+            // Add it if it is new
+            if (!mMarkers.containsValue(capsule.getSyncId())) {
+                Marker marker = mMap.addMarker(new MarkerOptions()
+                    .position(new LatLng(capsule.getLatitude(), capsule.getLongitude()))
+                    .title(capsule.getName())
+                    .draggable(false)
+                );
+                mMarkers.put(marker.getId(), capsule.getSyncId());
             }
         }
     }
@@ -341,26 +323,30 @@ public class MainActivity extends ActionBarActivity
     /**
      * Background task for sending a HTTP request to the server to get undiscovered capsules.
      */
-    public class CapsuleRequestTask extends AsyncTask<String, Void, JSONArray> {
+    public class CapsuleRequestTask extends AsyncTask<String, Void, List<Capsule>> {
 
         @Override
-        protected JSONArray doInBackground(String... params) {
+        protected List<Capsule> doInBackground(String... params) {
             Log.i(TAG, "CapsuleRequestTask.doInBackground()");
             // Attempt to get the last location
             Location location = mLocationClient.getLastLocation();
             if (location != null) {
-                JSONArray capsules = null;
+                // Request the undiscovered Capsules
+                String response = null;
                 try {
-                    capsules = mRequestHandler.requestUndiscoveredCapsules(params[0], location.getLatitude(), location.getLongitude());
-                } catch (ClientProtocolException e) {
-                    // TODO Auto-generated catch block
+                    response = mRequestHandler.requestUndiscoveredCapsules(params[0], location.getLatitude(), location.getLongitude());
+                } catch (ParseException | IOException e) {
                     e.printStackTrace();
-                } catch (IOException e) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
+                    this.cancel(true);
+                }
+
+                // Parse the response
+                List<Capsule> capsules = null;
+                try {
+                    capsules = JSONParser.parseUndiscoveredCapsules(response);
                 } catch (JSONException e) {
-                    // TODO Auto-generated catch block
                     e.printStackTrace();
+                    this.cancel(true);
                 }
                 return capsules;
             }
@@ -368,7 +354,7 @@ public class MainActivity extends ActionBarActivity
         }
 
         @Override
-        protected void onPostExecute(final JSONArray capsules) {
+        protected void onPostExecute(final List<Capsule> capsules) {
             Log.i(TAG, "CapsuleRequestTask.onPostExecute()");
             // Add the markers to the map
             MainActivity.this.addMarkers(capsules);
@@ -421,6 +407,7 @@ public class MainActivity extends ActionBarActivity
             // Hide the dialog
             if (this.dialog.isShowing()) {
                 this.dialog.hide();
+                this.dialog.dismiss();
             }
             // Set the auth token on the corresponding activity property
             mAuthToken = authToken;
