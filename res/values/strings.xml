@@ -30,4 +30,7 @@
 	<!-- Message shown if the provided account doesn't support the current activity. -->
 	<string name="login_activity_newaccount_text">Please login.</string>
 
+    <!-- MainActivity -->
+    <string name="map_outside_capsule_radius">You cannot open that at this distance.  Make sure it is within your open radius.</string>
+
 </resources>

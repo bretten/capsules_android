@@ -23,10 +23,12 @@ import android.support.v7.app.ActionBarActivity;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.Toast;
 
 import com.brettnamba.capsules.dataaccess.Capsule;
 import com.brettnamba.capsules.http.HttpFactory;
 import com.brettnamba.capsules.http.RequestHandler;
+import com.brettnamba.capsules.provider.CapsuleOperations;
 import com.brettnamba.capsules.util.JSONParser;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesClient.ConnectionCallbacks;
@@ -36,12 +38,14 @@ import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.GoogleMap.OnInfoWindowClickListener;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.Circle;
 import com.google.android.gms.maps.model.CircleOptions;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.maps.android.SphericalUtil;
 
 /**
  * The main Activity that displays a GoogleMap and capsules to the user.
@@ -101,6 +105,11 @@ public class MainActivity extends ActionBarActivity
     private Map<String, Long> mMarkers;
 
     /**
+     * Maintains a Collection of all Capsules retrieved from the server.
+     */
+    private Map<Long, Capsule> mCapsules;
+
+    /**
      * Flag to determine if the map needs centering on the user's location during onCreate or onResume.
      */
     private boolean mNeedsCentering = true;
@@ -147,6 +156,7 @@ public class MainActivity extends ActionBarActivity
         mHttpClient = HttpFactory.getInstance();
         mRequestHandler = new RequestHandler(mHttpClient);
         mMarkers = new HashMap<String, Long>();
+        mCapsules = new HashMap<Long, Capsule>();
 	}
 
 	@Override
@@ -271,6 +281,8 @@ public class MainActivity extends ActionBarActivity
                     .strokeWidth(0)
                     .fillColor(USER_CIRCLE_COLOR)
                 );
+                // Create the info window listener
+                mMap.setOnInfoWindowClickListener(new InfoWindowListener());
             }
         }
     }
@@ -308,6 +320,9 @@ public class MainActivity extends ActionBarActivity
             // Current capsule
             Capsule capsule = capsules.get(i);
 
+            // Add the Capsule to the collection
+            mCapsules.put(capsule.getSyncId(), capsule);
+
             // Add it if it is new
             if (!mMarkers.containsValue(capsule.getSyncId())) {
                 Marker marker = mMap.addMarker(new MarkerOptions()
@@ -318,6 +333,38 @@ public class MainActivity extends ActionBarActivity
                 mMarkers.put(marker.getId(), capsule.getSyncId());
             }
         }
+    }
+
+    /**
+     * Handler for clicks on the info window
+     */
+    private class InfoWindowListener implements OnInfoWindowClickListener {
+
+        @Override
+        public void onInfoWindowClick(Marker marker) {
+            long syncId = mMarkers.get(marker.getId());
+            if (!CapsuleOperations.isDiscovered(getContentResolver(), syncId, mAccount.name)) {
+                Location location = mLocationClient.getLastLocation();
+                if (location != null) {
+                    double distance = SphericalUtil.computeDistanceBetween(
+                            new LatLng(location.getLatitude(), location.getLongitude()),
+                            marker.getPosition()
+                    );
+                    if (distance < DISCOVERY_RADIUS) {
+                        // TODO Use a transaction
+                        long insertId = CapsuleOperations.insertCapsule(getContentResolver(), mCapsules.get(syncId));
+                        CapsuleOperations.insertDiscovery(getContentResolver(), insertId, mAccount.name);
+                    } else {
+                        Toast.makeText(getApplicationContext(), getText(R.string.map_outside_capsule_radius), Toast.LENGTH_SHORT).show();
+                    }
+                }
+            }
+
+            if (CapsuleOperations.isDiscovered(getContentResolver(), syncId, mAccount.name)) {
+                // TODO Open an Activity containing the Capsule data
+            }
+        }
+
     }
 
     /**

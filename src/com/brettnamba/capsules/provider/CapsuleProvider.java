@@ -212,7 +212,9 @@ public class CapsuleProvider extends ContentProvider {
             break;
 
         case CODE_DISCOVERIES :
-            table = CapsuleContract.Discoveries.TABLE_NAME;
+            table = CapsuleContract.Discoveries.TABLE_NAME + " INNER JOIN " + CapsuleContract.Capsules.TABLE_NAME
+                    + " ON " + CapsuleContract.Discoveries.TABLE_NAME + "." + CapsuleContract.Discoveries.CAPSULE_ID
+                    + " = " + CapsuleContract.Capsules.TABLE_NAME + "." + CapsuleContract.Capsules._ID;
             break;
 
         case CODE_DISCOVERIES_WILD :
