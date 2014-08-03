@@ -32,5 +32,6 @@
 
     <!-- MainActivity -->
     <string name="map_outside_capsule_radius">You cannot open that at this distance.  Make sure it is within your open radius.</string>
+    <string name="map_during_open_capsule">Discovering...</string>
 
 </resources>

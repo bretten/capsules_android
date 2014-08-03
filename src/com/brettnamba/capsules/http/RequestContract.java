@@ -37,6 +37,11 @@ public final class RequestContract {
          */
         public static final String UNDISCOVERED_CAPSULES_URI = "/capsules/ping";
 
+        /**
+         * The URI for opening a Capsule.
+         */
+        public static final String OPEN_CAPSULE_URI = "/capsules/open";
+
     }
 
     /**
@@ -48,6 +53,11 @@ public final class RequestContract {
          * The name of the field storing the authentication token in the authentication response JSON body.
          */
         public static final String AUTH_TOKEN_RESPONSE = "token";
+
+        /**
+         * The name of the field representing the server-side result of an API request.
+         */
+        public static final String API_REQUEST_SERVER_RESULT = "success";
 
         /**
          * The field storing a Capsule object.

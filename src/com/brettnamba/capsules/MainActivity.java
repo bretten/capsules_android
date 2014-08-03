@@ -309,6 +309,15 @@ public class MainActivity extends ActionBarActivity
     }
 
     /**
+     * Handles the process of opening a Capsule marker.
+     * 
+     * @param syncId
+     */
+    private void openCapsuleMarker(long syncId) {
+        Toast.makeText(getApplicationContext(), "Opened!", Toast.LENGTH_SHORT).show();
+    }
+
+    /**
      * Adds Markers to the map
      * 
      * Will keep track of Markers using a data structure so duplicates are not added.
@@ -351,15 +360,13 @@ public class MainActivity extends ActionBarActivity
                             marker.getPosition()
                     );
                     if (distance < DISCOVERY_RADIUS) {
-                        CapsuleOperations.insertDiscovery(getContentResolver(), mCapsules.get(syncId), mAccount.name);
+                        new OpenCapsuleTask(MainActivity.this, mCapsules.get(syncId)).execute(mAuthToken);
                     } else {
                         Toast.makeText(getApplicationContext(), getText(R.string.map_outside_capsule_radius), Toast.LENGTH_SHORT).show();
                     }
                 }
-            }
-
-            if (CapsuleOperations.isDiscovered(getContentResolver(), syncId, mAccount.name)) {
-                // TODO Open an Activity containing the Capsule data
+            } else {
+                MainActivity.this.openCapsuleMarker(syncId);
             }
         }
 
@@ -403,6 +410,82 @@ public class MainActivity extends ActionBarActivity
             Log.i(TAG, "CapsuleRequestTask.onPostExecute()");
             // Add the markers to the map
             MainActivity.this.addMarkers(capsules);
+        }
+
+    }
+
+    public class OpenCapsuleTask extends AsyncTask<String, Void, Long> {
+
+        /**
+         * Shows a notification while the Task is being run in the background.
+         */
+        private ProgressDialog dialog;
+
+        /**
+         * The Capsule that is being opened.
+         */
+        private Capsule capsule;
+
+        public OpenCapsuleTask(Activity activity, Capsule capsule) {
+            this.dialog = new ProgressDialog(activity);
+            this.capsule = capsule;
+        }
+
+        @Override
+        protected void onPreExecute() {
+            this.dialog.setMessage(getText(R.string.map_during_open_capsule));
+            this.dialog.show();
+        }
+
+        @Override
+        protected Long doInBackground(String... params) {
+            Log.i(TAG, "OpenCapsuleTask.doInBackground()");
+            // Attempt to get the last location
+            Location location = mLocationClient.getLastLocation();
+            String response = null;
+            if (location != null) {
+                try {
+                    response = mRequestHandler.requestOpenCapsule(params[0], this.capsule.getSyncId(), location.getLatitude(), location.getLongitude());
+                } catch (NumberFormatException | ParseException | IOException e) {
+                    e.printStackTrace();
+                    this.cancel(true);
+                }
+                
+            }
+            // Parse the Discovery
+            boolean success = false;
+            try {
+                success = JSONParser.parseOpenCapsule(response);
+            } catch (JSONException e) {
+                e.printStackTrace();
+                this.cancel(true);
+            }
+            // INSERT the new Discovery
+            if (success) {
+                CapsuleOperations.insertDiscovery(getContentResolver(), this.capsule, mAccount.name);
+            } else {
+                this.cancel(true);
+            }
+
+            return this.capsule.getSyncId();
+        }
+
+        @Override
+        protected void onCancelled(Long result) {
+            if (this.dialog.isShowing()) {
+                this.dialog.hide();
+                this.dialog.dismiss();
+            }
+        }
+
+        @Override
+        protected void onPostExecute(final Long syncId) {
+            if (this.dialog.isShowing()) {
+                this.dialog.hide();
+                this.dialog.dismiss();
+            }
+            // Open the Capsule marker
+            MainActivity.this.openCapsuleMarker(syncId);
         }
 
     }

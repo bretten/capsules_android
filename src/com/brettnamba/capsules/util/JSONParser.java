@@ -47,7 +47,7 @@ public class JSONParser {
         // Will hold the Capsule objects
         List<Capsule> capsules = new ArrayList<Capsule>();
 
-        // Parse individual JSON objects
+        // Extract data from individual JSON objects
         for (int i = 0; i < json.length(); i++) {
             JSONObject jsonCapsule = json.getJSONObject(i).getJSONObject(RequestContract.Field.CAPSULE_OBJECT);
 
@@ -61,6 +61,20 @@ public class JSONParser {
         }
 
         return capsules;
+    }
+
+    /**
+     * Parses an "open Capsule" response.
+     * 
+     * @param body
+     * @return
+     * @throws JSONException
+     */
+    public static boolean parseOpenCapsule(String body) throws JSONException {
+        // Parse the response
+        JSONObject json = new JSONObject(body);
+
+        return json.getBoolean(RequestContract.Field.API_REQUEST_SERVER_RESULT);
     }
 
 }
