@@ -228,9 +228,13 @@ public class MainActivity extends ActionBarActivity
 		    // The toggle for displaying the user's discovered capsules
 		    if (id == R.id.action_discovered) {
 		        if (item.isChecked()) {
-		            // TODO Add discovered capsule markers
+                    for (Marker marker : mDiscoveredMarkers.values()) {
+                        marker.setVisible(true);
+                    }
 		        } else {
-		            // TODO Remove discovered capsule markers
+		            for (Marker marker : mDiscoveredMarkers.values()) {
+		                marker.setVisible(false);
+		            }
 		        }
 		    }
 		    // The toggle for showing satellite view
