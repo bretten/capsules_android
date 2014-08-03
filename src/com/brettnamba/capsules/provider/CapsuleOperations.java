@@ -61,16 +61,19 @@ public class CapsuleOperations {
     }
 
     /**
-     * Creates a new Discovery row.
+     * Creates a new Discovery row and also inserts the Capsule if it has not been added yet.
      * 
      * @param resolver
-     * @param capsuleId
+     * @param capsule
      * @param account
      * @return
      */
-    public static long insertDiscovery(ContentResolver resolver, long capsuleId, String account) {
+    public static long insertDiscovery(ContentResolver resolver, Capsule capsule, String account) {
         ContentValues values = new ContentValues();
-        values.put(CapsuleContract.Discoveries.CAPSULE_ID, String.valueOf(capsuleId));
+        values.put(CapsuleContract.Capsules.SYNC_ID, capsule.getSyncId());
+        values.put(CapsuleContract.Capsules.NAME, capsule.getName());
+        values.put(CapsuleContract.Capsules.LATITUDE, capsule.getLatitude());
+        values.put(CapsuleContract.Capsules.LONGITUDE, capsule.getLongitude());
         values.put(CapsuleContract.Discoveries.ACCOUNT_NAME, account);
 
         Uri uri = resolver.insert(CapsuleContract.Discoveries.CONTENT_URI, values);

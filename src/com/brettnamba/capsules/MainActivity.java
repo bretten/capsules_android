@@ -351,9 +351,7 @@ public class MainActivity extends ActionBarActivity
                             marker.getPosition()
                     );
                     if (distance < DISCOVERY_RADIUS) {
-                        // TODO Use a transaction
-                        long insertId = CapsuleOperations.insertCapsule(getContentResolver(), mCapsules.get(syncId));
-                        CapsuleOperations.insertDiscovery(getContentResolver(), insertId, mAccount.name);
+                        CapsuleOperations.insertDiscovery(getContentResolver(), mCapsules.get(syncId), mAccount.name);
                     } else {
                         Toast.makeText(getApplicationContext(), getText(R.string.map_outside_capsule_radius), Toast.LENGTH_SHORT).show();
                     }

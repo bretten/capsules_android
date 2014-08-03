@@ -52,6 +52,9 @@ public class CapsuleProvider extends ContentProvider {
     @Override
     public int delete(Uri uri, String selection, String[] selectionArgs) {
         String table;
+        if (selection == null) {
+            selection = "";
+        }
 
         switch (sUriMatcher.match(uri)) {
 
@@ -168,11 +171,55 @@ public class CapsuleProvider extends ContentProvider {
             break;
 
         case CODE_DISCOVERIES :
-            insertId = mDb.insert(CapsuleContract.Discoveries.TABLE_NAME, null, values);
+            ContentValues capsuleValues = new ContentValues();
+            capsuleValues.put(CapsuleContract.Capsules.SYNC_ID, values.getAsLong(CapsuleContract.Capsules.SYNC_ID));
+            capsuleValues.put(CapsuleContract.Capsules.NAME, values.getAsString(CapsuleContract.Capsules.NAME));
+            capsuleValues.put(CapsuleContract.Capsules.LATITUDE, values.getAsDouble(CapsuleContract.Capsules.LATITUDE));
+            capsuleValues.put(CapsuleContract.Capsules.LONGITUDE, values.getAsDouble(CapsuleContract.Capsules.LONGITUDE));
+            mDb.beginTransaction();
+            try {
+                SQLiteQueryBuilder qb = new SQLiteQueryBuilder();
+                // Check if a Capsule row exists for the unique sync ID
+                qb.setTables(CapsuleContract.Capsules.TABLE_NAME);
+                Cursor c = qb.query(
+                        mDb,
+                        new String[]{CapsuleContract.Capsules._ID},
+                        CapsuleContract.Capsules.SYNC_ID + " = ?",
+                        new String[]{String.valueOf(values.getAsLong(CapsuleContract.Capsules.SYNC_ID))},
+                        null,
+                        null,
+                        null
+                );
+                // Check if the Capsule already exists and get its application specific primary key
+                long capsuleId;
+                if (c.getCount() < 1) {
+                    // Does not exist, so insert it
+                    capsuleId = mDb.insert(CapsuleContract.Capsules.TABLE_NAME, CapsuleContract.Capsules.NAME, capsuleValues);
 
-            if (insertId > 0) {
-                insertUri = ContentUris.withAppendedId(CapsuleContract.Discoveries.CONTENT_URI, insertId);
-                getContext().getContentResolver().notifyChange(insertUri, null);
+                    if (capsuleId > 0) {
+                        Uri newCapsuleUri = ContentUris.withAppendedId(CapsuleContract.Capsules.CONTENT_URI, capsuleId);
+                        getContext().getContentResolver().notifyChange(newCapsuleUri, null);
+                    }
+                } else {
+                    c.moveToFirst();
+                    capsuleId = c.getLong(c.getColumnIndex(CapsuleContract.Capsules._ID));
+                }
+                // Close the cursor
+                c.close();
+                // INSERT the Discovery
+                ContentValues discoveryValues = new ContentValues();
+                discoveryValues.put(CapsuleContract.Discoveries.CAPSULE_ID, capsuleId);
+                discoveryValues.put(CapsuleContract.Discoveries.ACCOUNT_NAME, values.getAsString(CapsuleContract.Discoveries.ACCOUNT_NAME));
+                long discoveryId = mDb.insert(CapsuleContract.Discoveries.TABLE_NAME, CapsuleContract.Discoveries.FAVORITE, discoveryValues);
+                if (discoveryId > 0) {
+                    insertUri = ContentUris.withAppendedId(CapsuleContract.Discoveries.CONTENT_URI, discoveryId);
+                    getContext().getContentResolver().notifyChange(insertUri, null);
+                }
+                // No exceptions, so flag to commit
+                mDb.setTransactionSuccessful();
+            } finally {
+                // Commit
+                mDb.endTransaction();
             }
             break;
 
