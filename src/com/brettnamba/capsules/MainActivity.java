@@ -15,6 +15,7 @@ import android.accounts.AuthenticatorException;
 import android.accounts.OperationCanceledException;
 import android.app.Activity;
 import android.app.ProgressDialog;
+import android.database.Cursor;
 import android.graphics.Color;
 import android.location.Location;
 import android.os.AsyncTask;
@@ -26,8 +27,10 @@ import android.view.MenuItem;
 import android.widget.Toast;
 
 import com.brettnamba.capsules.dataaccess.Capsule;
+import com.brettnamba.capsules.dataaccess.CapsuleCojo;
 import com.brettnamba.capsules.http.HttpFactory;
 import com.brettnamba.capsules.http.RequestHandler;
+import com.brettnamba.capsules.provider.CapsuleContract;
 import com.brettnamba.capsules.provider.CapsuleOperations;
 import com.brettnamba.capsules.util.JSONParser;
 import com.google.android.gms.common.ConnectionResult;
@@ -40,6 +43,7 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.GoogleMap.OnInfoWindowClickListener;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.Circle;
 import com.google.android.gms.maps.model.CircleOptions;
 import com.google.android.gms.maps.model.LatLng;
@@ -100,9 +104,19 @@ public class MainActivity extends ActionBarActivity
     private RequestHandler mRequestHandler;
 
     /**
-     * Maintains a reference to all the markers added to the map.
+     * Mapping of all Markers to a Capsule sync id.
      */
-    private Map<String, Long> mMarkers;
+    private Map<Marker, Long> mMarkerToCapsule;
+
+    /**
+     * Mapping of undiscovered Capsule sync id's to Marker.
+     */
+    private Map<Long, Marker> mUndiscoveredMarkers;
+
+    /**
+     * Mapping of all discovered Capsule sync id's to Marker.
+     */
+    private Map<Long, Marker> mDiscoveredMarkers;
 
     /**
      * Maintains a Collection of all Capsules retrieved from the server.
@@ -155,8 +169,13 @@ public class MainActivity extends ActionBarActivity
         mAccount = mAccountManager.getAccountsByType(Constants.ACCOUNT_TYPE)[0];
         mHttpClient = HttpFactory.getInstance();
         mRequestHandler = new RequestHandler(mHttpClient);
-        mMarkers = new HashMap<String, Long>();
+        mMarkerToCapsule = new HashMap<Marker, Long>();
+        mUndiscoveredMarkers = new HashMap<Long, Marker>();
+        mDiscoveredMarkers = new HashMap<Long, Marker>();
         mCapsules = new HashMap<Long, Capsule>();
+
+        // Populate
+        this.populateStoredMarkers();
 	}
 
 	@Override
@@ -318,6 +337,29 @@ public class MainActivity extends ActionBarActivity
     }
 
     /**
+     * Populates the Map with stored Capsule Markers.
+     */
+    private void populateStoredMarkers() {
+        // Populate the Discovery Markers
+        Cursor c = getApplicationContext().getContentResolver().query(CapsuleContract.Discoveries.CONTENT_URI, null, null, null, null);
+        while (c.moveToNext()) {
+            Capsule capsule = new CapsuleCojo(c, c.getPosition());
+            // Add the new Discovery Marker
+            Marker marker = mMap.addMarker(new MarkerOptions()
+                .position(new LatLng(capsule.getLatitude(), capsule.getLongitude()))
+                .title(capsule.getName())
+                .draggable(false)
+                .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE))
+            );
+            // Maintain a mapping of the Capsule sync id to the Marker
+            mDiscoveredMarkers.put(capsule.getSyncId(), marker);
+            // Maintain a mapping of the Marker to the Capsule sync id
+            mMarkerToCapsule.put(marker, capsule.getSyncId());
+        }
+        c.close();
+    }
+
+    /**
      * Adds Markers to the map
      * 
      * Will keep track of Markers using a data structure so duplicates are not added.
@@ -333,13 +375,16 @@ public class MainActivity extends ActionBarActivity
             mCapsules.put(capsule.getSyncId(), capsule);
 
             // Add it if it is new
-            if (!mMarkers.containsValue(capsule.getSyncId())) {
+            if (!mUndiscoveredMarkers.containsKey(capsule.getSyncId())) {
                 Marker marker = mMap.addMarker(new MarkerOptions()
                     .position(new LatLng(capsule.getLatitude(), capsule.getLongitude()))
                     .title(capsule.getName())
                     .draggable(false)
                 );
-                mMarkers.put(marker.getId(), capsule.getSyncId());
+                // Maintain a mapping of the Capsule sync id to the Marker
+                mUndiscoveredMarkers.put(capsule.getSyncId(), marker);
+                // Maintain a mapping of the Marker to the Capsule sync id
+                mMarkerToCapsule.put(marker, capsule.getSyncId());
             }
         }
     }
@@ -351,7 +396,7 @@ public class MainActivity extends ActionBarActivity
 
         @Override
         public void onInfoWindowClick(Marker marker) {
-            long syncId = mMarkers.get(marker.getId());
+            long syncId = mMarkerToCapsule.get(marker);
             if (!CapsuleOperations.isDiscovered(getContentResolver(), syncId, mAccount.name)) {
                 Location location = mLocationClient.getLastLocation();
                 if (location != null) {
@@ -484,8 +529,23 @@ public class MainActivity extends ActionBarActivity
                 this.dialog.hide();
                 this.dialog.dismiss();
             }
-            // Open the Capsule marker
+            // Open the Capsule Marker
             MainActivity.this.openCapsuleMarker(syncId);
+            // Remove the old, undiscovered Marker
+            Marker oldMarker = mUndiscoveredMarkers.get(syncId);
+            mMarkerToCapsule.remove(oldMarker);
+            oldMarker.remove();
+            // Add the new Discovery Marker
+            Marker marker = mMap.addMarker(new MarkerOptions()
+                .position(new LatLng(capsule.getLatitude(), capsule.getLongitude()))
+                .title(capsule.getName())
+                .draggable(false)
+                .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE))
+            );
+            // Maintain a mapping of the Capsule sync id to the Marker
+            mDiscoveredMarkers.put(syncId, marker);
+            // Maintain a mapping of the Marker to the Capsule sync id
+            mMarkerToCapsule.put(marker, syncId);
         }
 
     }
