@@ -2,6 +2,8 @@ package com.brettnamba.capsules.activities;
 
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentManager;
+import android.support.v4.app.FragmentTransaction;
 import android.support.v7.app.ActionBarActivity;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -38,10 +40,11 @@ public class CapsuleActivity extends ActionBarActivity {
         Fragment capsuleFragment = new CapsuleFragment();
         capsuleFragment.setArguments(capsuleFragmentBundle);
         if (savedInstanceState == null) {
-            getSupportFragmentManager().beginTransaction()
-                    .add(R.id.container, capsuleFragment).commit();
-            getSupportFragmentManager().beginTransaction()
-                    .add(R.id.container, new CapsuleContentFragment()).commit();
+            FragmentManager fragmentManager = getSupportFragmentManager();
+            FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+            fragmentTransaction.add(R.id.fragment_capsule, capsuleFragment);
+            fragmentTransaction.add(R.id.fragment_capsule_content, new CapsuleContentFragment());
+            fragmentTransaction.commit();
         }
 
     }

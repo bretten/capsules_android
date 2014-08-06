@@ -1,9 +1,23 @@
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/container"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context="com.brettnamba.capsules.activities.CapsuleActivity"
-    tools:ignore="MergeRootFrame">
+    android:orientation="vertical"
+    tools:context="com.brettnamba.capsules.activities.CapsuleActivity">
 
-</FrameLayout>
+    <FrameLayout
+        android:id="@+id/fragment_capsule"
+        android:name="com.brettnamba.capsules.fragments.CapsuleFragment"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_weight="1" />
+
+    <FrameLayout
+        android:id="@+id/fragment_capsule_content"
+        android:name="com.brettnamba.capsules.fragments.CapsuleContentFragment"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_weight="1" />
+
+</LinearLayout>
