@@ -7,6 +7,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 
 import com.brettnamba.capsules.R;
+import com.brettnamba.capsules.fragments.CapsuleContentFragment;
 import com.brettnamba.capsules.fragments.CapsuleFragment;
 
 /**
@@ -39,6 +40,8 @@ public class CapsuleActivity extends ActionBarActivity {
         if (savedInstanceState == null) {
             getSupportFragmentManager().beginTransaction()
                     .add(R.id.container, capsuleFragment).commit();
+            getSupportFragmentManager().beginTransaction()
+                    .add(R.id.container, new CapsuleContentFragment()).commit();
         }
 
     }
