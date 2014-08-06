@@ -7,6 +7,7 @@ import android.database.Cursor;
 import android.net.Uri;
 
 import com.brettnamba.capsules.dataaccess.Capsule;
+import com.brettnamba.capsules.dataaccess.CapsulePojo;
 import com.brettnamba.capsules.provider.CapsuleContract.Capsules;
 import com.brettnamba.capsules.provider.CapsuleContract.Discoveries;
 
@@ -79,6 +80,37 @@ public class CapsuleOperations {
         Uri uri = resolver.insert(CapsuleContract.Discoveries.CONTENT_URI, values);
 
         return ContentUris.parseId(uri);
+    }
+
+    /**
+     * Gets an individual Capsule by the server sync id.
+     * 
+     * @param resolver
+     * @param syncId
+     * @return
+     */
+    public static Capsule getCapsule(ContentResolver resolver, long syncId) {
+        Cursor c = resolver.query(
+                Capsules.CONTENT_URI,
+                new String[]{"*"},
+                Capsules.TABLE_NAME + "." + Capsules.SYNC_ID + " = ?",
+                new String[]{String.valueOf(syncId)},
+                null
+        );
+
+        CapsulePojo capsule = null;
+        if (c.moveToFirst()) {
+            capsule = new CapsulePojo();
+            capsule.setId(c.getLong(c.getColumnIndex(Capsules._ID)));
+            capsule.setSyncId(c.getLong(c.getColumnIndex(Capsules.SYNC_ID)));
+            capsule.setName(c.getString(c.getColumnIndex(Capsules.NAME)));
+            capsule.setLatitude(c.getDouble(c.getColumnIndex(Capsules.LATITUDE)));
+            capsule.setLongitude(c.getDouble(c.getColumnIndex(Capsules.LONGITUDE)));
+        }
+
+        c.close();
+
+        return capsule;
     }
 
 }

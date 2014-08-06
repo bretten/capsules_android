@@ -15,6 +15,7 @@ import android.accounts.AuthenticatorException;
 import android.accounts.OperationCanceledException;
 import android.app.Activity;
 import android.app.ProgressDialog;
+import android.content.Intent;
 import android.database.Cursor;
 import android.graphics.Color;
 import android.location.Location;
@@ -26,6 +27,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.Toast;
 
+import com.brettnamba.capsules.activities.CapsuleActivity;
 import com.brettnamba.capsules.dataaccess.Capsule;
 import com.brettnamba.capsules.dataaccess.CapsuleCojo;
 import com.brettnamba.capsules.http.HttpFactory;
@@ -338,6 +340,10 @@ public class MainActivity extends ActionBarActivity
      */
     private void openCapsuleMarker(long syncId) {
         Toast.makeText(getApplicationContext(), "Opened!", Toast.LENGTH_SHORT).show();
+        Intent intent = new Intent(getApplicationContext(), CapsuleActivity.class);
+        intent.putExtra("capsule_id", syncId);
+        intent.putExtra("account", mAccount);
+        startActivity(intent);
     }
 
     /**

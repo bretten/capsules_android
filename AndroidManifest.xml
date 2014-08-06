@@ -88,6 +88,10 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity
+            android:name="com.brettnamba.capsules.activities.CapsuleActivity"
+            android:label="@string/title_activity_capsule" >
+        </activity>
     </application>
 
 </manifest>
