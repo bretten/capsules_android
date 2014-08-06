@@ -8,7 +8,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ProgressBar;
-import android.widget.Toast;
+import android.widget.TextView;
 
 import com.brettnamba.capsules.R;
 import com.brettnamba.capsules.dataaccess.Capsule;
@@ -27,10 +27,8 @@ public class CapsuleFragment extends Fragment {
         View view = inflater.inflate(R.layout.fragment_capsule, container, false);
         // Get the arguments passed in from the Activity
         Long id = getArguments().getLong("capsule_id");
-        // Get a reference to the ProgressBar
-        ProgressBar progressBar = (ProgressBar) view.findViewById(R.id.fragment_capsule_progress_bar);
         // Begin the AsyncTask for loading the Capsule data
-        new LoadCapsuleTask(getActivity(), progressBar).execute(id);
+        new LoadCapsuleTask(getActivity(), view).execute(id);
         return view;
     }
 
@@ -45,6 +43,11 @@ public class CapsuleFragment extends Fragment {
         private Activity activity;
 
         /**
+         * The View for the Fragment.
+         */
+        private View view;
+
+        /**
          * ProgressBar to be displayed while the data is being loaded.
          */
         private ProgressBar progress;
@@ -53,11 +56,12 @@ public class CapsuleFragment extends Fragment {
          * Constructor
          * 
          * @param activity
-         * @param progress
+         * @param view
          */
-        public LoadCapsuleTask(Activity activity, ProgressBar progress) {
+        public LoadCapsuleTask(Activity activity, View view) {
             this.activity = activity;
-            this.progress = progress;
+            this.view = view;
+            this.progress = (ProgressBar) view.findViewById(R.id.fragment_capsule_progress_bar);
         }
 
         @Override
@@ -76,7 +80,8 @@ public class CapsuleFragment extends Fragment {
             if (this.progress.isShown()) {
                 this.progress.setVisibility(View.GONE);
             }
-            Toast.makeText(this.activity, "ID : " + capsule.getId() + ", NAME: " + capsule.getName(), Toast.LENGTH_SHORT).show();
+            TextView name = (TextView) this.view.findViewById(R.id.fragment_capsule_info_name);
+            name.setText(capsule.getName());
         }
 
     }

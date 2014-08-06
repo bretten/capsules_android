@@ -8,6 +8,12 @@
     android:paddingTop="@dimen/activity_vertical_margin"
     tools:context="com.brettnamba.capsules.activities.CapsuleFragment" >
 
+    <TextView 
+        android:id="@+id/fragment_capsule_info_name"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="20sp" />
+
     <ProgressBar
         android:id="@+id/fragment_capsule_progress_bar"
         style="?android:attr/progressBarStyleLarge"
