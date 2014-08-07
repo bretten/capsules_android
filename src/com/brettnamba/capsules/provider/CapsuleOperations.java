@@ -8,6 +8,8 @@ import android.net.Uri;
 
 import com.brettnamba.capsules.dataaccess.Capsule;
 import com.brettnamba.capsules.dataaccess.CapsulePojo;
+import com.brettnamba.capsules.dataaccess.Discovery;
+import com.brettnamba.capsules.dataaccess.DiscoveryPojo;
 import com.brettnamba.capsules.provider.CapsuleContract.Capsules;
 import com.brettnamba.capsules.provider.CapsuleContract.Discoveries;
 
@@ -111,6 +113,61 @@ public class CapsuleOperations {
         c.close();
 
         return capsule;
+    }
+
+    /**
+     * Gets an individual Discovery given the Capsule sync id and the Account name.
+     * 
+     * @param resolver
+     * @param syncId
+     * @param account
+     * @return
+     */
+    public static Discovery getDiscovery(ContentResolver resolver, long syncId, String account) {
+        Cursor c = resolver.query(
+                Discoveries.CONTENT_URI,
+                new String[]{"*"},
+                Capsules.TABLE_NAME + "." + Capsules.SYNC_ID + " = ? AND " + Discoveries.TABLE_NAME + "." + Discoveries.ACCOUNT_NAME + " = ?",
+                new String[]{String.valueOf(syncId), account},
+                null
+        );
+
+        DiscoveryPojo discovery = null;
+        if (c.moveToFirst()) {
+            discovery = new DiscoveryPojo();
+            discovery.setId(c.getLong(c.getColumnIndex(Discoveries._ID)));
+            discovery.setCapsuleId(c.getLong(c.getColumnIndex(Discoveries.CAPSULE_ID)));
+            discovery.setAccountName(c.getString(c.getColumnIndex(Discoveries.ACCOUNT_NAME)));
+            discovery.setDirty(c.getInt(c.getColumnIndex(Discoveries.DIRTY)));
+            discovery.setFavorite(c.getInt(c.getColumnIndex(Discoveries.FAVORITE)));
+            discovery.setRating(c.getInt(c.getColumnIndex(Discoveries.RATING)));
+        }
+
+        c.close();
+
+        return discovery;
+    }
+
+    /**
+     * Updates an individual Discovery row given the Capsule sync id and the Account name.
+     * 
+     * @param resolver
+     * @param values
+     * @param syncId
+     * @param account
+     * @return
+     */
+    public static boolean updateDiscovery(ContentResolver resolver, ContentValues values, long syncId, String account) {
+        // TODO Get rid of nested query
+        int count = resolver.update(
+                Discoveries.CONTENT_URI,
+                values,
+                Discoveries.TABLE_NAME + "." + Discoveries.CAPSULE_ID + " IN "
+                + "(SELECT " + Capsules.TABLE_NAME + "." + Capsules._ID + " FROM " + Capsules.TABLE_NAME + " WHERE " + Capsules.TABLE_NAME + "." + Capsules.SYNC_ID + " = ?)"
+                + " AND " + Discoveries.TABLE_NAME + "." + Discoveries.ACCOUNT_NAME + " = ?",
+                new String[]{String.valueOf(syncId), account}
+        );
+        return count > 0;
     }
 
 }
