@@ -342,7 +342,7 @@ public class MainActivity extends ActionBarActivity
         Toast.makeText(getApplicationContext(), "Opened!", Toast.LENGTH_SHORT).show();
         Intent intent = new Intent(getApplicationContext(), CapsuleActivity.class);
         intent.putExtra("capsule_id", syncId);
-        intent.putExtra("account", mAccount);
+        intent.putExtra("account_name", mAccount.name);
         startActivity(intent);
     }
 

@@ -14,6 +14,13 @@
         android:layout_weight="1" />
 
     <FrameLayout
+        android:id="@+id/fragment_discovery"
+        android:name="com.brettnamba.capsules.fragments.DiscoveryFragment"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_weight="1" />
+
+    <FrameLayout
         android:id="@+id/fragment_capsule_content"
         android:name="com.brettnamba.capsules.fragments.CapsuleContentFragment"
         android:layout_width="match_parent"

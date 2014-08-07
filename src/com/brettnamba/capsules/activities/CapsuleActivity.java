@@ -11,6 +11,7 @@ import android.view.MenuItem;
 import com.brettnamba.capsules.R;
 import com.brettnamba.capsules.fragments.CapsuleContentFragment;
 import com.brettnamba.capsules.fragments.CapsuleFragment;
+import com.brettnamba.capsules.fragments.DiscoveryFragment;
 
 /**
  * The Activity that shows information about a Capsule.
@@ -28,21 +29,29 @@ public class CapsuleActivity extends ActionBarActivity {
         // Get the Intent extras
         Bundle extras = getIntent().getExtras();
         long capsuleId = 0;
+        String accountName = null;
         if (extras != null) {
             capsuleId = extras.getLong("capsule_id");
+            accountName = extras.getString("account_name");
         }
 
         // Bundle the Fragment arguments
         Bundle capsuleFragmentBundle = new Bundle();
         capsuleFragmentBundle.putLong("capsule_id", capsuleId);
+        Bundle discoveryFragmentBundle = new Bundle();
+        discoveryFragmentBundle.putLong("capsule_id", capsuleId);
+        discoveryFragmentBundle.putString("account_name", accountName);
 
         // Add any Fragments
         Fragment capsuleFragment = new CapsuleFragment();
         capsuleFragment.setArguments(capsuleFragmentBundle);
+        Fragment discoveryFragment = new DiscoveryFragment();
+        discoveryFragment.setArguments(discoveryFragmentBundle);
         if (savedInstanceState == null) {
             FragmentManager fragmentManager = getSupportFragmentManager();
             FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
             fragmentTransaction.add(R.id.fragment_capsule, capsuleFragment);
+            fragmentTransaction.add(R.id.fragment_discovery, discoveryFragment);
             fragmentTransaction.add(R.id.fragment_capsule_content, new CapsuleContentFragment());
             fragmentTransaction.commit();
         }
