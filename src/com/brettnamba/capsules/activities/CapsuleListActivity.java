@@ -21,11 +21,24 @@ public class CapsuleListActivity extends ActionBarActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_capsule_list);
 
+        // Get Intent extras
+        Bundle extras = getIntent().getExtras();
+        String accountName = null;
+        if (extras != null) {
+            accountName = extras.getString("account_name");
+        }
+
+        // Bundle data to be passed to the Fragments
+        Bundle capsuleListBundle = new Bundle();
+        capsuleListBundle.putString("account_name", accountName);
+
         // Add any Fragments
+        CapsuleListFragment capsuleListFragment = new CapsuleListFragment();
+        capsuleListFragment.setArguments(capsuleListBundle);
         if (savedInstanceState == null) {
             FragmentManager fragmentManager = this.getSupportFragmentManager();
             FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
-            fragmentTransaction.add(R.id.fragment_capsule_list, new CapsuleListFragment());
+            fragmentTransaction.add(R.id.fragment_capsule_list, capsuleListFragment);
             fragmentTransaction.commit();
         }
     }

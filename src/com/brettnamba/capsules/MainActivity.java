@@ -220,6 +220,7 @@ public class MainActivity extends ActionBarActivity
 			return true;
 		} else if (id == R.id.action_discoveries_list) {
             Intent intent = new Intent(getApplicationContext(), CapsuleListActivity.class);
+            intent.putExtra("account_name", mAccount.name);
             startActivity(intent);
 		} else if (item.isCheckable()) {
 		    item.setChecked(!item.isChecked());
