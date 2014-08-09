@@ -28,6 +28,7 @@ import android.view.MenuItem;
 import android.widget.Toast;
 
 import com.brettnamba.capsules.activities.CapsuleActivity;
+import com.brettnamba.capsules.activities.CapsuleListActivity;
 import com.brettnamba.capsules.dataaccess.Capsule;
 import com.brettnamba.capsules.dataaccess.CapsuleCojo;
 import com.brettnamba.capsules.http.HttpFactory;
@@ -217,6 +218,9 @@ public class MainActivity extends ActionBarActivity
 		int id = item.getItemId();
 		if (id == R.id.action_settings) {
 			return true;
+		} else if (id == R.id.action_discoveries_list) {
+            Intent intent = new Intent(getApplicationContext(), CapsuleListActivity.class);
+            startActivity(intent);
 		} else if (item.isCheckable()) {
 		    item.setChecked(!item.isChecked());
 		    // The toggle for displaying capsules created by the user

@@ -92,6 +92,10 @@
             android:name="com.brettnamba.capsules.activities.CapsuleActivity"
             android:label="@string/title_activity_capsule" >
         </activity>
+        <activity
+            android:name="com.brettnamba.capsules.activities.CapsuleListActivity"
+            android:label="@string/title_activity_capsule_list" >
+        </activity>
     </application>
 
 </manifest>
