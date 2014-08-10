@@ -14,7 +14,9 @@ import android.accounts.AccountManager;
 import android.accounts.AuthenticatorException;
 import android.accounts.OperationCanceledException;
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.app.ProgressDialog;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
 import android.graphics.Color;
@@ -45,6 +47,7 @@ import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.GoogleMap.OnInfoWindowClickListener;
+import com.google.android.gms.maps.GoogleMap.OnMapLongClickListener;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.Circle;
@@ -125,6 +128,11 @@ public class MainActivity extends ActionBarActivity
      * Maintains a Collection of all Capsules retrieved from the server.
      */
     private Map<Long, Capsule> mCapsules;
+
+    /**
+     * Holds the Marker that is used to create new Capsules.
+     */
+    private Marker mNewCapsuleMarker;
 
     /**
      * Flag to determine if the map needs centering on the user's location during onCreate or onResume.
@@ -313,6 +321,8 @@ public class MainActivity extends ActionBarActivity
                 );
                 // Create the info window listener
                 mMap.setOnInfoWindowClickListener(new InfoWindowListener());
+                // Create the long click listener
+                mMap.setOnMapLongClickListener(new MapLongClickListener());
             }
         }
     }
@@ -411,6 +421,13 @@ public class MainActivity extends ActionBarActivity
 
         @Override
         public void onInfoWindowClick(Marker marker) {
+            // Check if this is the new Capsule Marker
+            if (marker.equals(mNewCapsuleMarker)) {
+                Toast.makeText(getApplicationContext(), "This is a new Capsule.", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            // Otherwise it is an undiscovered, discovered, or created Capsule Marker
             long syncId = mMarkerToCapsule.get(marker);
             if (!CapsuleOperations.isDiscovered(getContentResolver(), syncId, mAccount.name)) {
                 Location location = mLocationClient.getLastLocation();
@@ -428,6 +445,48 @@ public class MainActivity extends ActionBarActivity
             } else {
                 MainActivity.this.openCapsuleMarker(syncId);
             }
+        }
+
+    }
+
+    /**
+     * Handler for GoogleMap long clicks.
+     * 
+     * Currently long clicks allow for creating new Capsules.
+     */
+    private class MapLongClickListener implements OnMapLongClickListener {
+
+        @Override
+        public void onMapLongClick(final LatLng point) {
+            // Build the Dialog
+            AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+            builder.setTitle(getString(R.string.map_new_capsule_dialog_title)).setMessage(getString(R.string.map_new_capsule_dialog_message));
+
+            // Confirm button
+            builder.setPositiveButton(getString(android.R.string.ok), new DialogInterface.OnClickListener() {
+
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    if (mNewCapsuleMarker != null) {
+                        mNewCapsuleMarker.remove();
+                    }
+                    mNewCapsuleMarker = mMap.addMarker(new MarkerOptions()
+                        .position(point)
+                        .title(getString(R.string.map_new_capsule_marker_infowindow_title))
+                        .snippet(getString(R.string.map_new_capsule_marker_infowindow_snippet))
+                        .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN))
+                        .draggable(true)
+                    );
+                }
+
+            });
+
+            // Negative button
+            builder.setNegativeButton(getString(android.R.string.cancel), null);
+
+            // Create and show the Dialog
+            AlertDialog dialog = builder.create();
+            dialog.show();
         }
 
     }

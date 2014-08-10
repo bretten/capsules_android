@@ -34,6 +34,10 @@
     <!-- MainActivity -->
     <string name="map_outside_capsule_radius">You cannot open that at this distance.  Make sure it is within your open radius.</string>
     <string name="map_during_open_capsule">Discovering...</string>
+    <string name="map_new_capsule_dialog_title">Add a Capsule?</string>
+    <string name="map_new_capsule_dialog_message">After dropping a new Capsule, you may alter its position by holding and dragging it.  When you find the correct placement, you can click on the Capsule to finish creating it.</string>
+    <string name="map_new_capsule_marker_infowindow_title">New Capsule</string>
+    <string name="map_new_capsule_marker_infowindow_snippet">Click to finalize</string>
 
     <!-- CapsuleActivity -->
     <string name="title_activity_capsule">CapsuleActivity</string>
