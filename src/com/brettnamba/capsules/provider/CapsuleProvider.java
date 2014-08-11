@@ -298,7 +298,9 @@ public class CapsuleProvider extends ContentProvider {
             break;
 
         case CODE_OWNERSHIPS :
-            table = CapsuleContract.Ownerships.TABLE_NAME;
+            table = CapsuleContract.Ownerships.TABLE_NAME + " INNER JOIN " + CapsuleContract.Capsules.TABLE_NAME
+                    + " ON " + CapsuleContract.Ownerships.TABLE_NAME + "." + CapsuleContract.Ownerships.CAPSULE_ID
+                    + " = " + CapsuleContract.Capsules.TABLE_NAME + "." + CapsuleContract.Capsules._ID;
             break;
 
         case CODE_OWNERSHIPS_WILD :
