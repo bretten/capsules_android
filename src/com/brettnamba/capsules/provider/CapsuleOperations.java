@@ -85,6 +85,26 @@ public class CapsuleOperations {
     }
 
     /**
+     * Creates a new Ownership row.
+     * 
+     * @param resolver
+     * @param capsule
+     * @param account
+     * @return
+     */
+    public static long insertOwnership(ContentResolver resolver, Capsule capsule, String account) {
+        ContentValues values = new ContentValues();
+        values.put(CapsuleContract.Capsules.NAME, capsule.getName());
+        values.put(CapsuleContract.Capsules.LATITUDE, capsule.getLatitude());
+        values.put(CapsuleContract.Capsules.LONGITUDE, capsule.getLongitude());
+        values.put(CapsuleContract.Ownerships.ACCOUNT_NAME, account);
+
+        Uri uri = resolver.insert(CapsuleContract.Ownerships.CONTENT_URI, values);
+
+        return ContentUris.parseId(uri);
+    }
+
+    /**
      * Gets an individual Capsule by the server sync id.
      * 
      * @param resolver

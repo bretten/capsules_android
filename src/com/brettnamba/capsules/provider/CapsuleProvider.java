@@ -162,11 +162,39 @@ public class CapsuleProvider extends ContentProvider {
             break;
 
         case CODE_OWNERSHIPS :
-            insertId = mDb.insert(CapsuleContract.Ownerships.TABLE_NAME, null, values);
+            ContentValues newCapsuleValues = new ContentValues();
+            newCapsuleValues.put(CapsuleContract.Capsules.SYNC_ID, 0);
+            newCapsuleValues.put(CapsuleContract.Capsules.NAME, values.getAsString(CapsuleContract.Capsules.NAME));
+            newCapsuleValues.put(CapsuleContract.Capsules.LATITUDE, values.getAsDouble(CapsuleContract.Capsules.LATITUDE));
+            newCapsuleValues.put(CapsuleContract.Capsules.LONGITUDE, values.getAsDouble(CapsuleContract.Capsules.LONGITUDE));
+            mDb.beginTransaction();
+            try {
+                boolean commit = true;
+                // Does not exist, so insert it
+                long capsuleId = mDb.insert(CapsuleContract.Capsules.TABLE_NAME, CapsuleContract.Capsules.NAME, newCapsuleValues);
 
-            if (insertId > 0) {
-                insertUri = ContentUris.withAppendedId(CapsuleContract.Ownerships.CONTENT_URI, insertId);
-                getContext().getContentResolver().notifyChange(insertUri, null);
+                if (capsuleId > 0) {
+                    Uri newCapsuleUri = ContentUris.withAppendedId(CapsuleContract.Capsules.CONTENT_URI, capsuleId);
+                    getContext().getContentResolver().notifyChange(newCapsuleUri, null);
+                } else {
+                    commit = false;
+                }
+                // INSERT the Ownership
+                ContentValues ownershipValues = new ContentValues();
+                ownershipValues.put(CapsuleContract.Ownerships.CAPSULE_ID, capsuleId);
+                ownershipValues.put(CapsuleContract.Ownerships.ACCOUNT_NAME, values.getAsString(CapsuleContract.Ownerships.ACCOUNT_NAME));
+                long ownershipId = mDb.insert(CapsuleContract.Ownerships.TABLE_NAME, CapsuleContract.Ownerships.DIRTY, ownershipValues);
+                if (ownershipId > 0) {
+                    insertUri = ContentUris.withAppendedId(CapsuleContract.Ownerships.CONTENT_URI, ownershipId);
+                    getContext().getContentResolver().notifyChange(insertUri, null);
+                }
+                // No exceptions, so flag to commit
+                if (commit) {
+                    mDb.setTransactionSuccessful();
+                }
+            } finally {
+                // Commit
+                mDb.endTransaction();
             }
             break;
 
