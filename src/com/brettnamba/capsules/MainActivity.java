@@ -383,6 +383,27 @@ public class MainActivity extends ActionBarActivity
             mMarkerToCapsule.put(marker, capsule.getSyncId());
         }
         c.close();
+        // Populate the Ownership Markers
+        c = getApplicationContext().getContentResolver().query(
+                CapsuleContract.Ownerships.CONTENT_URI,
+                null,
+                CapsuleContract.Ownerships.ACCOUNT_NAME + " = ?",
+                new String[]{mAccount.name},
+                null
+        );
+        while (c.moveToNext()) {
+            Capsule capsule = new CapsuleCojo(c, c.getPosition());
+            // Add the new Discovery Marker
+            Marker marker = mMap.addMarker(new MarkerOptions()
+                .position(new LatLng(capsule.getLatitude(), capsule.getLongitude()))
+                .title(capsule.getName())
+                .draggable(false)
+                .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_YELLOW))
+            );
+            // Mark this as a new Capsule
+            mMarkerToCapsule.put(marker, (long) 0);
+        }
+        c.close();
     }
 
     /**
@@ -432,8 +453,13 @@ public class MainActivity extends ActionBarActivity
                 return;
             }
 
-            // Otherwise it is an undiscovered, discovered, or created Capsule Marker
+            // Otherwise it is an undiscovered, discovered, or owned Capsule Marker
             long syncId = mMarkerToCapsule.get(marker);
+            // It is a dirty owned Marker
+            if (syncId == 0) {
+                return;
+            }
+            // It is a undiscovered or discovered Marker
             if (!CapsuleOperations.isDiscovered(getContentResolver(), syncId, mAccount.name)) {
                 Location location = mLocationClient.getLastLocation();
                 if (location != null) {
