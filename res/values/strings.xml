@@ -45,4 +45,8 @@
     <!-- CapsuleListActivity -->
     <string name="title_activity_capsule_list">My Capsules</string>
 
+    <!-- CapsuleEditorActivity -->
+    <string name="title_activity_capsule_editor">Capsule Editor</string>
+    <string name="activity_capsule_editor_save_button">Save</string>
+
 </resources>

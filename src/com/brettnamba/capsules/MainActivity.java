@@ -30,6 +30,7 @@ import android.view.MenuItem;
 import android.widget.Toast;
 
 import com.brettnamba.capsules.activities.CapsuleActivity;
+import com.brettnamba.capsules.activities.CapsuleEditorActivity;
 import com.brettnamba.capsules.activities.CapsuleListActivity;
 import com.brettnamba.capsules.dataaccess.Capsule;
 import com.brettnamba.capsules.dataaccess.CapsuleCojo;
@@ -423,7 +424,11 @@ public class MainActivity extends ActionBarActivity
         public void onInfoWindowClick(Marker marker) {
             // Check if this is the new Capsule Marker
             if (marker.equals(mNewCapsuleMarker)) {
-                Toast.makeText(getApplicationContext(), "This is a new Capsule.", Toast.LENGTH_SHORT).show();
+                Intent intent = new Intent(getApplicationContext(), CapsuleEditorActivity.class);
+                intent.putExtra("latitude", marker.getPosition().latitude);
+                intent.putExtra("longitude", marker.getPosition().longitude);
+                intent.putExtra("account_name", mAccount.name);
+                startActivity(intent);
                 return;
             }
 
