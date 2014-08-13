@@ -120,7 +120,7 @@ public class CapsuleOperations {
                 null
         );
 
-        CapsulePojo capsule = null;
+        Capsule capsule = null;
         if (c.moveToFirst()) {
             capsule = new CapsulePojo();
             capsule.setId(c.getLong(c.getColumnIndex(Capsules._ID)));
@@ -152,7 +152,7 @@ public class CapsuleOperations {
                 null
         );
 
-        DiscoveryPojo discovery = null;
+        Discovery discovery = null;
         if (c.moveToFirst()) {
             discovery = new DiscoveryPojo();
             discovery.setId(c.getLong(c.getColumnIndex(Discoveries._ID)));

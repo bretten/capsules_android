@@ -33,7 +33,7 @@ public class CapsuleEditorFragment extends Fragment {
     /**
      * The Capsule being edited.
      */
-    private CapsulePojo mCapsule;
+    private Capsule mCapsule;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
