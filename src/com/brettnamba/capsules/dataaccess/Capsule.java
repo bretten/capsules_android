@@ -126,4 +126,34 @@ public abstract class Capsule {
         return this;
     }
 
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + (int) (mId ^ (mId >>> 32));
+        result = prime * result + (int) (mSyncId ^ (mSyncId >>> 32));
+        return result;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        Capsule other = (Capsule) obj;
+        if (mId != other.mId) {
+            return false;
+        }
+        if (mSyncId != other.mSyncId) {
+            return false;
+        }
+        return true;
+    }
+
 }
