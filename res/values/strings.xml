@@ -6,6 +6,7 @@
 
     <!-- Action Bar Menu -->
     <string name="action_settings">Settings</string>
+    <string name="action_edit">Edit</string>
     <string name="action_created">Toggle Capsules</string>
     <string name="action_discovered">Toggle Discoveries</string>
     <string name="action_satellite">Toggle Satellite</string>

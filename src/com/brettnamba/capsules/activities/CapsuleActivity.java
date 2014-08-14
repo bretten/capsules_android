@@ -21,6 +21,11 @@ import com.brettnamba.capsules.fragments.DiscoveryFragment;
  */
 public class CapsuleActivity extends ActionBarActivity {
 
+    /**
+     * Whether or not this Capsule is owned by the current Account.
+     */
+    private boolean mOwned = false;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -31,27 +36,31 @@ public class CapsuleActivity extends ActionBarActivity {
         long capsuleId = 0;
         String accountName = null;
         if (extras != null) {
+            mOwned = extras.getBoolean("owned");
             capsuleId = extras.getLong("capsule_id");
             accountName = extras.getString("account_name");
         }
 
         // Bundle the Fragment arguments
-        Bundle capsuleFragmentBundle = new Bundle();
-        capsuleFragmentBundle.putLong("capsule_id", capsuleId);
-        Bundle discoveryFragmentBundle = new Bundle();
-        discoveryFragmentBundle.putLong("capsule_id", capsuleId);
-        discoveryFragmentBundle.putString("account_name", accountName);
+        Bundle bundle = new Bundle();
+        bundle.putLong("capsule_id", capsuleId);
+        bundle.putString("account_name", accountName);
 
         // Add any Fragments
         Fragment capsuleFragment = new CapsuleFragment();
-        capsuleFragment.setArguments(capsuleFragmentBundle);
-        Fragment discoveryFragment = new DiscoveryFragment();
-        discoveryFragment.setArguments(discoveryFragmentBundle);
+        capsuleFragment.setArguments(bundle);
+        Fragment discoveryFragment = null;
+        if (!mOwned) {
+            discoveryFragment = new DiscoveryFragment();
+            discoveryFragment.setArguments(bundle);
+        }
         if (savedInstanceState == null) {
             FragmentManager fragmentManager = getSupportFragmentManager();
             FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
             fragmentTransaction.add(R.id.fragment_capsule, capsuleFragment);
-            fragmentTransaction.add(R.id.fragment_discovery, discoveryFragment);
+            if (!mOwned) {
+                fragmentTransaction.add(R.id.fragment_discovery, discoveryFragment);
+            }
             fragmentTransaction.add(R.id.fragment_capsule_content, new CapsuleContentFragment());
             fragmentTransaction.commit();
         }
@@ -63,6 +72,11 @@ public class CapsuleActivity extends ActionBarActivity {
 
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.capsule, menu);
+        // Show the Edit button if this is an Ownership
+        if (mOwned) {
+            MenuItem editItem = (MenuItem) menu.findItem(R.id.action_edit);
+            editItem.setVisible(true);
+        }
         return true;
     }
 
