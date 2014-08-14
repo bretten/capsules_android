@@ -21,6 +21,7 @@ import android.content.Intent;
 import android.database.Cursor;
 import android.graphics.Color;
 import android.location.Location;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v7.app.ActionBarActivity;
@@ -346,12 +347,12 @@ public class MainActivity extends ActionBarActivity
     /**
      * Handles the process of opening a Capsule marker.
      * 
-     * @param syncId
+     * @param capsuleId
      */
-    private void openCapsuleMarker(long syncId) {
+    private void openCapsuleMarker(long capsuleId) {
         Toast.makeText(getApplicationContext(), "Opened!", Toast.LENGTH_SHORT).show();
         Intent intent = new Intent(getApplicationContext(), CapsuleActivity.class);
-        intent.putExtra("capsule_id", syncId);
+        intent.putExtra("capsule_id", capsuleId);
         intent.putExtra("account_name", mAccount.name);
         startActivity(intent);
     }
@@ -460,7 +461,7 @@ public class MainActivity extends ActionBarActivity
 
             // Discovered Marker
             if (mDiscoveredMarkers.containsKey(marker)) {
-                MainActivity.this.openCapsuleMarker(mDiscoveredMarkers.get(marker).getSyncId());
+                MainActivity.this.openCapsuleMarker(mDiscoveredMarkers.get(marker).getId());
             }
 
             // Undiscovered Marker
@@ -566,7 +567,7 @@ public class MainActivity extends ActionBarActivity
 
     }
 
-    public class OpenCapsuleTask extends AsyncTask<String, Void, Long> {
+    public class OpenCapsuleTask extends AsyncTask<String, Void, Uri> {
 
         /**
          * Shows a notification while the Task is being run in the background.
@@ -596,7 +597,7 @@ public class MainActivity extends ActionBarActivity
         }
 
         @Override
-        protected Long doInBackground(String... params) {
+        protected Uri doInBackground(String... params) {
             Log.i(TAG, "OpenCapsuleTask.doInBackground()");
             // Attempt to get the last location
             Location location = mLocationClient.getLastLocation();
@@ -619,18 +620,18 @@ public class MainActivity extends ActionBarActivity
                 this.cancel(true);
             }
             // INSERT the new Discovery
+            Uri insertUri = null;
             if (success) {
-                // TODO Set the Capsule ID after inserting
-                CapsuleOperations.insertDiscovery(getContentResolver(), this.capsule, mAccount.name);
+                insertUri = CapsuleOperations.insertDiscovery(getContentResolver(), this.capsule, mAccount.name);
             } else {
                 this.cancel(true);
             }
 
-            return this.capsule.getSyncId();
+            return insertUri;
         }
 
         @Override
-        protected void onCancelled(Long result) {
+        protected void onCancelled(Uri result) {
             if (this.dialog.isShowing()) {
                 this.dialog.hide();
                 this.dialog.dismiss();
@@ -638,25 +639,35 @@ public class MainActivity extends ActionBarActivity
         }
 
         @Override
-        protected void onPostExecute(final Long syncId) {
+        protected void onPostExecute(final Uri insertUri) {
             if (this.dialog.isShowing()) {
                 this.dialog.hide();
                 this.dialog.dismiss();
             }
-            // Open the Capsule Marker
-            MainActivity.this.openCapsuleMarker(syncId);
-            // Remove the old, undiscovered Marker
-            mUndiscoveredMarkers.remove(this.marker);
-            this.marker.remove();
-            // Add the new Discovery Marker
-            Marker marker = mMap.addMarker(new MarkerOptions()
-                .position(new LatLng(this.capsule.getLatitude(), this.capsule.getLongitude()))
-                .title(this.capsule.getName())
-                .draggable(false)
-                .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE))
-            );
-            // Maintain a mapping of the Capsule sync id to the Marker
-            mDiscoveredMarkers.put(marker, this.capsule);
+            // Get the Capsule ID from the INSERT result URI
+            long capsuleId = 0;
+            if (insertUri.getQueryParameter(CapsuleContract.Discoveries.CAPSULE_ID) != null) {
+                capsuleId = Long.valueOf(insertUri.getQueryParameter(CapsuleContract.Discoveries.CAPSULE_ID));
+            }
+            // Update the Capsule object and the Markers
+            if (capsuleId > 0) {
+                // Set the Capsule ID on the Capsule object
+                this.capsule.setId(capsuleId);
+                // Open the Capsule Marker
+                MainActivity.this.openCapsuleMarker(capsuleId);
+                // Remove the old, undiscovered Marker
+                mUndiscoveredMarkers.remove(this.marker);
+                this.marker.remove();
+                // Add the new Discovery Marker
+                Marker marker = mMap.addMarker(new MarkerOptions()
+                    .position(new LatLng(this.capsule.getLatitude(), this.capsule.getLongitude()))
+                    .title(this.capsule.getName())
+                    .draggable(false)
+                    .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE))
+                );
+                // Maintain a mapping of the Capsule sync id to the Marker
+                mDiscoveredMarkers.put(marker, this.capsule);
+            }
         }
 
     }

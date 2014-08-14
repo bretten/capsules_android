@@ -73,7 +73,7 @@ public class CapsuleOperations {
      * @param account
      * @return
      */
-    public static long insertDiscovery(ContentResolver resolver, Capsule capsule, String account) {
+    public static Uri insertDiscovery(ContentResolver resolver, Capsule capsule, String account) {
         ContentValues values = new ContentValues();
         values.put(CapsuleContract.Capsules.SYNC_ID, capsule.getSyncId());
         values.put(CapsuleContract.Capsules.NAME, capsule.getName());
@@ -81,13 +81,11 @@ public class CapsuleOperations {
         values.put(CapsuleContract.Capsules.LONGITUDE, capsule.getLongitude());
         values.put(CapsuleContract.Discoveries.ACCOUNT_NAME, account);
 
-        Uri uri = resolver.insert(CapsuleContract.Discoveries.CONTENT_URI.buildUpon()
+        return resolver.insert(CapsuleContract.Discoveries.CONTENT_URI.buildUpon()
                 .appendQueryParameter(CapsuleContract.QUERY_PARAM_TRANSACTION, CapsuleContract.Capsules.TABLE_NAME)
                 .build(),
                 values
         );
-
-        return ContentUris.parseId(uri);
     }
 
     /**
@@ -98,35 +96,33 @@ public class CapsuleOperations {
      * @param account
      * @return
      */
-    public static long insertOwnership(ContentResolver resolver, Capsule capsule, String account) {
+    public static Uri insertOwnership(ContentResolver resolver, Capsule capsule, String account) {
         ContentValues values = new ContentValues();
         values.put(CapsuleContract.Capsules.NAME, capsule.getName());
         values.put(CapsuleContract.Capsules.LATITUDE, capsule.getLatitude());
         values.put(CapsuleContract.Capsules.LONGITUDE, capsule.getLongitude());
         values.put(CapsuleContract.Ownerships.ACCOUNT_NAME, account);
 
-        Uri uri = resolver.insert(CapsuleContract.Ownerships.CONTENT_URI.buildUpon()
+        return resolver.insert(CapsuleContract.Ownerships.CONTENT_URI.buildUpon()
                 .appendQueryParameter(CapsuleContract.QUERY_PARAM_TRANSACTION, CapsuleContract.Capsules.TABLE_NAME)
                 .build(),
                 values
         );
-
-        return ContentUris.parseId(uri);
     }
 
     /**
-     * Gets an individual Capsule by the server sync id.
+     * Gets an individual Capsule by id.
      * 
      * @param resolver
-     * @param syncId
+     * @param capsuleId
      * @return
      */
-    public static Capsule getCapsule(ContentResolver resolver, long syncId) {
+    public static Capsule getCapsule(ContentResolver resolver, long capsuleId) {
         Cursor c = resolver.query(
                 Capsules.CONTENT_URI,
                 new String[]{"*"},
-                Capsules.TABLE_NAME + "." + Capsules.SYNC_ID + " = ?",
-                new String[]{String.valueOf(syncId)},
+                Capsules.TABLE_NAME + "." + Capsules._ID + " = ?",
+                new String[]{String.valueOf(capsuleId)},
                 null
         );
 
@@ -146,21 +142,21 @@ public class CapsuleOperations {
     }
 
     /**
-     * Gets an individual Discovery given the Capsule sync id and the Account name.
+     * Gets an individual Discovery given the Capsule id and the Account name.
      * 
      * @param resolver
-     * @param syncId
+     * @param capsuleId
      * @param account
      * @return
      */
-    public static Discovery getDiscovery(ContentResolver resolver, long syncId, String account) {
+    public static Discovery getDiscovery(ContentResolver resolver, long capsuleId, String account) {
         Cursor c = resolver.query(
                 Discoveries.CONTENT_URI.buildUpon()
                 .appendQueryParameter(CapsuleContract.QUERY_PARAM_JOIN, CapsuleContract.Capsules.TABLE_NAME)
                 .build(),
                 new String[]{"*"},
-                Capsules.TABLE_NAME + "." + Capsules.SYNC_ID + " = ? AND " + Discoveries.TABLE_NAME + "." + Discoveries.ACCOUNT_NAME + " = ?",
-                new String[]{String.valueOf(syncId), account},
+                Capsules.TABLE_NAME + "." + Capsules._ID + " = ? AND " + Discoveries.TABLE_NAME + "." + Discoveries.ACCOUNT_NAME + " = ?",
+                new String[]{String.valueOf(capsuleId), account},
                 null
         );
 
@@ -181,23 +177,21 @@ public class CapsuleOperations {
     }
 
     /**
-     * Updates an individual Discovery row given the Capsule sync id and the Account name.
+     * Updates an individual Discovery row given the Capsule id and the Account name.
      * 
      * @param resolver
      * @param values
-     * @param syncId
+     * @param capsuleId
      * @param account
      * @return
      */
-    public static boolean updateDiscovery(ContentResolver resolver, ContentValues values, long syncId, String account) {
+    public static boolean updateDiscovery(ContentResolver resolver, ContentValues values, long capsuleId, String account) {
         // TODO Get rid of nested query
         int count = resolver.update(
                 Discoveries.CONTENT_URI,
                 values,
-                Discoveries.TABLE_NAME + "." + Discoveries.CAPSULE_ID + " IN "
-                + "(SELECT " + Capsules.TABLE_NAME + "." + Capsules._ID + " FROM " + Capsules.TABLE_NAME + " WHERE " + Capsules.TABLE_NAME + "." + Capsules.SYNC_ID + " = ?)"
-                + " AND " + Discoveries.TABLE_NAME + "." + Discoveries.ACCOUNT_NAME + " = ?",
-                new String[]{String.valueOf(syncId), account}
+                Discoveries.TABLE_NAME + "." + Discoveries.CAPSULE_ID + " = ? AND " + Discoveries.TABLE_NAME + "." + Discoveries.ACCOUNT_NAME + " = ?",
+                new String[]{String.valueOf(capsuleId), account}
         );
         return count > 0;
     }

@@ -30,9 +30,9 @@ import com.brettnamba.capsules.provider.CapsuleOperations;
 public class DiscoveryFragment extends Fragment {
 
     /**
-     * The Capsule sync id
+     * The Capsule id
      */
-    private long mSyncId;
+    private long mCapsuleId;
 
     /**
      * The Account name
@@ -43,7 +43,7 @@ public class DiscoveryFragment extends Fragment {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         // Get the arguments passed in from the Activity
-        this.mSyncId = getArguments().getLong("capsule_id");
+        this.mCapsuleId = getArguments().getLong("capsule_id");
         this.mAccountName = getArguments().getString("account_name");
     }
 
@@ -51,7 +51,7 @@ public class DiscoveryFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_discovery, container, false);
         // Begin the AsyncTask for loading the Capsule data
-        new LoadDiscoveryTask(getActivity(), view).execute(String.valueOf(this.mSyncId), this.mAccountName);
+        new LoadDiscoveryTask(getActivity(), view).execute(String.valueOf(this.mCapsuleId), this.mAccountName);
         return view;
     }
 
@@ -64,7 +64,7 @@ public class DiscoveryFragment extends Fragment {
         public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
             ContentValues values = new ContentValues();
             values.put(CapsuleContract.Discoveries.FAVORITE, (isChecked) ? 1 : 0);
-            new UpdateDiscoveryTask(getActivity(), getView(), values).execute(String.valueOf(mSyncId), mAccountName);
+            new UpdateDiscoveryTask(getActivity(), getView(), values).execute(String.valueOf(mCapsuleId), mAccountName);
         }
 
     }
@@ -78,7 +78,7 @@ public class DiscoveryFragment extends Fragment {
         public void onItemSelected(AdapterView<?> parent, View view, int pos, long id) {
             ContentValues values = new ContentValues();
             values.put(CapsuleContract.Discoveries.RATING, Integer.valueOf((String) parent.getItemAtPosition(pos)));
-            new UpdateDiscoveryTask(getActivity(), getView(), values).execute(String.valueOf(mSyncId), mAccountName);
+            new UpdateDiscoveryTask(getActivity(), getView(), values).execute(String.valueOf(mCapsuleId), mAccountName);
         }
 
         @Override

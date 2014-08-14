@@ -58,10 +58,10 @@ public class CapsuleListFragment extends ListFragment implements LoaderManager.L
     public void onListItemClick(ListView l, View v, int position, long id) {
         super.onListItemClick(l, v, position, id);
         Cursor c = (Cursor) getListView().getItemAtPosition(position);
-        long syncId = c.getLong(c.getColumnIndex(CapsuleContract.Capsules.SYNC_ID));
-        if (syncId != 0 && mAccountName != null) {
+        long capsuleId = c.getLong(c.getColumnIndex(CapsuleContract.Capsules._ID));
+        if (capsuleId != 0 && mAccountName != null) {
             Intent intent = new Intent(getActivity(), CapsuleActivity.class);
-            intent.putExtra("capsule_id", syncId);
+            intent.putExtra("capsule_id", capsuleId);
             intent.putExtra("account_name", mAccountName);
             startActivity(intent);
         }

@@ -1,6 +1,7 @@
 package com.brettnamba.capsules.fragments;
 
 import android.app.Activity;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
@@ -84,7 +85,7 @@ public class CapsuleEditorFragment extends Fragment {
     /**
      * Handles saving a Capsule to the database.
      */
-    private class SaveCapsuleTask extends AsyncTask<Capsule, Void, Long> {
+    private class SaveCapsuleTask extends AsyncTask<Capsule, Void, Uri> {
 
         /**
          * The Activity containing this Fragment.
@@ -114,16 +115,16 @@ public class CapsuleEditorFragment extends Fragment {
         }
 
         @Override
-        protected Long doInBackground(Capsule... params) {
+        protected Uri doInBackground(Capsule... params) {
             return CapsuleOperations.insertOwnership(this.activity.getContentResolver(), mCapsule, mAccountName);
         }
 
         @Override
-        protected void onPostExecute(final Long result) {
+        protected void onPostExecute(final Uri insertUri) {
             if (this.progress.isShown()) {
                 this.progress.setVisibility(View.GONE);
             }
-            if (result > 0) {
+            if (insertUri != null) {
                 this.activity.finish();
             }
         }
