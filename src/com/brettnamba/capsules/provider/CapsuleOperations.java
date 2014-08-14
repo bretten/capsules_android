@@ -51,7 +51,9 @@ public class CapsuleOperations {
      */
     public static boolean isDiscovered(ContentResolver resolver, long syncId, String account) {
         Cursor c = resolver.query(
-                Discoveries.CONTENT_URI,
+                Discoveries.CONTENT_URI.buildUpon()
+                .appendQueryParameter(CapsuleContract.QUERY_PARAM_JOIN, CapsuleContract.Capsules.TABLE_NAME)
+                .build(),
                 new String[]{"1"},
                 Capsules.TABLE_NAME + "." + Capsules.SYNC_ID + " = ? AND " + Discoveries.TABLE_NAME + "." + Discoveries.ACCOUNT_NAME + " = ?",
                 new String[]{String.valueOf(syncId), account},
@@ -79,7 +81,11 @@ public class CapsuleOperations {
         values.put(CapsuleContract.Capsules.LONGITUDE, capsule.getLongitude());
         values.put(CapsuleContract.Discoveries.ACCOUNT_NAME, account);
 
-        Uri uri = resolver.insert(CapsuleContract.Discoveries.CONTENT_URI, values);
+        Uri uri = resolver.insert(CapsuleContract.Discoveries.CONTENT_URI.buildUpon()
+                .appendQueryParameter(CapsuleContract.QUERY_PARAM_TRANSACTION, CapsuleContract.Capsules.TABLE_NAME)
+                .build(),
+                values
+        );
 
         return ContentUris.parseId(uri);
     }
@@ -99,7 +105,11 @@ public class CapsuleOperations {
         values.put(CapsuleContract.Capsules.LONGITUDE, capsule.getLongitude());
         values.put(CapsuleContract.Ownerships.ACCOUNT_NAME, account);
 
-        Uri uri = resolver.insert(CapsuleContract.Ownerships.CONTENT_URI, values);
+        Uri uri = resolver.insert(CapsuleContract.Ownerships.CONTENT_URI.buildUpon()
+                .appendQueryParameter(CapsuleContract.QUERY_PARAM_TRANSACTION, CapsuleContract.Capsules.TABLE_NAME)
+                .build(),
+                values
+        );
 
         return ContentUris.parseId(uri);
     }
@@ -145,7 +155,9 @@ public class CapsuleOperations {
      */
     public static Discovery getDiscovery(ContentResolver resolver, long syncId, String account) {
         Cursor c = resolver.query(
-                Discoveries.CONTENT_URI,
+                Discoveries.CONTENT_URI.buildUpon()
+                .appendQueryParameter(CapsuleContract.QUERY_PARAM_JOIN, CapsuleContract.Capsules.TABLE_NAME)
+                .build(),
                 new String[]{"*"},
                 Capsules.TABLE_NAME + "." + Capsules.SYNC_ID + " = ? AND " + Discoveries.TABLE_NAME + "." + Discoveries.ACCOUNT_NAME + " = ?",
                 new String[]{String.valueOf(syncId), account},

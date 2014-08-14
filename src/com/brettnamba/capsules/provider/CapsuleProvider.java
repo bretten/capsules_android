@@ -24,12 +24,12 @@ public class CapsuleProvider extends ContentProvider {
 
     private static final UriMatcher sUriMatcher;
 
-    private static final int CODE_CAPSULES = 1;
-    private static final int CODE_CAPSULES_WILD = 2;
-    private static final int CODE_OWNERSHIPS = 3;
-    private static final int CODE_OWNERSHIPS_WILD = 4;
-    private static final int CODE_DISCOVERIES = 5;
-    private static final int CODE_DISCOVERIES_WILD = 6;
+    private static final int CODE_CAPSULES = 10;
+    private static final int CODE_CAPSULES_WILD = 11;
+    private static final int CODE_DISCOVERIES = 20;
+    private static final int CODE_DISCOVERIES_WILD = 21;
+    private static final int CODE_OWNERSHIPS = 30;
+    private static final int CODE_OWNERSHIPS_WILD = 31;
 
     private static final int PATH_ID_POS = 1;
 
@@ -43,10 +43,10 @@ public class CapsuleProvider extends ContentProvider {
         sUriMatcher = new UriMatcher(UriMatcher.NO_MATCH);
         sUriMatcher.addURI(CapsuleContract.AUTHORITY, CapsuleContract.Capsules.CONTENT_URI_PATH, CODE_CAPSULES);
         sUriMatcher.addURI(CapsuleContract.AUTHORITY, CapsuleContract.Capsules.CONTENT_URI_PATH + "/#", CODE_CAPSULES_WILD);
-        sUriMatcher.addURI(CapsuleContract.AUTHORITY, CapsuleContract.Ownerships.CONTENT_URI_PATH, CODE_OWNERSHIPS);
-        sUriMatcher.addURI(CapsuleContract.AUTHORITY, CapsuleContract.Ownerships.CONTENT_URI_PATH + "/#", CODE_OWNERSHIPS_WILD);
         sUriMatcher.addURI(CapsuleContract.AUTHORITY, CapsuleContract.Discoveries.CONTENT_URI_PATH, CODE_DISCOVERIES);
         sUriMatcher.addURI(CapsuleContract.AUTHORITY, CapsuleContract.Discoveries.CONTENT_URI_PATH + "/#", CODE_DISCOVERIES_WILD);
+        sUriMatcher.addURI(CapsuleContract.AUTHORITY, CapsuleContract.Ownerships.CONTENT_URI_PATH, CODE_OWNERSHIPS);
+        sUriMatcher.addURI(CapsuleContract.AUTHORITY, CapsuleContract.Ownerships.CONTENT_URI_PATH + "/#", CODE_OWNERSHIPS_WILD);
     }
 
     @Override
@@ -161,94 +161,119 @@ public class CapsuleProvider extends ContentProvider {
             }
             break;
 
-        case CODE_OWNERSHIPS :
-            ContentValues newCapsuleValues = new ContentValues();
-            newCapsuleValues.put(CapsuleContract.Capsules.SYNC_ID, 0);
-            newCapsuleValues.put(CapsuleContract.Capsules.NAME, values.getAsString(CapsuleContract.Capsules.NAME));
-            newCapsuleValues.put(CapsuleContract.Capsules.LATITUDE, values.getAsDouble(CapsuleContract.Capsules.LATITUDE));
-            newCapsuleValues.put(CapsuleContract.Capsules.LONGITUDE, values.getAsDouble(CapsuleContract.Capsules.LONGITUDE));
-            mDb.beginTransaction();
-            try {
-                boolean commit = true;
-                // Does not exist, so insert it
-                long capsuleId = mDb.insert(CapsuleContract.Capsules.TABLE_NAME, CapsuleContract.Capsules.NAME, newCapsuleValues);
-
-                if (capsuleId > 0) {
-                    Uri newCapsuleUri = ContentUris.withAppendedId(CapsuleContract.Capsules.CONTENT_URI, capsuleId);
-                    getContext().getContentResolver().notifyChange(newCapsuleUri, null);
-                } else {
-                    commit = false;
+        case CODE_DISCOVERIES :
+            if (uri.getQueryParameter(CapsuleContract.QUERY_PARAM_TRANSACTION) != null
+                && uri.getQueryParameter(CapsuleContract.QUERY_PARAM_TRANSACTION).equals(CapsuleContract.Capsules.TABLE_NAME)) {
+                ContentValues capsuleValues = new ContentValues();
+                capsuleValues.put(CapsuleContract.Capsules.SYNC_ID, values.getAsLong(CapsuleContract.Capsules.SYNC_ID));
+                capsuleValues.put(CapsuleContract.Capsules.NAME, values.getAsString(CapsuleContract.Capsules.NAME));
+                capsuleValues.put(CapsuleContract.Capsules.LATITUDE, values.getAsDouble(CapsuleContract.Capsules.LATITUDE));
+                capsuleValues.put(CapsuleContract.Capsules.LONGITUDE, values.getAsDouble(CapsuleContract.Capsules.LONGITUDE));
+                mDb.beginTransaction();
+                try {
+                    SQLiteQueryBuilder qb = new SQLiteQueryBuilder();
+                    // Check if a Capsule row exists for the unique sync ID
+                    qb.setTables(CapsuleContract.Capsules.TABLE_NAME);
+                    Cursor c = qb.query(
+                            mDb,
+                            new String[]{CapsuleContract.Capsules._ID},
+                            CapsuleContract.Capsules.SYNC_ID + " = ?",
+                            new String[]{String.valueOf(values.getAsLong(CapsuleContract.Capsules.SYNC_ID))},
+                            null,
+                            null,
+                            null
+                    );
+                    // Check if the Capsule already exists and get its application specific primary key
+                    long capsuleId;
+                    if (c.getCount() < 1) {
+                        // Does not exist, so insert it
+                        capsuleId = mDb.insert(CapsuleContract.Capsules.TABLE_NAME, CapsuleContract.Capsules.NAME, capsuleValues);
+                
+                        if (capsuleId > 0) {
+                            Uri newCapsuleUri = ContentUris.withAppendedId(CapsuleContract.Capsules.CONTENT_URI, capsuleId);
+                            getContext().getContentResolver().notifyChange(newCapsuleUri, null);
+                        }
+                    } else {
+                        c.moveToFirst();
+                        capsuleId = c.getLong(c.getColumnIndex(CapsuleContract.Capsules._ID));
+                    }
+                    // Close the cursor
+                    c.close();
+                    // INSERT the Discovery
+                    ContentValues discoveryValues = new ContentValues();
+                    discoveryValues.put(CapsuleContract.Discoveries.CAPSULE_ID, capsuleId);
+                    discoveryValues.put(CapsuleContract.Discoveries.ACCOUNT_NAME, values.getAsString(CapsuleContract.Discoveries.ACCOUNT_NAME));
+                    long discoveryId = mDb.insert(CapsuleContract.Discoveries.TABLE_NAME, CapsuleContract.Discoveries.FAVORITE, discoveryValues);
+                    if (discoveryId > 0) {
+                        insertUri = ContentUris.withAppendedId(CapsuleContract.Discoveries.CONTENT_URI, discoveryId).buildUpon()
+                                    .appendQueryParameter(CapsuleContract.Discoveries.CAPSULE_ID, String.valueOf(capsuleId))
+                                    .build();
+                        getContext().getContentResolver().notifyChange(insertUri, null);
+                    }
+                    // No exceptions, so flag to commit
+                    mDb.setTransactionSuccessful();
+                } finally {
+                    // Commit
+                    mDb.endTransaction();
                 }
-                // INSERT the Ownership
-                ContentValues ownershipValues = new ContentValues();
-                ownershipValues.put(CapsuleContract.Ownerships.CAPSULE_ID, capsuleId);
-                ownershipValues.put(CapsuleContract.Ownerships.ACCOUNT_NAME, values.getAsString(CapsuleContract.Ownerships.ACCOUNT_NAME));
-                long ownershipId = mDb.insert(CapsuleContract.Ownerships.TABLE_NAME, CapsuleContract.Ownerships.DIRTY, ownershipValues);
-                if (ownershipId > 0) {
-                    insertUri = ContentUris.withAppendedId(CapsuleContract.Ownerships.CONTENT_URI, ownershipId);
+            } else {
+                insertId = mDb.insert(CapsuleContract.Discoveries.TABLE_NAME, CapsuleContract.Discoveries.CAPSULE_ID, values);
+    
+                if (insertId > 0) {
+                    insertUri = ContentUris.withAppendedId(CapsuleContract.Discoveries.CONTENT_URI, insertId);
                     getContext().getContentResolver().notifyChange(insertUri, null);
                 }
-                // No exceptions, so flag to commit
-                if (commit) {
-                    mDb.setTransactionSuccessful();
-                }
-            } finally {
-                // Commit
-                mDb.endTransaction();
             }
             break;
 
-        case CODE_DISCOVERIES :
-            ContentValues capsuleValues = new ContentValues();
-            capsuleValues.put(CapsuleContract.Capsules.SYNC_ID, values.getAsLong(CapsuleContract.Capsules.SYNC_ID));
-            capsuleValues.put(CapsuleContract.Capsules.NAME, values.getAsString(CapsuleContract.Capsules.NAME));
-            capsuleValues.put(CapsuleContract.Capsules.LATITUDE, values.getAsDouble(CapsuleContract.Capsules.LATITUDE));
-            capsuleValues.put(CapsuleContract.Capsules.LONGITUDE, values.getAsDouble(CapsuleContract.Capsules.LONGITUDE));
-            mDb.beginTransaction();
-            try {
-                SQLiteQueryBuilder qb = new SQLiteQueryBuilder();
-                // Check if a Capsule row exists for the unique sync ID
-                qb.setTables(CapsuleContract.Capsules.TABLE_NAME);
-                Cursor c = qb.query(
-                        mDb,
-                        new String[]{CapsuleContract.Capsules._ID},
-                        CapsuleContract.Capsules.SYNC_ID + " = ?",
-                        new String[]{String.valueOf(values.getAsLong(CapsuleContract.Capsules.SYNC_ID))},
-                        null,
-                        null,
-                        null
-                );
-                // Check if the Capsule already exists and get its application specific primary key
-                long capsuleId;
-                if (c.getCount() < 1) {
+        case CODE_OWNERSHIPS :
+            if (uri.getQueryParameter(CapsuleContract.QUERY_PARAM_TRANSACTION) != null
+                && uri.getQueryParameter(CapsuleContract.QUERY_PARAM_TRANSACTION).equals(CapsuleContract.Capsules.TABLE_NAME)) {
+                ContentValues capsuleValues = new ContentValues();
+                capsuleValues.put(CapsuleContract.Capsules.SYNC_ID, 0);
+                capsuleValues.put(CapsuleContract.Capsules.NAME, values.getAsString(CapsuleContract.Capsules.NAME));
+                capsuleValues.put(CapsuleContract.Capsules.LATITUDE, values.getAsDouble(CapsuleContract.Capsules.LATITUDE));
+                capsuleValues.put(CapsuleContract.Capsules.LONGITUDE, values.getAsDouble(CapsuleContract.Capsules.LONGITUDE));
+                mDb.beginTransaction();
+                try {
+                    boolean commit = true;
                     // Does not exist, so insert it
-                    capsuleId = mDb.insert(CapsuleContract.Capsules.TABLE_NAME, CapsuleContract.Capsules.NAME, capsuleValues);
-
+                    long capsuleId = mDb.insert(CapsuleContract.Capsules.TABLE_NAME, CapsuleContract.Capsules.NAME, capsuleValues);
+                
                     if (capsuleId > 0) {
                         Uri newCapsuleUri = ContentUris.withAppendedId(CapsuleContract.Capsules.CONTENT_URI, capsuleId);
                         getContext().getContentResolver().notifyChange(newCapsuleUri, null);
+                    } else {
+                        commit = false;
                     }
-                } else {
-                    c.moveToFirst();
-                    capsuleId = c.getLong(c.getColumnIndex(CapsuleContract.Capsules._ID));
-                }
-                // Close the cursor
-                c.close();
-                // INSERT the Discovery
-                ContentValues discoveryValues = new ContentValues();
-                discoveryValues.put(CapsuleContract.Discoveries.CAPSULE_ID, capsuleId);
-                discoveryValues.put(CapsuleContract.Discoveries.ACCOUNT_NAME, values.getAsString(CapsuleContract.Discoveries.ACCOUNT_NAME));
-                long discoveryId = mDb.insert(CapsuleContract.Discoveries.TABLE_NAME, CapsuleContract.Discoveries.FAVORITE, discoveryValues);
-                if (discoveryId > 0) {
-                    insertUri = ContentUris.withAppendedId(CapsuleContract.Discoveries.CONTENT_URI, discoveryId);
+                    // INSERT the Ownership
+                    ContentValues ownershipValues = new ContentValues();
+                    ownershipValues.put(CapsuleContract.Ownerships.CAPSULE_ID, capsuleId);
+                    ownershipValues.put(CapsuleContract.Ownerships.ACCOUNT_NAME, values.getAsString(CapsuleContract.Ownerships.ACCOUNT_NAME));
+                    long ownershipId = mDb.insert(CapsuleContract.Ownerships.TABLE_NAME, CapsuleContract.Ownerships.DIRTY, ownershipValues);
+                    if (ownershipId > 0) {
+                        insertUri = ContentUris.withAppendedId(CapsuleContract.Ownerships.CONTENT_URI, ownershipId).buildUpon()
+                                    .appendQueryParameter(CapsuleContract.Ownerships.CAPSULE_ID, String.valueOf(capsuleId))
+                                    .build();
+                        getContext().getContentResolver().notifyChange(insertUri, null);
+                    }
+                    // No exceptions, so flag to commit
+                    if (commit) {
+                        mDb.setTransactionSuccessful();
+                    }
+                } finally {
+                    // Commit
+                    mDb.endTransaction();
+                }                
+            } else {
+                insertId = mDb.insert(CapsuleContract.Ownerships.TABLE_NAME, CapsuleContract.Ownerships.CAPSULE_ID, values);
+                
+                if (insertId > 0) {
+                    insertUri = ContentUris.withAppendedId(CapsuleContract.Ownerships.CONTENT_URI, insertId);
                     getContext().getContentResolver().notifyChange(insertUri, null);
                 }
-                // No exceptions, so flag to commit
-                mDb.setTransactionSuccessful();
-            } finally {
-                // Commit
-                mDb.endTransaction();
             }
+
             break;
 
         default :
@@ -287,9 +312,14 @@ public class CapsuleProvider extends ContentProvider {
             break;
 
         case CODE_DISCOVERIES :
-            table = CapsuleContract.Discoveries.TABLE_NAME + " INNER JOIN " + CapsuleContract.Capsules.TABLE_NAME
-                    + " ON " + CapsuleContract.Discoveries.TABLE_NAME + "." + CapsuleContract.Discoveries.CAPSULE_ID
-                    + " = " + CapsuleContract.Capsules.TABLE_NAME + "." + CapsuleContract.Capsules._ID;
+            if (uri.getQueryParameter(CapsuleContract.QUERY_PARAM_JOIN) != null
+                && uri.getQueryParameter(CapsuleContract.QUERY_PARAM_JOIN).equals(CapsuleContract.Capsules.TABLE_NAME)) {
+                table = CapsuleContract.Discoveries.TABLE_NAME + " INNER JOIN " + CapsuleContract.Capsules.TABLE_NAME
+                        + " ON " + CapsuleContract.Discoveries.TABLE_NAME + "." + CapsuleContract.Discoveries.CAPSULE_ID
+                        + " = " + CapsuleContract.Capsules.TABLE_NAME + "." + CapsuleContract.Capsules._ID;
+            } else {
+                table = CapsuleContract.Discoveries.TABLE_NAME;
+            }
             break;
 
         case CODE_DISCOVERIES_WILD :
@@ -298,9 +328,14 @@ public class CapsuleProvider extends ContentProvider {
             break;
 
         case CODE_OWNERSHIPS :
-            table = CapsuleContract.Ownerships.TABLE_NAME + " INNER JOIN " + CapsuleContract.Capsules.TABLE_NAME
-                    + " ON " + CapsuleContract.Ownerships.TABLE_NAME + "." + CapsuleContract.Ownerships.CAPSULE_ID
-                    + " = " + CapsuleContract.Capsules.TABLE_NAME + "." + CapsuleContract.Capsules._ID;
+            if (uri.getQueryParameter(CapsuleContract.QUERY_PARAM_JOIN) != null
+                && uri.getQueryParameter(CapsuleContract.QUERY_PARAM_JOIN).equals(CapsuleContract.Capsules.TABLE_NAME)) {
+                table = CapsuleContract.Ownerships.TABLE_NAME + " INNER JOIN " + CapsuleContract.Capsules.TABLE_NAME
+                        + " ON " + CapsuleContract.Ownerships.TABLE_NAME + "." + CapsuleContract.Ownerships.CAPSULE_ID
+                        + " = " + CapsuleContract.Capsules.TABLE_NAME + "." + CapsuleContract.Capsules._ID;                
+            } else {
+                table = CapsuleContract.Ownerships.TABLE_NAME;
+            }
             break;
 
         case CODE_OWNERSHIPS_WILD :

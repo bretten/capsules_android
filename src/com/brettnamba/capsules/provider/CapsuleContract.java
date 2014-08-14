@@ -20,6 +20,10 @@ public final class CapsuleContract {
 
     public static final Uri CONTENT_URI = Uri.parse(SCHEME + AUTHORITY);
 
+    public static final String QUERY_PARAM_JOIN = "join";
+
+    public static final String QUERY_PARAM_TRANSACTION = "transaction";
+
     protected interface CapsuleColumns {
 
         public static final String NAME = "name";

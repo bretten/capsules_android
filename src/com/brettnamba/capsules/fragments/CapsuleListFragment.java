@@ -73,7 +73,9 @@ public class CapsuleListFragment extends ListFragment implements LoaderManager.L
         if (mAccountName != null) {
             loader = new CursorLoader(
                     getActivity(),
-                    CapsuleContract.Discoveries.CONTENT_URI,
+                    CapsuleContract.Discoveries.CONTENT_URI.buildUpon()
+                    .appendQueryParameter(CapsuleContract.QUERY_PARAM_JOIN, CapsuleContract.Capsules.TABLE_NAME)
+                    .build(),
                     new String[]{CapsuleContract.Capsules.SYNC_ID, CapsuleContract.Capsules.NAME, CapsuleContract.Discoveries.ACCOUNT_NAME},
                     CapsuleContract.Discoveries.ACCOUNT_NAME + " = ?",
                     new String[]{mAccountName},

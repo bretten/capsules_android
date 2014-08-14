@@ -361,7 +361,11 @@ public class MainActivity extends ActionBarActivity
      */
     private void populateStoredMarkers() {
         // Populate the Discovery Markers
-        Cursor c = getApplicationContext().getContentResolver().query(CapsuleContract.Discoveries.CONTENT_URI, null, null, null, null);
+        Cursor c = getApplicationContext().getContentResolver().query(CapsuleContract.Discoveries.CONTENT_URI.buildUpon()
+                .appendQueryParameter(CapsuleContract.QUERY_PARAM_JOIN, CapsuleContract.Capsules.TABLE_NAME)
+                .build(),
+                null, null, null, null
+        );
         while (c.moveToNext()) {
             Capsule capsule = new CapsulePojo(c);
             // Add the new Discovery Marker
@@ -377,7 +381,9 @@ public class MainActivity extends ActionBarActivity
         c.close();
         // Populate the Ownership Markers
         c = getApplicationContext().getContentResolver().query(
-                CapsuleContract.Ownerships.CONTENT_URI,
+                CapsuleContract.Ownerships.CONTENT_URI.buildUpon()
+                .appendQueryParameter(CapsuleContract.QUERY_PARAM_JOIN, CapsuleContract.Capsules.TABLE_NAME)
+                .build(),
                 null,
                 CapsuleContract.Ownerships.ACCOUNT_NAME + " = ?",
                 new String[]{mAccount.name},
