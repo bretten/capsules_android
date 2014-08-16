@@ -1,5 +1,8 @@
 package com.brettnamba.capsules.dataaccess;
 
+import android.os.Parcel;
+import android.os.Parcelable;
+
 /**
  * Abstraction of a Capsule class.
  * 
@@ -9,7 +12,7 @@ package com.brettnamba.capsules.dataaccess;
  * @author Brett Namba
  *
  */
-public abstract class Capsule {
+public abstract class Capsule implements Parcelable {
 
     /**
      * The application-specific primary key
@@ -70,6 +73,24 @@ public abstract class Capsule {
      * @return double
      */
     abstract public double getLongitude();
+
+    /**
+     * Constructor
+     */
+    public Capsule() {}
+
+    /**
+     * Constructor used by Parcelable.Creator to rebuild a Capsule object
+     * 
+     * @param in
+     */
+    protected Capsule(Parcel in) {
+        this.mId = in.readLong();
+        this.mSyncId = in.readLong();
+        this.mName = in.readString();
+        this.mLatitude = in.readDouble();
+        this.mLongitude = in.readDouble();
+    }
 
     /**
      * Sets the ID.
@@ -154,6 +175,21 @@ public abstract class Capsule {
             return false;
         }
         return true;
+    }
+
+    @Override
+    public int describeContents() {
+        return this.hashCode();
+    }
+
+    @Override
+    public void writeToParcel(Parcel dest, int flags) {
+        // Write the class instance properties to the Parcel
+        dest.writeLong(this.mId);
+        dest.writeLong(this.mSyncId);
+        dest.writeString(this.mName);
+        dest.writeDouble(this.mLatitude);
+        dest.writeDouble(this.mLongitude);
     }
 
 }

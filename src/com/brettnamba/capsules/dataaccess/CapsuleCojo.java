@@ -1,6 +1,8 @@
 package com.brettnamba.capsules.dataaccess;
 
 import android.database.Cursor;
+import android.os.Parcel;
+import android.os.Parcelable;
 
 import com.brettnamba.capsules.provider.CapsuleContract;
 
@@ -36,6 +38,19 @@ public class CapsuleCojo extends Capsule {
     public CapsuleCojo(Cursor cursor, int position) {
         this.mCursor = cursor;
         this.mPosition = position;
+    }
+
+    /**
+     * Constructor used by Parcelable to rebuild the data into another object.
+     * 
+     * NOTE: The cursor and cursor position are not retained since it is recreated from serialized data.
+     * 
+     * @param in
+     */
+    protected CapsuleCojo(Parcel in) {
+        super(in);
+        this.mCursor = null;
+        this.mPosition = -1;
     }
 
     @Override
@@ -97,5 +112,22 @@ public class CapsuleCojo extends Capsule {
 
         return this.mCursor.getDouble(i);
     }
+
+    /**
+     * Class that rebuilds a copy of the original Capsule object.
+     */
+    public static final Parcelable.Creator<Capsule> CREATOR = new Parcelable.Creator<Capsule>() {
+
+        @Override
+        public CapsuleCojo createFromParcel(Parcel source) {
+            return new CapsuleCojo(source);
+        }
+
+        @Override
+        public Capsule[] newArray(int size) {
+            return new Capsule[size];
+        }
+
+    };
 
 }
