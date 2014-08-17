@@ -1,6 +1,8 @@
 package com.brettnamba.capsules.fragments;
 
 import android.app.Activity;
+import android.content.Intent;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
@@ -15,6 +17,7 @@ import android.widget.ProgressBar;
 import com.brettnamba.capsules.R;
 import com.brettnamba.capsules.dataaccess.Capsule;
 import com.brettnamba.capsules.dataaccess.CapsulePojo;
+import com.brettnamba.capsules.provider.CapsuleContract;
 import com.brettnamba.capsules.provider.CapsuleOperations;
 
 /**
@@ -93,7 +96,7 @@ public class CapsuleEditorFragment extends Fragment {
     /**
      * Handles saving a Capsule to the database.
      */
-    private class SaveCapsuleTask extends AsyncTask<Capsule, Void, Boolean> {
+    private class SaveCapsuleTask extends AsyncTask<Capsule, Void, Capsule> {
 
         /**
          * The Activity containing this Fragment.
@@ -123,20 +126,29 @@ public class CapsuleEditorFragment extends Fragment {
         }
 
         @Override
-        protected Boolean doInBackground(Capsule... params) {
-            if (mCapsule.getId() > 0) {
-                return CapsuleOperations.updateCapsule(this.activity.getContentResolver(), mCapsule);
+        protected Capsule doInBackground(Capsule... params) {
+            Capsule capsule = params[0];
+            if (capsule.getId() <= 0) {
+                Uri uri = CapsuleOperations.insertOwnership(this.activity.getContentResolver(), capsule, mAccountName);
+                long capsuleId = Long.valueOf(uri.getQueryParameter(CapsuleContract.Ownerships.CAPSULE_ID));
+                if (capsuleId > 0) {
+                    capsule.setId(capsuleId);
+                }
             } else {
-                return (CapsuleOperations.insertOwnership(this.activity.getContentResolver(), mCapsule, mAccountName) != null) ? true : false;
+                CapsuleOperations.updateCapsule(this.activity.getContentResolver(), capsule);
             }
+            return capsule;
         }
 
         @Override
-        protected void onPostExecute(final Boolean result) {
+        protected void onPostExecute(final Capsule newCapsule) {
             if (this.progress.isShown()) {
                 this.progress.setVisibility(View.GONE);
             }
-            if (result) {
+            if (newCapsule != null) {
+                Intent intent = new Intent();
+                intent.putExtra("capsule", newCapsule);
+                this.activity.setResult(Activity.RESULT_OK, intent);
                 this.activity.finish();
             }
         }

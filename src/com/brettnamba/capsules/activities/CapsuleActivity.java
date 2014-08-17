@@ -1,5 +1,6 @@
 package com.brettnamba.capsules.activities;
 
+import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
@@ -8,6 +9,7 @@ import android.support.v4.app.FragmentTransaction;
 import android.support.v7.app.ActionBarActivity;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.TextView;
 
 import com.brettnamba.capsules.R;
 import com.brettnamba.capsules.dataaccess.Capsule;
@@ -37,6 +39,11 @@ public class CapsuleActivity extends ActionBarActivity {
      * The Account name
      */
     private String mAccountName = null;
+
+    /**
+     * Request code for starting the CapsuleEditorActivity
+     */
+    private static final int REQUEST_CODE_CAPSULE_EDITOR = 1;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -102,9 +109,41 @@ public class CapsuleActivity extends ActionBarActivity {
             Intent intent = new Intent(getApplicationContext(), CapsuleEditorActivity.class);
             intent.putExtra("capsule", mCapsule);
             intent.putExtra("account_name", mAccountName);
-            startActivity(intent);
+            startActivityForResult(intent, REQUEST_CODE_CAPSULE_EDITOR);
         }
         return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    public void onBackPressed() {
+        Intent intent = new Intent();
+        intent.putExtra("capsule", mCapsule);
+        setResult(Activity.RESULT_OK, intent);
+        super.onBackPressed();
+    }
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        switch (requestCode) {
+
+        case (REQUEST_CODE_CAPSULE_EDITOR) :
+            if (resultCode == Activity.RESULT_OK) {
+                mCapsule = (Capsule) data.getParcelableExtra("capsule");
+                // Get the Fragment containing the Capsule information
+                Fragment capsuleFragment = getSupportFragmentManager().findFragmentById(R.id.fragment_capsule);
+                // Populate the information
+                TextView name = (TextView) capsuleFragment.getView().findViewById(R.id.fragment_capsule_info_name);
+                name.setText(mCapsule.getName());
+            }
+            break;
+
+        default:
+            break;
+
+        }
+
     }
 
 }

@@ -160,6 +160,16 @@ public class MainActivity extends ActionBarActivity
             .setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
 
     /**
+     * Request code for CapsuleActivity
+     */
+    private static final int REQUEST_CODE_CAPSULE = 1;
+
+    /**
+     * Request code for CapsuleEditorActivity (creating a new Capsule)
+     */
+    private static final int REQUEST_CODE_CAPSULE_EDITOR = 2;
+
+    /**
      * The tag used for logging.
      */
     private static final String TAG = "MainActivity";
@@ -261,6 +271,56 @@ public class MainActivity extends ActionBarActivity
 	}
 
     @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        switch (requestCode) {
+
+        case (REQUEST_CODE_CAPSULE) :
+            if (resultCode == Activity.RESULT_OK) {
+                Capsule capsule = (Capsule) data.getParcelableExtra("capsule");
+                // Replace the old Capsule Marker
+                if (mOwnedMarkers.containsValue(capsule)) {
+                    for (Map.Entry<Marker, Capsule> entry : mOwnedMarkers.entrySet()) {
+                        if (capsule.equals(entry.getValue())) {
+                            entry.getKey().setTitle(capsule.getName());
+                            // Hide and show the info window to refresh it
+                            entry.getKey().hideInfoWindow();
+                            entry.getKey().showInfoWindow();
+                            mOwnedMarkers.put(entry.getKey(), capsule);
+                        }
+                    }
+                }
+            }
+            break;
+
+        case (REQUEST_CODE_CAPSULE_EDITOR) :
+            if (resultCode == Activity.RESULT_OK) {
+                Capsule capsule = (Capsule) data.getParcelableExtra("capsule");
+                // Remove the new Capsule Marker
+                if (mNewCapsuleMarker != null) {
+                    mNewCapsuleMarker.remove();
+                }
+                // Create a Marker for the new Capsule data
+                Marker marker = mMap.addMarker(new MarkerOptions()
+                    .position(new LatLng(capsule.getLatitude(), capsule.getLongitude()))
+                    .title(capsule.getName())
+                    .draggable(false)
+                    .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_YELLOW))
+                );
+                // Add the Marker to the Owned Capsule collection
+                mOwnedMarkers.put(marker, capsule);
+            }
+            break;
+
+        default:
+            break;
+
+        }
+
+    }
+
+    @Override
     public void onConnectionFailed(ConnectionResult result) {
         Log.i(TAG, "onConnectionFailed()");
     }
@@ -356,7 +416,11 @@ public class MainActivity extends ActionBarActivity
         intent.putExtra("owned", owned);
         intent.putExtra("capsule", capsule);
         intent.putExtra("account_name", mAccount.name);
-        startActivity(intent);
+        if (owned) {
+            startActivityForResult(intent, REQUEST_CODE_CAPSULE);
+        } else {
+            startActivity(intent);
+        }
     }
 
     /**
@@ -394,7 +458,7 @@ public class MainActivity extends ActionBarActivity
         );
         while (c.moveToNext()) {
             Capsule capsule = new CapsulePojo(c);
-            // Add the new Discovery Marker
+            // Add the new Owned Marker
             Marker marker = mMap.addMarker(new MarkerOptions()
                 .position(new LatLng(capsule.getLatitude(), capsule.getLongitude()))
                 .title(capsule.getName())
@@ -452,7 +516,7 @@ public class MainActivity extends ActionBarActivity
                 intent.putExtra("latitude", marker.getPosition().latitude);
                 intent.putExtra("longitude", marker.getPosition().longitude);
                 intent.putExtra("account_name", mAccount.name);
-                startActivity(intent);
+                startActivityForResult(intent, REQUEST_CODE_CAPSULE_EDITOR);
                 return;
             }
 
