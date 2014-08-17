@@ -1,7 +1,6 @@
 package com.brettnamba.capsules.fragments;
 
 import android.app.Activity;
-import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
@@ -42,9 +41,18 @@ public class CapsuleEditorFragment extends Fragment {
 
         // Get passed Bundle
         mAccountName = getArguments().getString("account_name");
-        mCapsule = new CapsulePojo();
-        mCapsule.setLatitude(getArguments().getDouble("latitude"));
-        mCapsule.setLongitude(getArguments().getDouble("longitude"));
+        mCapsule = getArguments().getParcelable("capsule");
+        if (mCapsule == null) {
+            mCapsule = new CapsulePojo();
+            mCapsule.setLatitude(getArguments().getDouble("latitude"));
+            mCapsule.setLongitude(getArguments().getDouble("longitude"));
+        }
+
+        // Populate the views if an existing Capsule is being edited
+        if (mCapsule.getId() > 0) {
+            EditText name = (EditText) view.findViewById(R.id.fragment_capsule_editor_name);
+            name.setText(mCapsule.getName());
+        }
 
         // Set the save button listener
         Button saveButton = (Button) view.findViewById(R.id.fragment_capsule_editor_save);
@@ -85,7 +93,7 @@ public class CapsuleEditorFragment extends Fragment {
     /**
      * Handles saving a Capsule to the database.
      */
-    private class SaveCapsuleTask extends AsyncTask<Capsule, Void, Uri> {
+    private class SaveCapsuleTask extends AsyncTask<Capsule, Void, Boolean> {
 
         /**
          * The Activity containing this Fragment.
@@ -115,16 +123,20 @@ public class CapsuleEditorFragment extends Fragment {
         }
 
         @Override
-        protected Uri doInBackground(Capsule... params) {
-            return CapsuleOperations.insertOwnership(this.activity.getContentResolver(), mCapsule, mAccountName);
+        protected Boolean doInBackground(Capsule... params) {
+            if (mCapsule.getId() > 0) {
+                return CapsuleOperations.updateCapsule(this.activity.getContentResolver(), mCapsule);
+            } else {
+                return (CapsuleOperations.insertOwnership(this.activity.getContentResolver(), mCapsule, mAccountName) != null) ? true : false;
+            }
         }
 
         @Override
-        protected void onPostExecute(final Uri insertUri) {
+        protected void onPostExecute(final Boolean result) {
             if (this.progress.isShown()) {
                 this.progress.setVisibility(View.GONE);
             }
-            if (insertUri != null) {
+            if (result) {
                 this.activity.finish();
             }
         }

@@ -25,10 +25,18 @@ public class CapsuleFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_capsule, container, false);
+        /*
         // Get the arguments passed in from the Activity
         Long id = getArguments().getLong("capsule_id");
         // Begin the AsyncTask for loading the Capsule data
         new LoadCapsuleTask(getActivity(), view).execute(id);
+        */
+
+        // Populate the information
+        Capsule capsule = (Capsule) getArguments().getParcelable("capsule");
+        TextView name = (TextView) view.findViewById(R.id.fragment_capsule_info_name);
+        name.setText(capsule.getName());
+
         return view;
     }
 

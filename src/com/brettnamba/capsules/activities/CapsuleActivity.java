@@ -1,5 +1,6 @@
 package com.brettnamba.capsules.activities;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
@@ -9,6 +10,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 
 import com.brettnamba.capsules.R;
+import com.brettnamba.capsules.dataaccess.Capsule;
 import com.brettnamba.capsules.fragments.CapsuleContentFragment;
 import com.brettnamba.capsules.fragments.CapsuleFragment;
 import com.brettnamba.capsules.fragments.DiscoveryFragment;
@@ -26,6 +28,16 @@ public class CapsuleActivity extends ActionBarActivity {
      */
     private boolean mOwned = false;
 
+    /**
+     * The Capsule for this Activity
+     */
+    private Capsule mCapsule;
+
+    /**
+     * The Account name
+     */
+    private String mAccountName = null;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -33,18 +45,16 @@ public class CapsuleActivity extends ActionBarActivity {
 
         // Get the Intent extras
         Bundle extras = getIntent().getExtras();
-        long capsuleId = 0;
-        String accountName = null;
         if (extras != null) {
             mOwned = extras.getBoolean("owned");
-            capsuleId = extras.getLong("capsule_id");
-            accountName = extras.getString("account_name");
+            mCapsule = (Capsule) extras.getParcelable("capsule");
+            mAccountName = extras.getString("account_name");
         }
 
         // Bundle the Fragment arguments
         Bundle bundle = new Bundle();
-        bundle.putLong("capsule_id", capsuleId);
-        bundle.putString("account_name", accountName);
+        bundle.putParcelable("capsule", mCapsule);
+        bundle.putString("account_name", mAccountName);
 
         // Add any Fragments
         Fragment capsuleFragment = new CapsuleFragment();
@@ -88,6 +98,11 @@ public class CapsuleActivity extends ActionBarActivity {
         int id = item.getItemId();
         if (id == R.id.action_settings) {
             return true;
+        } else if (id == R.id.action_edit) {
+            Intent intent = new Intent(getApplicationContext(), CapsuleEditorActivity.class);
+            intent.putExtra("capsule", mCapsule);
+            intent.putExtra("account_name", mAccountName);
+            startActivity(intent);
         }
         return super.onOptionsItemSelected(item);
     }

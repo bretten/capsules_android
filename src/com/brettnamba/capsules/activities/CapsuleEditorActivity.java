@@ -6,6 +6,7 @@ import android.support.v4.app.FragmentTransaction;
 import android.support.v7.app.ActionBarActivity;
 
 import com.brettnamba.capsules.R;
+import com.brettnamba.capsules.dataaccess.Capsule;
 import com.brettnamba.capsules.fragments.CapsuleEditorFragment;
 
 /**
@@ -26,10 +27,12 @@ public class CapsuleEditorActivity extends ActionBarActivity {
         double latitude = 0;
         double longitude = 0;
         String accountName = null;
+        Capsule capsule = null;
         if (extras != null) {
             latitude = extras.getDouble("latitude");
             longitude = extras.getDouble("longitude");
             accountName = extras.getString("account_name");
+            capsule = (Capsule) extras.getParcelable("capsule");
         }
 
         // Bundle data for Fragments
@@ -37,6 +40,7 @@ public class CapsuleEditorActivity extends ActionBarActivity {
         capsuleEditorBundle.putDouble("latitude", latitude);
         capsuleEditorBundle.putDouble("longitude", longitude);
         capsuleEditorBundle.putString("account_name", accountName);
+        capsuleEditorBundle.putParcelable("capsule", capsule);
 
         // Add any Fragments
         CapsuleEditorFragment capsuleEditorFragment = new CapsuleEditorFragment();

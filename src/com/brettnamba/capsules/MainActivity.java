@@ -347,14 +347,14 @@ public class MainActivity extends ActionBarActivity
     /**
      * Handles the process of opening a Capsule marker.
      * 
-     * @param capsuleId
+     * @param capsule
      * @param owned
      */
-    private void openCapsuleMarker(long capsuleId, boolean owned) {
+    private void openCapsuleMarker(Capsule capsule, boolean owned) {
         Toast.makeText(getApplicationContext(), "Opened!", Toast.LENGTH_SHORT).show();
         Intent intent = new Intent(getApplicationContext(), CapsuleActivity.class);
         intent.putExtra("owned", owned);
-        intent.putExtra("capsule_id", capsuleId);
+        intent.putExtra("capsule", capsule);
         intent.putExtra("account_name", mAccount.name);
         startActivity(intent);
     }
@@ -458,13 +458,13 @@ public class MainActivity extends ActionBarActivity
 
             // Owned Marker
             if (mOwnedMarkers.containsKey(marker)) {
-                MainActivity.this.openCapsuleMarker(mOwnedMarkers.get(marker).getId(), true /* owned */);
+                MainActivity.this.openCapsuleMarker(mOwnedMarkers.get(marker), true /* owned */);
                 return;
             }
 
             // Discovered Marker
             if (mDiscoveredMarkers.containsKey(marker)) {
-                MainActivity.this.openCapsuleMarker(mDiscoveredMarkers.get(marker).getId(), false /* not owned */);
+                MainActivity.this.openCapsuleMarker(mDiscoveredMarkers.get(marker), false /* not owned */);
                 return;
             }
 
@@ -658,7 +658,7 @@ public class MainActivity extends ActionBarActivity
                 // Set the Capsule ID on the Capsule object
                 this.capsule.setId(capsuleId);
                 // Open the Capsule Marker
-                MainActivity.this.openCapsuleMarker(capsuleId, false /* not owned */);
+                MainActivity.this.openCapsuleMarker(this.capsule, false /* not owned */);
                 // Remove the old, undiscovered Marker
                 mUndiscoveredMarkers.remove(this.marker);
                 this.marker.remove();

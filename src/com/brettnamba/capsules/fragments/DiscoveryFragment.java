@@ -17,6 +17,7 @@ import android.widget.Toast;
 import android.widget.ToggleButton;
 
 import com.brettnamba.capsules.R;
+import com.brettnamba.capsules.dataaccess.Capsule;
 import com.brettnamba.capsules.dataaccess.Discovery;
 import com.brettnamba.capsules.provider.CapsuleContract;
 import com.brettnamba.capsules.provider.CapsuleOperations;
@@ -30,9 +31,9 @@ import com.brettnamba.capsules.provider.CapsuleOperations;
 public class DiscoveryFragment extends Fragment {
 
     /**
-     * The Capsule id
+     * The Capsule
      */
-    private long mCapsuleId;
+    private Capsule mCapsule;
 
     /**
      * The Account name
@@ -43,7 +44,7 @@ public class DiscoveryFragment extends Fragment {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         // Get the arguments passed in from the Activity
-        this.mCapsuleId = getArguments().getLong("capsule_id");
+        this.mCapsule = (Capsule) getArguments().getParcelable("capsule");
         this.mAccountName = getArguments().getString("account_name");
     }
 
@@ -51,7 +52,7 @@ public class DiscoveryFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_discovery, container, false);
         // Begin the AsyncTask for loading the Capsule data
-        new LoadDiscoveryTask(getActivity(), view).execute(String.valueOf(this.mCapsuleId), this.mAccountName);
+        new LoadDiscoveryTask(getActivity(), view).execute(String.valueOf(this.mCapsule.getId()), this.mAccountName);
         return view;
     }
 
@@ -64,7 +65,7 @@ public class DiscoveryFragment extends Fragment {
         public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
             ContentValues values = new ContentValues();
             values.put(CapsuleContract.Discoveries.FAVORITE, (isChecked) ? 1 : 0);
-            new UpdateDiscoveryTask(getActivity(), getView(), values).execute(String.valueOf(mCapsuleId), mAccountName);
+            new UpdateDiscoveryTask(getActivity(), getView(), values).execute(String.valueOf(mCapsule.getId()), mAccountName);
         }
 
     }
@@ -78,7 +79,7 @@ public class DiscoveryFragment extends Fragment {
         public void onItemSelected(AdapterView<?> parent, View view, int pos, long id) {
             ContentValues values = new ContentValues();
             values.put(CapsuleContract.Discoveries.RATING, Integer.valueOf((String) parent.getItemAtPosition(pos)));
-            new UpdateDiscoveryTask(getActivity(), getView(), values).execute(String.valueOf(mCapsuleId), mAccountName);
+            new UpdateDiscoveryTask(getActivity(), getView(), values).execute(String.valueOf(mCapsule.getId()), mAccountName);
         }
 
         @Override
