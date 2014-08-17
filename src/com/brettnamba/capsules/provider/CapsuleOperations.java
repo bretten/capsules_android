@@ -196,4 +196,23 @@ public class CapsuleOperations {
         return count > 0;
     }
 
+    /**
+     * UPDATEs a Capsule row.
+     * 
+     * @param resolver
+     * @param capsule
+     * @return
+     */
+    public static boolean updateCapsule(ContentResolver resolver, Capsule capsule) {
+        ContentValues values = new ContentValues();
+        values.put(CapsuleContract.Capsules.NAME, capsule.getName());
+        int count = resolver.update(
+                ContentUris.withAppendedId(CapsuleContract.Capsules.CONTENT_URI, capsule.getId()),
+                values,
+                null,
+                null
+        );
+        return count > 0;
+    }
+
 }
