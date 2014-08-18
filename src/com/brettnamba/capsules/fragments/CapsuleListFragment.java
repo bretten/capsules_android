@@ -2,6 +2,7 @@ package com.brettnamba.capsules.fragments;
 
 import android.content.Intent;
 import android.database.Cursor;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.ListFragment;
 import android.support.v4.app.LoaderManager;
@@ -34,19 +35,49 @@ public class CapsuleListFragment extends ListFragment implements LoaderManager.L
      */
     private String mAccountName;
 
+    /**
+     * Whether or not the list is of Owned Capsules
+     */
+    private boolean mOwned;
+
+    /**
+     * The content Uri
+     */
+    private Uri mUri;
+
+    /**
+     * The list query projection
+     */
+    private String[] mProjection;
+
+    /**
+     * The query selection
+     */
+    private String mSelection;
+
+    /**
+     * The query selection arguments
+     */
+    private String[] mSelectionArgs;
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
         // Get passed Bundle
+        mOwned = getArguments().getBoolean("owned");
         mAccountName = getArguments().getString("account_name");
+        mUri = (Uri) getArguments().getParcelable("uri");
+        mProjection = getArguments().getStringArray("projection");
+        mSelection = getArguments().getString("selection");
+        mSelectionArgs = getArguments().getStringArray("selection_args");
 
         // Create the Adapter
         mAdapter = new SimpleCursorAdapter(
                 getActivity(),
                 android.R.layout.simple_list_item_2,
                 null,
-                new String[]{CapsuleContract.Capsules.NAME, CapsuleContract.Discoveries.ACCOUNT_NAME},
+                mProjection,
                 new int[]{android.R.id.text1, android.R.id.text2},
                 0
         );
@@ -63,6 +94,7 @@ public class CapsuleListFragment extends ListFragment implements LoaderManager.L
         Capsule capsule = new CapsulePojo(c);
         if (capsule.getId() > 0 && mAccountName != null) {
             Intent intent = new Intent(getActivity(), CapsuleActivity.class);
+            intent.putExtra("owned", mOwned);
             intent.putExtra("capsule", capsule);
             intent.putExtra("account_name", mAccountName);
             startActivity(intent);
@@ -75,12 +107,10 @@ public class CapsuleListFragment extends ListFragment implements LoaderManager.L
         if (mAccountName != null) {
             loader = new CursorLoader(
                     getActivity(),
-                    CapsuleContract.Discoveries.CONTENT_URI.buildUpon()
-                    .appendQueryParameter(CapsuleContract.QUERY_PARAM_JOIN, CapsuleContract.Capsules.TABLE_NAME)
-                    .build(),
-                    new String[]{CapsuleContract.Capsules.SYNC_ID, CapsuleContract.Capsules.NAME, CapsuleContract.Discoveries.ACCOUNT_NAME},
-                    CapsuleContract.Discoveries.ACCOUNT_NAME + " = ?",
-                    new String[]{mAccountName},
+                    mUri,
+                    mProjection,
+                    mSelection,
+                    mSelectionArgs,
                     null
             );
         }
@@ -89,6 +119,7 @@ public class CapsuleListFragment extends ListFragment implements LoaderManager.L
 
     @Override
     public void onLoadFinished(Loader<Cursor> loader, Cursor c) {
+        c.setNotificationUri(getActivity().getContentResolver(), CapsuleContract.Capsules.CONTENT_URI);
         mAdapter.swapCursor(c);
     }
 

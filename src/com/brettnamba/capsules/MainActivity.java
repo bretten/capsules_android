@@ -170,6 +170,11 @@ public class MainActivity extends ActionBarActivity
     private static final int REQUEST_CODE_CAPSULE_EDITOR = 2;
 
     /**
+     * Request code for CapsuleListActivity
+     */
+    private static final int REQUEST_CODE_CAPSULE_LIST = 3;
+
+    /**
      * The tag used for logging.
      */
     private static final String TAG = "MainActivity";
@@ -232,10 +237,10 @@ public class MainActivity extends ActionBarActivity
 		int id = item.getItemId();
 		if (id == R.id.action_settings) {
 			return true;
-		} else if (id == R.id.action_discoveries_list) {
+		} else if (id == R.id.action_collection) {
             Intent intent = new Intent(getApplicationContext(), CapsuleListActivity.class);
             intent.putExtra("account_name", mAccount.name);
-            startActivity(intent);
+            startActivityForResult(intent, REQUEST_CODE_CAPSULE_LIST);
 		} else if (item.isCheckable()) {
 		    item.setChecked(!item.isChecked());
 		    // The toggle for displaying capsules created by the user
@@ -311,6 +316,12 @@ public class MainActivity extends ActionBarActivity
                 // Add the Marker to the Owned Capsule collection
                 mOwnedMarkers.put(marker, capsule);
             }
+            break;
+
+        case (REQUEST_CODE_CAPSULE_LIST) :
+            // Refresh the Capsule Markers regardless of the result
+            // TODO This can be refined
+            this.populateStoredMarkers();
             break;
 
         default:

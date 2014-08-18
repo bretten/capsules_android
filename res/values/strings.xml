@@ -10,7 +10,7 @@
     <string name="action_created">Toggle Capsules</string>
     <string name="action_discovered">Toggle Discoveries</string>
     <string name="action_satellite">Toggle Satellite</string>
-    <string name="action_discoveries_list">My Discoveries</string>
+    <string name="action_collection">My Collection</string>
     
     <!-- AuthenticatorActivity -->
     <!-- Title string for Login activity-->
@@ -44,7 +44,9 @@
     <string name="title_activity_capsule">CapsuleActivity</string>
 
     <!-- CapsuleListActivity -->
-    <string name="title_activity_capsule_list">My Capsules</string>
+    <string name="title_activity_capsule_list">My Collection</string>
+    <string name="tab_ownerships">My Capsules</string>
+    <string name="tab_discoveries">My Discoveries</string>
 
     <!-- CapsuleEditorActivity -->
     <string name="title_activity_capsule_editor">Capsule Editor</string>
