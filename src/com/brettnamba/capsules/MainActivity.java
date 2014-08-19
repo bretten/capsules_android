@@ -185,18 +185,17 @@ public class MainActivity extends ActionBarActivity
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        // Set up the GoogleMap and LocationClient
+        this.setMap();
+        this.setLocationClient();
+
         // Initialize
-        this.getMap();
-        this.getLocationClient();
         mAccountManager = AccountManager.get(this);
         mAccount = mAccountManager.getAccountsByType(Constants.ACCOUNT_TYPE)[0];
         mHttpClient = HttpFactory.getInstance();
         mRequestHandler = new RequestHandler(mHttpClient);
-        mUndiscoveredMarkers = new HashMap<Marker, Capsule>();
-        mDiscoveredMarkers = new HashMap<Marker, Capsule>();
-        mOwnedMarkers = new HashMap<Marker, Capsule>();
 
-        // Populate
+        // Populate the stored Markers
         this.populateStoredMarkers();
 	}
 
@@ -205,21 +204,22 @@ public class MainActivity extends ActionBarActivity
 	    Log.i(TAG, "onResume()");
 	    super.onResume();
 
-	    // Re-initialize
-	    this.getMap();
-	    this.getLocationClient();
-	    mLocationClient.connect();
+	    // Reconnect the LocationClient
+	    if (mLocationClient != null && !mLocationClient.isConnected()) {
+	        mLocationClient.connect();
+	    }
 	}
 
 	@Override
 	public void onPause() {
 	    Log.i(TAG, "onPause()");
 	    super.onPause();
-        // Disconnect from the location client
-	    if (mLocationClient != null) {
+
+        // Disconnect the LocationClient
+	    if (mLocationClient != null && mLocationClient.isConnected()) {
 	        mLocationClient.disconnect();
 	    }
-	    // To re-center the map onResume, set the flag
+	    // To re-center the map onResume(), set the flag
 	    mNeedsCentering = true;
 	}
 
@@ -305,6 +305,7 @@ public class MainActivity extends ActionBarActivity
                 // Remove the new Capsule Marker
                 if (mNewCapsuleMarker != null) {
                     mNewCapsuleMarker.remove();
+                    mNewCapsuleMarker = null;
                 }
                 // Create a Marker for the new Capsule data
                 Marker marker = mMap.addMarker(new MarkerOptions()
@@ -319,9 +320,12 @@ public class MainActivity extends ActionBarActivity
             break;
 
         case (REQUEST_CODE_CAPSULE_LIST) :
-            // Refresh the Capsule Markers regardless of the result
-            // TODO This can be refined
-            this.populateStoredMarkers();
+            // Refresh the Capsule Markers if there was a modification
+            boolean modified = data.getBooleanExtra("modified", false);
+            // Re-populate the Markers if one was modified
+            if (modified) {
+                this.populateStoredMarkers();
+            }
             break;
 
         default:
@@ -345,6 +349,7 @@ public class MainActivity extends ActionBarActivity
     @Override
     public void onDisconnected() {
         Log.i(TAG, "onDisconnected()");
+        mLocationClient.removeLocationUpdates(this);
     }
 
     @Override
@@ -372,7 +377,7 @@ public class MainActivity extends ActionBarActivity
     /**
      * Gets a reference (if necessary) to the map Fragment.
      */
-    private void getMap() {
+    private void setMap() {
         // Only get the map if it is not already set
         if (mMap == null) {
             mMap = ((SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map)).getMap();
@@ -397,7 +402,7 @@ public class MainActivity extends ActionBarActivity
     /**
      * Gets a reference (if necessary) to the LocationClient.
      */
-    private void getLocationClient() {
+    private void setLocationClient() {
         // Only get the client if it is not already set
         if (mLocationClient == null) {
             mLocationClient = new LocationClient(getApplicationContext(), this, this);
@@ -438,11 +443,30 @@ public class MainActivity extends ActionBarActivity
      * Populates the Map with stored Capsule Markers.
      */
     private void populateStoredMarkers() {
+        // Remove any previous Markers
+        if (mDiscoveredMarkers != null && mDiscoveredMarkers.size() > 0) {
+            for (Marker marker : mDiscoveredMarkers.keySet()) {
+                marker.remove();
+            }
+        }
+        if (mOwnedMarkers != null && mOwnedMarkers.size() > 0) {
+            for (Marker marker : mOwnedMarkers.keySet()) {
+                marker.remove();
+            }
+        }
+        // (Re)initialize the collections
+        mDiscoveredMarkers = new HashMap<Marker, Capsule>();
+        mOwnedMarkers = new HashMap<Marker, Capsule>();
+
         // Populate the Discovery Markers
-        Cursor c = getApplicationContext().getContentResolver().query(CapsuleContract.Discoveries.CONTENT_URI.buildUpon()
+        Cursor c = getApplicationContext().getContentResolver().query(
+                CapsuleContract.Discoveries.CONTENT_URI.buildUpon()
                 .appendQueryParameter(CapsuleContract.QUERY_PARAM_JOIN, CapsuleContract.Capsules.TABLE_NAME)
                 .build(),
-                null, null, null, null
+                null,
+                CapsuleContract.Discoveries.ACCOUNT_NAME + " = ?",
+                new String[]{mAccount.name},
+                null
         );
         while (c.moveToNext()) {
             Capsule capsule = new CapsulePojo(c);
@@ -457,6 +481,7 @@ public class MainActivity extends ActionBarActivity
             mDiscoveredMarkers.put(marker, capsule);
         }
         c.close();
+
         // Populate the Ownership Markers
         c = getApplicationContext().getContentResolver().query(
                 CapsuleContract.Ownerships.CONTENT_URI.buildUpon()
@@ -483,7 +508,7 @@ public class MainActivity extends ActionBarActivity
     }
 
     /**
-     * Adds Markers to the map
+     * Adds Undiscovered Markers to the map given a collection
      * 
      * Will keep track of Markers using a data structure so duplicates are not added.
      * 
@@ -494,11 +519,16 @@ public class MainActivity extends ActionBarActivity
      * 
      * @param List<Capsule> capsules
      */
-    private void addUndiscoveredMarkers(List<Capsule> capsules) {
+    private void populateUndiscoveredMarkers(List<Capsule> capsules) {
         // Remove all the old Markers
-        for (Marker marker : mUndiscoveredMarkers.keySet()) {
-            marker.remove();
+        if (mUndiscoveredMarkers != null && mUndiscoveredMarkers.size() > 0) {
+            for (Marker marker : mUndiscoveredMarkers.keySet()) {
+                marker.remove();
+            }
         }
+        // (Re)initialize the collection
+        mUndiscoveredMarkers = new HashMap<Marker, Capsule>();
+
         // Add updated Markers from the server response
         for (int i = 0; i < capsules.size(); i++) {
             // The current capsule
@@ -612,27 +642,29 @@ public class MainActivity extends ActionBarActivity
         @Override
         protected List<Capsule> doInBackground(String... params) {
             Log.i(TAG, "CapsuleRequestTask.doInBackground()");
-            // Attempt to get the last location
-            Location location = mLocationClient.getLastLocation();
-            if (location != null) {
-                // Request the undiscovered Capsules
-                String response = null;
-                try {
-                    response = mRequestHandler.requestUndiscoveredCapsules(params[0], location.getLatitude(), location.getLongitude());
-                } catch (ParseException | IOException e) {
-                    e.printStackTrace();
-                    this.cancel(true);
+            // Attempt to get the last Location if the LocationClient is connected
+            if (mLocationClient.isConnected()) {
+                Location location = mLocationClient.getLastLocation();
+                if (location != null) {
+                    // Request the undiscovered Capsules
+                    String response = null;
+                    try {
+                        response = mRequestHandler.requestUndiscoveredCapsules(params[0], location.getLatitude(), location.getLongitude());
+                    } catch (ParseException | IOException e) {
+                        e.printStackTrace();
+                        this.cancel(true);
+                    }
+    
+                    // Parse the response
+                    List<Capsule> capsules = null;
+                    try {
+                        capsules = JSONParser.parseUndiscoveredCapsules(response);
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                        this.cancel(true);
+                    }
+                    return capsules;
                 }
-
-                // Parse the response
-                List<Capsule> capsules = null;
-                try {
-                    capsules = JSONParser.parseUndiscoveredCapsules(response);
-                } catch (JSONException e) {
-                    e.printStackTrace();
-                    this.cancel(true);
-                }
-                return capsules;
             }
             return null;
         }
@@ -641,7 +673,7 @@ public class MainActivity extends ActionBarActivity
         protected void onPostExecute(final List<Capsule> capsules) {
             Log.i(TAG, "CapsuleRequestTask.onPostExecute()");
             // Add the markers to the map
-            MainActivity.this.addUndiscoveredMarkers(capsules);
+            populateUndiscoveredMarkers(capsules);
         }
 
     }

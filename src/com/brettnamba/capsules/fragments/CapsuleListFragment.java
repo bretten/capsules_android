@@ -1,5 +1,6 @@
 package com.brettnamba.capsules.fragments;
 
+import android.app.Activity;
 import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
@@ -60,6 +61,16 @@ public class CapsuleListFragment extends ListFragment implements LoaderManager.L
      */
     private String[] mSelectionArgs;
 
+    /**
+     * Whether or not a Capsule was modified
+     */
+    private boolean mModified = false;
+
+    /**
+     * Request code for CapsuleEditorActivity
+     */
+    private static final int REQUEST_CODE_CAPSULE_EDITOR = 1;
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -97,7 +108,7 @@ public class CapsuleListFragment extends ListFragment implements LoaderManager.L
             intent.putExtra("owned", mOwned);
             intent.putExtra("capsule", capsule);
             intent.putExtra("account_name", mAccountName);
-            startActivity(intent);
+            startActivityForResult(intent, REQUEST_CODE_CAPSULE_EDITOR);
         }
     }
 
@@ -126,6 +137,35 @@ public class CapsuleListFragment extends ListFragment implements LoaderManager.L
     @Override
     public void onLoaderReset(Loader<Cursor> loader) {
         mAdapter.swapCursor(null);
+    }
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        switch (requestCode) {
+
+        case (REQUEST_CODE_CAPSULE_EDITOR) :
+            if (resultCode == Activity.RESULT_OK) {
+                // Check if a Capsule was modified
+                mModified = data.getBooleanExtra("modified", false);
+            }
+            break;
+
+        default:
+            break;
+
+        }
+
+    }
+
+    /**
+     * Returns the flag indicating if a Capsule was modified.
+     * 
+     * @return
+     */
+    public boolean wasModified() {
+        return mModified;
     }
 
 }

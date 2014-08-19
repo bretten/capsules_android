@@ -41,6 +41,11 @@ public class CapsuleActivity extends ActionBarActivity {
     private String mAccountName = null;
 
     /**
+     * Whether or not the Capsule was modified
+     */
+    private boolean mModified = false;
+
+    /**
      * Request code for starting the CapsuleEditorActivity
      */
     private static final int REQUEST_CODE_CAPSULE_EDITOR = 1;
@@ -118,6 +123,7 @@ public class CapsuleActivity extends ActionBarActivity {
     public void onBackPressed() {
         Intent intent = new Intent();
         intent.putExtra("capsule", mCapsule);
+        intent.putExtra("modified", mModified);
         setResult(Activity.RESULT_OK, intent);
         super.onBackPressed();
     }
@@ -130,6 +136,9 @@ public class CapsuleActivity extends ActionBarActivity {
 
         case (REQUEST_CODE_CAPSULE_EDITOR) :
             if (resultCode == Activity.RESULT_OK) {
+                // Flag it as modified
+                mModified = true;
+                // Get the new Capsule
                 mCapsule = (Capsule) data.getParcelableExtra("capsule");
                 // Get the Fragment containing the Capsule information
                 Fragment capsuleFragment = getSupportFragmentManager().findFragmentById(R.id.fragment_capsule);

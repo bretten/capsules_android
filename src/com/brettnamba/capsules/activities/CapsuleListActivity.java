@@ -1,6 +1,7 @@
 package com.brettnamba.capsules.activities;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentTransaction;
@@ -19,6 +20,16 @@ import com.brettnamba.capsules.provider.CapsuleContract;
  *
  */
 public class CapsuleListActivity extends ActionBarActivity {
+
+    /**
+     * The Fragment tag for the Ownerships CapsuleListFragment
+     */
+    private static final String FRAGMENT_TAG_OWNERSHIP_LIST = "ownerships";
+
+    /**
+     * The Fragment tag for the Discoveries CapsuleListFragment
+     */
+    private static final String FRAGMENT_TAG_DISCOVERY_LIST = "discoveries";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -61,12 +72,22 @@ public class CapsuleListActivity extends ActionBarActivity {
         actionBar.setNavigationMode(ActionBar.NAVIGATION_MODE_TABS);
         actionBar.addTab(actionBar.newTab()
                 .setText(getString(R.string.tab_ownerships))
-                .setTabListener(new TabListener<CapsuleListFragment>(this, "ownerships", CapsuleListFragment.class, ownershipBundle))
+                .setTabListener(new TabListener<CapsuleListFragment>(this, FRAGMENT_TAG_OWNERSHIP_LIST, CapsuleListFragment.class, ownershipBundle))
         );
         actionBar.addTab(actionBar.newTab()
                 .setText(getString(R.string.tab_discoveries))
-                .setTabListener(new TabListener<CapsuleListFragment>(this, "discoveries", CapsuleListFragment.class, discoveryBundle))
+                .setTabListener(new TabListener<CapsuleListFragment>(this, FRAGMENT_TAG_DISCOVERY_LIST, CapsuleListFragment.class, discoveryBundle))
         );
+    }
+
+    @Override
+    public void onBackPressed() {
+        // Get the OwnershipList Fragment
+        CapsuleListFragment ownershipList = (CapsuleListFragment) getSupportFragmentManager().findFragmentByTag(FRAGMENT_TAG_OWNERSHIP_LIST);
+        Intent intent = new Intent();
+        intent.putExtra("modified", ownershipList.wasModified());
+        setResult(Activity.RESULT_OK, intent);
+        super.onBackPressed();
     }
 
     /**
