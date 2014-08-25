@@ -1,5 +1,8 @@
 package com.brettnamba.capsules.provider;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import android.content.ContentResolver;
 import android.content.ContentUris;
 import android.content.ContentValues;
@@ -7,11 +10,13 @@ import android.database.Cursor;
 import android.net.Uri;
 
 import com.brettnamba.capsules.dataaccess.Capsule;
+import com.brettnamba.capsules.dataaccess.CapsuleOwnershipPojo;
 import com.brettnamba.capsules.dataaccess.CapsulePojo;
 import com.brettnamba.capsules.dataaccess.Discovery;
 import com.brettnamba.capsules.dataaccess.DiscoveryPojo;
 import com.brettnamba.capsules.provider.CapsuleContract.Capsules;
 import com.brettnamba.capsules.provider.CapsuleContract.Discoveries;
+import com.brettnamba.capsules.provider.CapsuleContract.Ownerships;
 
 /**
  * Used to handle common database operations.
@@ -139,6 +144,34 @@ public class CapsuleOperations {
         c.close();
 
         return capsule;
+    }
+
+    /**
+     * Returns Ownership Capsules belonging to the specified Account name.
+     * 
+     * @param resolver
+     * @param account
+     * @param onlyDirty
+     * @return
+     */
+    public static List<Capsule> getOwnerships(ContentResolver resolver, String account, boolean onlyDirty) {
+        Cursor c = resolver.query(
+                Ownerships.CONTENT_URI.buildUpon()
+                .appendQueryParameter(CapsuleContract.QUERY_PARAM_JOIN, Capsules.TABLE_NAME)
+                .build(),
+                new String[]{"*"},
+                Ownerships.ACCOUNT_NAME + " = ?" + (onlyDirty ? " AND " + Ownerships.DIRTY + " != 0" : ""),
+                new String[]{account},
+                null
+        );
+
+        List<Capsule> capsules = new ArrayList<Capsule>();
+        while (c.moveToNext()) {
+            capsules.add(new CapsuleOwnershipPojo(c));
+        }
+        c.close();
+
+        return capsules;
     }
 
     /**
