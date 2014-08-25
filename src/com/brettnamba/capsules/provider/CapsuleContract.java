@@ -54,7 +54,11 @@ public final class CapsuleContract {
 
         public static final String SYNC_ID = "sync_id";
 
+        public static final String ETAG = "etag";
+
         public static final String DIRTY = "dirty";
+
+        public static final String DELETED = "deleted";
 
         public static final String ACCOUNT_NAME = "account_name";
 
@@ -124,15 +128,19 @@ public final class CapsuleContract {
             List<String> columnIndexList = new ArrayList<String>();
             columnIndexList.add(_ID);
             columnIndexList.add(CAPSULE_ID);
+            columnIndexList.add(ETAG);
             columnIndexList.add(ACCOUNT_NAME);
             columnIndexList.add(DIRTY);
+            columnIndexList.add(DELETED);
             COLUMN_INDEX_LIST = Collections.unmodifiableList(columnIndexList);
 
             Map<String, String> columnTypeMap = new HashMap<String, String>();
             columnTypeMap.put(_ID, "INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL");
             columnTypeMap.put(CAPSULE_ID, "INTEGER NOT NULL");
+            columnTypeMap.put(ETAG, "TEXT DEFAULT NULL");
             columnTypeMap.put(ACCOUNT_NAME, "TEXT NOT NULL");
             columnTypeMap.put(DIRTY, "INTEGER NOT NULL DEFAULT 0");
+            columnTypeMap.put(DELETED, "INTEGER NOT NULL DEFAULT 0");
             COLUMN_TYPE_MAP = Collections.unmodifiableMap(columnTypeMap);
         }
 
@@ -162,6 +170,7 @@ public final class CapsuleContract {
             List<String> columnIndexList = new ArrayList<String>();
             columnIndexList.add(_ID);
             columnIndexList.add(CAPSULE_ID);
+            columnIndexList.add(ETAG);
             columnIndexList.add(ACCOUNT_NAME);
             columnIndexList.add(DIRTY);
             columnIndexList.add(FAVORITE);
@@ -171,6 +180,7 @@ public final class CapsuleContract {
             Map<String, String> columnTypeMap = new HashMap<String, String>();
             columnTypeMap.put(_ID, "INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL");
             columnTypeMap.put(CAPSULE_ID, "INTEGER NOT NULL");
+            columnTypeMap.put(ETAG, "TEXT DEFAULT NULL");
             columnTypeMap.put(ACCOUNT_NAME, "TEXT NOT NULL");
             columnTypeMap.put(DIRTY, "INTEGER NOT NULL DEFAULT 0");
             columnTypeMap.put(FAVORITE, "INTEGER NOT NULL DEFAULT 0");

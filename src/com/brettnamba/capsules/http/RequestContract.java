@@ -84,6 +84,10 @@ public final class RequestContract {
          */
         public static final String CAPSULE_LONGITUDE = "lng";
 
+        /**
+         * The field for storing a Capsule's etag.
+         */
+        public static final String CAPSULE_ETAG = "etag";
     }
 
 }
