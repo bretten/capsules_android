@@ -17,6 +17,8 @@ import org.apache.http.util.EntityUtils;
 
 import android.util.Base64;
 
+import com.brettnamba.capsules.dataaccess.Capsule;
+
 /**
  * Handles general HTTP requests and responses.
  * 
@@ -123,6 +125,61 @@ public class RequestHandler {
         params.add(new BasicNameValuePair("data[" + RequestContract.Field.CAPSULE_LONGITUDE + "]", Double.toString(lng)));
         request.setEntity(new UrlEncodedFormEntity(params));
         
+        // Send and get the response
+        HttpResponse response = mClient.execute(request);
+        return EntityUtils.toString(response.getEntity());
+    }
+
+    /**
+     * Sends a request to the server to retrieve the ctag for the collection specified in the URI.
+     * 
+     * @param authToken
+     * @param uri
+     * @return
+     * @throws ParseException
+     * @throws IOException
+     */
+    public String requestCtag(String authToken, String uri) throws ParseException, IOException {
+        // GET
+        HttpGet request = new HttpGet(RequestContract.BASE_URL + uri);
+
+        // Headers
+        request.addHeader(HTTP.TARGET_HOST, RequestContract.HOST);
+        request.addHeader(RequestContract.AUTH_HEADER, Base64.encodeToString((authToken).getBytes(), Base64.URL_SAFE|Base64.NO_WRAP));
+
+        // Send and get the response
+        HttpResponse response = mClient.execute(request);
+        return EntityUtils.toString(response.getEntity());
+    }
+
+    /**
+     * Sends a request to the server to update an Ownership Capsule.
+     * 
+     * @param authToken
+     * @param capsule
+     * @return
+     * @throws ParseException
+     * @throws IOException
+     */
+    public String requestOwnershipUpdate(String authToken, Capsule capsule) throws ParseException, IOException {
+        // POST
+        HttpPost request = new HttpPost(RequestContract.BASE_URL + RequestContract.Uri.OWNERSHIP_URI);
+
+        // Headers
+        request.addHeader(HTTP.TARGET_HOST, RequestContract.HOST);
+        request.addHeader(RequestContract.AUTH_HEADER, Base64.encodeToString((authToken).getBytes(), Base64.URL_SAFE|Base64.NO_WRAP));
+        request.addHeader(HTTP.CONTENT_TYPE, URLEncodedUtils.CONTENT_TYPE);
+
+        // POST body
+        ArrayList<NameValuePair> params = new ArrayList<NameValuePair>();
+        if (capsule.getSyncId() > 0) {
+            params.add(new BasicNameValuePair("data[" + RequestContract.Field.CAPSULE_SYNC_ID + "]", Long.toString(capsule.getSyncId())));
+        }
+        params.add(new BasicNameValuePair("data[" + RequestContract.Field.CAPSULE_NAME + "]", capsule.getName()));
+        params.add(new BasicNameValuePair("data[" + RequestContract.Field.CAPSULE_LATITUDE + "]", Double.toString(capsule.getLatitude())));
+        params.add(new BasicNameValuePair("data[" + RequestContract.Field.CAPSULE_LONGITUDE + "]", Double.toString(capsule.getLongitude())));
+        request.setEntity(new UrlEncodedFormEntity(params));
+
         // Send and get the response
         HttpResponse response = mClient.execute(request);
         return EntityUtils.toString(response.getEntity());

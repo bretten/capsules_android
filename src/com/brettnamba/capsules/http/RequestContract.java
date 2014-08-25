@@ -42,6 +42,15 @@ public final class RequestContract {
          */
         public static final String OPEN_CAPSULE_URI = "/capsules/open";
 
+        /**
+         * The URI for requesting the Ownership collection ctag.
+         */
+        public static final String CTAG_OWNERSHIPS_URI = "/api/ctag/capsules";
+
+        /**
+         * The URI that handles single Capsules
+         */
+        public static final String OWNERSHIP_URI = "/api/capsule";
     }
 
     /**

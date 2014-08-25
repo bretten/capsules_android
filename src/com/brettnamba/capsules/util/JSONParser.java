@@ -8,6 +8,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import com.brettnamba.capsules.dataaccess.Capsule;
+import com.brettnamba.capsules.dataaccess.CapsuleOwnershipPojo;
 import com.brettnamba.capsules.dataaccess.CapsulePojo;
 import com.brettnamba.capsules.http.RequestContract;
 
@@ -18,6 +19,11 @@ import com.brettnamba.capsules.http.RequestContract;
  *
  */
 public class JSONParser {
+
+    /**
+     * The name of the JSONObject that contains a web resource's data.
+     */
+    public static final String RESOURCE_DATA = "data";
 
     /**
      * Parses an authentication response to retrieve an authentication token.
@@ -75,6 +81,28 @@ public class JSONParser {
         JSONObject json = new JSONObject(body);
 
         return json.getBoolean(RequestContract.Field.API_REQUEST_SERVER_RESULT);
+    }
+
+    /**
+     * Parses a server response for updating an Ownership Capsule.
+     * 
+     * @param body
+     * @return
+     * @throws JSONException
+     */
+    public static Capsule parseOwnershipCapsule(String body) throws JSONException {
+        // Parse the response
+        JSONObject json = new JSONObject(body).getJSONObject(RESOURCE_DATA);
+
+        // Build the Capsule
+        Capsule capsule = new CapsuleOwnershipPojo();
+        ((CapsuleOwnershipPojo) capsule.setSyncId(json.getLong(RequestContract.Field.CAPSULE_SYNC_ID))
+            .setName(json.getString(RequestContract.Field.CAPSULE_NAME))
+            .setLatitude(json.getDouble(RequestContract.Field.CAPSULE_LATITUDE))
+            .setLongitude(json.getDouble(RequestContract.Field.CAPSULE_LONGITUDE)))
+            .setEtag(json.getString(RequestContract.Field.CAPSULE_ETAG));
+
+        return capsule;
     }
 
 }
