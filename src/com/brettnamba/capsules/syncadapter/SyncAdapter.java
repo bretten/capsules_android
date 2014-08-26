@@ -1,12 +1,11 @@
 package com.brettnamba.capsules.syncadapter;
 
 import java.io.IOException;
+import java.util.List;
 
-import org.apache.http.client.ClientProtocolException;
+import org.apache.http.ParseException;
 import org.apache.http.client.HttpClient;
-import org.json.JSONArray;
 import org.json.JSONException;
-import org.json.JSONObject;
 
 import android.accounts.Account;
 import android.accounts.AccountManager;
@@ -15,9 +14,10 @@ import android.accounts.OperationCanceledException;
 import android.annotation.TargetApi;
 import android.content.AbstractThreadedSyncAdapter;
 import android.content.ContentProviderClient;
+import android.content.ContentResolver;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.SyncResult;
-import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Build;
@@ -25,8 +25,14 @@ import android.os.Bundle;
 import android.util.Log;
 
 import com.brettnamba.capsules.Constants;
+import com.brettnamba.capsules.dataaccess.Capsule;
+import com.brettnamba.capsules.dataaccess.CapsuleOwnershipPojo;
 import com.brettnamba.capsules.http.HttpFactory;
+import com.brettnamba.capsules.http.RequestContract;
 import com.brettnamba.capsules.http.RequestHandler;
+import com.brettnamba.capsules.provider.CapsuleContract;
+import com.brettnamba.capsules.provider.CapsuleOperations;
+import com.brettnamba.capsules.util.JSONParser;
 
 /**
  * SyncAdapter handles tapping into the Android framework.
@@ -133,67 +139,114 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
             ContentProviderClient provider, SyncResult syncResult) {
         Log.v(TAG, "onPerformSync()");
 
+        final ContentResolver resolver = mContext.getContentResolver();
+
         // Get the auth token
         String authToken = "";
         try {
             authToken = mAccountManager.blockingGetAuthToken(account, Constants.AUTH_TOKEN_TYPE, true);
-        } catch (OperationCanceledException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        } catch (AuthenticatorException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        } catch (IOException e) {
+        } catch (OperationCanceledException | AuthenticatorException | IOException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
 
-        // Get the undiscovered capsules
-        JSONArray capsules = this.getUndiscoveredCapsules(authToken, mLocationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER));
-        for (int i = 0; i < capsules.length(); i++) {
-            JSONObject item = null;
+        // Determines whether the whole sync was successful
+        boolean success = true;
+
+        // Sync Ownership Capsules
+        String serverOwnershipCtag = null;
+        try {
+            serverOwnershipCtag = mHttpHandler.requestCtag(authToken, RequestContract.Uri.CTAG_OWNERSHIPS_URI);
+        } catch (ParseException | IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        String clientOwnershipCtag = mAccountManager.getUserData(account, "ownership_ctag");
+        if (serverOwnershipCtag.equals(clientOwnershipCtag)) {
+            // Sync dirty
+            List<Capsule> capsules = CapsuleOperations.getOwnerships(resolver, account.name, true /* onlyDirty */);
+            success = syncDirtyOwnerships(resolver, account, authToken, capsules);
+        } else {
+            // TODO Two-way sync
+        }
+
+        // Ownership sync was successful, so update the Ctag
+        if (success) {
             try {
-                item = capsules.getJSONObject(i);
-            } catch (JSONException e1) {
-                // TODO Auto-generated catch block
-                e1.printStackTrace();
-            }
-            try {
-                JSONObject capsule = item.getJSONObject("Capsule");
-                Log.v(TAG, capsule.getString("id"));
-            } catch (JSONException e) {
+                serverOwnershipCtag = mHttpHandler.requestCtag(authToken, RequestContract.Uri.CTAG_OWNERSHIPS_URI);
+            } catch (ParseException | IOException e) {
                 // TODO Auto-generated catch block
                 e.printStackTrace();
+            }
+            if (!serverOwnershipCtag.equals(clientOwnershipCtag)) {
+                mAccountManager.setUserData(account, "ownership_ctag", serverOwnershipCtag);
             }
         }
     }
 
     /**
-     * Sends request to server for the undiscovered capsules via the HTTPClient.
+     * Syncs dirty Ownership Capsules to the server for the specified Account
      * 
+     * @param resolver
+     * @param account
      * @param authToken
-     * @param lastLocation
-     * @return JSONArray
+     * @param capsules
+     * @return
      */
-    private JSONArray getUndiscoveredCapsules(String authToken, Location lastLocation) {
-        // Send a request to the server for the undiscovered capsules
-        JSONArray capsules = null;
-        if (lastLocation != null) {
-            try {
-                capsules = mHttpHandler.requestUndiscoveredCapsules(authToken, lastLocation.getLatitude(), lastLocation.getLongitude());
-            } catch (ClientProtocolException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            } catch (IOException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            } catch (JSONException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
+    private boolean syncDirtyOwnerships(ContentResolver resolver, Account account, String authToken, List<Capsule> capsules) {
+        boolean success = true;
+
+        for (Capsule capsule : capsules) {
+            final boolean isDeleted = ((CapsuleOwnershipPojo) capsule).getDeleted() > 1;
+
+            if (isDeleted) {
+                // TODO Add server-side API functionality
+            } else {
+                // Request an update
+                String response = null;
+                try {
+                    response = mHttpHandler.requestOwnershipUpdate(authToken, capsule);
+                } catch (ParseException | IOException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
+                // Parse the response
+                Capsule serverCapsule = null;
+                try {
+                    serverCapsule = JSONParser.parseOwnershipCapsule(response);
+                } catch (JSONException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
+                // Update the client Capsule
+                ContentValues values = new ContentValues();
+                values.put(CapsuleContract.Capsules.SYNC_ID, serverCapsule.getSyncId());
+                int count = resolver.update(
+                        CapsuleContract.Capsules.CONTENT_URI,
+                        values,
+                        CapsuleContract.Capsules._ID + " = ?",
+                        new String[]{String.valueOf(capsule.getId())}
+                );
+                if (count < 1) {
+                    success = false;
+                }
+                // Update the client Ownership
+                values = new ContentValues();
+                values.put(CapsuleContract.Capsules.DIRTY, 0);
+                values.put(CapsuleContract.Capsules.ETAG, ((CapsuleOwnershipPojo) serverCapsule).getEtag());
+                count = resolver.update(
+                        CapsuleContract.Ownerships.CONTENT_URI,
+                        values,
+                        CapsuleContract.Ownerships.ACCOUNT_NAME + " = ? AND " + CapsuleContract.Ownerships.CAPSULE_ID + " = ?",
+                        new String[]{account.name, String.valueOf(capsule.getId())}
+                );
+                if (count < 1) {
+                    success = false;
+                }
             }
         }
 
-        return capsules;
+        return success;
     }
 
 }
