@@ -6,8 +6,10 @@ import java.util.ArrayList;
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
 import org.apache.http.ParseException;
+import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.utils.URLEncodedUtils;
@@ -183,6 +185,28 @@ public class RequestHandler {
         // Send and get the response
         HttpResponse response = mClient.execute(request);
         return EntityUtils.toString(response.getEntity());
+    }
+
+    /**
+     * Sends a DELETE request to the Capsule Ownership URI
+     * 
+     * @param authToken
+     * @param capsuleId
+     * @return
+     * @throws ClientProtocolException
+     * @throws IOException
+     */
+    public int requestOwnershipDelete(String authToken, long capsuleId) throws ClientProtocolException, IOException {
+         // DELETE
+        HttpDelete request = new HttpDelete(RequestContract.BASE_URL + RequestContract.Uri.OWNERSHIP_URI + "/" + String.valueOf(capsuleId));
+
+        // Headers
+        request.addHeader(HTTP.TARGET_HOST, RequestContract.HOST);
+        request.addHeader(RequestContract.AUTH_HEADER, Base64.encodeToString((authToken).getBytes(), Base64.URL_SAFE|Base64.NO_WRAP));
+
+        // Send and get the response
+        HttpResponse response = mClient.execute(request);
+        return response.getStatusLine().getStatusCode();
     }
 
 }
