@@ -3,6 +3,7 @@ package com.brettnamba.capsules.syncadapter;
 import java.io.IOException;
 import java.util.List;
 
+import org.apache.http.HttpStatus;
 import org.apache.http.ParseException;
 import org.apache.http.client.HttpClient;
 import org.json.JSONException;
@@ -197,10 +198,51 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
         boolean success = true;
 
         for (Capsule capsule : capsules) {
-            final boolean isDeleted = ((CapsuleOwnershipPojo) capsule).getDeleted() > 1;
+            final boolean isDeleted = ((CapsuleOwnershipPojo) capsule).getDeleted() >= 1;
 
             if (isDeleted) {
-                // TODO Add server-side API functionality
+                if (capsule.getSyncId() > 0) {
+                    int deleteStatusCode = 0;
+                    try {
+                        deleteStatusCode = mHttpHandler.requestOwnershipDelete(authToken, capsule.getSyncId());
+                    } catch (IOException e) {
+                        // TODO Auto-generated catch block
+                        e.printStackTrace();
+                    }
+                    if (deleteStatusCode == HttpStatus.SC_NO_CONTENT || deleteStatusCode == HttpStatus.SC_NOT_FOUND) {
+                        int count = resolver.delete(
+                                CapsuleContract.Ownerships.CONTENT_URI,
+                                CapsuleContract.Ownerships.CAPSULE_ID + " = ?",
+                                new String[]{String.valueOf(capsule.getId())}
+                        );
+                        if (count > 0) {
+                            count = resolver.delete(
+                                    CapsuleContract.Capsules.CONTENT_URI,
+                                    CapsuleContract.Capsules._ID + " = ?",
+                                    new String[]{String.valueOf(capsule.getId())}
+                            );
+                            if (count < 1) {
+                                success = false;
+                            }
+                        }
+                    }
+                } else {
+                    int count = resolver.delete(
+                            CapsuleContract.Ownerships.CONTENT_URI,
+                            CapsuleContract.Ownerships.CAPSULE_ID + " = ?",
+                            new String[]{String.valueOf(capsule.getId())}
+                    );
+                    if (count > 0) {
+                        count = resolver.delete(
+                                CapsuleContract.Capsules.CONTENT_URI,
+                                CapsuleContract.Capsules._ID + " = ?",
+                                new String[]{String.valueOf(capsule.getId())}
+                        );
+                        if (count < 1) {
+                            success = false;
+                        }
+                    }
+                }
             } else {
                 // Request an update
                 String response = null;
