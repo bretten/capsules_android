@@ -74,34 +74,6 @@ public final class CapsuleContract {
 
         public static final Uri CONTENT_URI = Uri.parse(SCHEME + AUTHORITY + "/" + CONTENT_URI_PATH);
 
-        /**
-         * An ordered list of the database columns where their index in the List represents their database column index.
-         */
-        public static final List<String> COLUMN_INDEX_LIST;
-
-        /**
-         * A mapping of database columns to their column type declarations.
-         */
-        public static final Map<String, String> COLUMN_TYPE_MAP;
-
-        static {
-            List<String> columnIndexList = new ArrayList<String>();
-            columnIndexList.add(_ID);
-            columnIndexList.add(SYNC_ID);
-            columnIndexList.add(NAME);
-            columnIndexList.add(LATITUDE);
-            columnIndexList.add(LONGITUDE);
-            COLUMN_INDEX_LIST = Collections.unmodifiableList(columnIndexList);
-
-            Map<String, String> columnTypeMap = new HashMap<String, String>();
-            columnTypeMap.put(_ID, "INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL");
-            columnTypeMap.put(SYNC_ID, "INTEGER NOT NULL");
-            columnTypeMap.put(NAME, "TEXT NOT NULL");
-            columnTypeMap.put(LATITUDE, "REAL NOT NULL");
-            columnTypeMap.put(LONGITUDE, "REAL NOT NULL");
-            COLUMN_TYPE_MAP = Collections.unmodifiableMap(columnTypeMap);
-        }
-
     }
 
     public static final class Ownerships implements BaseColumns, OwnershipColumns, SyncColumns {
@@ -113,36 +85,6 @@ public final class CapsuleContract {
         public static final String CONTENT_URI_PATH = "ownerships";
 
         public static final Uri CONTENT_URI = Uri.parse(SCHEME + AUTHORITY + "/" + CONTENT_URI_PATH);
-
-        /**
-         * An ordered list of the database columns where their index in the List represents their database column index.
-         */
-        public static final List<String> COLUMN_INDEX_LIST;
-
-        /**
-         * A mapping of database columns to their column type declarations.
-         */
-        public static final Map<String, String> COLUMN_TYPE_MAP;
-
-        static {
-            List<String> columnIndexList = new ArrayList<String>();
-            columnIndexList.add(_ID);
-            columnIndexList.add(CAPSULE_ID);
-            columnIndexList.add(ETAG);
-            columnIndexList.add(ACCOUNT_NAME);
-            columnIndexList.add(DIRTY);
-            columnIndexList.add(DELETED);
-            COLUMN_INDEX_LIST = Collections.unmodifiableList(columnIndexList);
-
-            Map<String, String> columnTypeMap = new HashMap<String, String>();
-            columnTypeMap.put(_ID, "INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL");
-            columnTypeMap.put(CAPSULE_ID, "INTEGER NOT NULL");
-            columnTypeMap.put(ETAG, "TEXT DEFAULT NULL");
-            columnTypeMap.put(ACCOUNT_NAME, "TEXT NOT NULL");
-            columnTypeMap.put(DIRTY, "INTEGER NOT NULL DEFAULT 0");
-            columnTypeMap.put(DELETED, "INTEGER NOT NULL DEFAULT 0");
-            COLUMN_TYPE_MAP = Collections.unmodifiableMap(columnTypeMap);
-        }
 
     }
 
@@ -156,37 +98,6 @@ public final class CapsuleContract {
 
         public static final Uri CONTENT_URI = Uri.parse(SCHEME + AUTHORITY + "/" + CONTENT_URI_PATH);
 
-        /**
-         * An ordered list of the database columns where their index in the List represents their database column index.
-         */
-        public static final List<String> COLUMN_INDEX_LIST;
-
-        /**
-         * A mapping of database columns to their column type declarations.
-         */
-        public static final Map<String, String> COLUMN_TYPE_MAP;
-
-        static {
-            List<String> columnIndexList = new ArrayList<String>();
-            columnIndexList.add(_ID);
-            columnIndexList.add(CAPSULE_ID);
-            columnIndexList.add(ETAG);
-            columnIndexList.add(ACCOUNT_NAME);
-            columnIndexList.add(DIRTY);
-            columnIndexList.add(FAVORITE);
-            columnIndexList.add(RATING);
-            COLUMN_INDEX_LIST = Collections.unmodifiableList(columnIndexList);
-
-            Map<String, String> columnTypeMap = new HashMap<String, String>();
-            columnTypeMap.put(_ID, "INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL");
-            columnTypeMap.put(CAPSULE_ID, "INTEGER NOT NULL");
-            columnTypeMap.put(ETAG, "TEXT DEFAULT NULL");
-            columnTypeMap.put(ACCOUNT_NAME, "TEXT NOT NULL");
-            columnTypeMap.put(DIRTY, "INTEGER NOT NULL DEFAULT 0");
-            columnTypeMap.put(FAVORITE, "INTEGER NOT NULL DEFAULT 0");
-            columnTypeMap.put(RATING, "INTEGER NOT NULL DEFAULT 0");
-            COLUMN_TYPE_MAP = Collections.unmodifiableMap(columnTypeMap);
-        }
     }
 
 }
