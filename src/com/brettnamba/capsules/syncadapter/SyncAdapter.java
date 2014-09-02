@@ -140,48 +140,37 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
             ContentProviderClient provider, SyncResult syncResult) {
         Log.v(TAG, "onPerformSync()");
 
-        final ContentResolver resolver = mContext.getContentResolver();
-
-        // Get the auth token
-        String authToken = "";
         try {
-            authToken = mAccountManager.blockingGetAuthToken(account, Constants.AUTH_TOKEN_TYPE, true);
+            final ContentResolver resolver = mContext.getContentResolver();
+
+            // Determines whether the whole sync was successful
+            boolean success = true;
+
+            // Get the auth token
+            String authToken = mAccountManager.blockingGetAuthToken(account, Constants.AUTH_TOKEN_TYPE, true);
+
+            // Sync Ownership Capsules
+            String serverOwnershipCtag = mHttpHandler.requestCtag(authToken, RequestContract.Uri.CTAG_OWNERSHIPS_URI);
+    
+            String clientOwnershipCtag = mAccountManager.getUserData(account, "ownership_ctag");
+            if (serverOwnershipCtag.equals(clientOwnershipCtag)) {
+                // Sync dirty
+                List<Capsule> capsules = CapsuleOperations.getOwnerships(resolver, account.name, true /* onlyDirty */);
+                success = syncDirtyOwnerships(resolver, account, authToken, capsules);
+            } else {
+                // TODO Two-way sync
+            }
+
+            // Ownership sync was successful, so update the Ctag
+            if (success) {
+                serverOwnershipCtag = mHttpHandler.requestCtag(authToken, RequestContract.Uri.CTAG_OWNERSHIPS_URI);
+                if (!serverOwnershipCtag.equals(clientOwnershipCtag)) {
+                    mAccountManager.setUserData(account, "ownership_ctag", serverOwnershipCtag);
+                }
+            }
         } catch (OperationCanceledException | AuthenticatorException | IOException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
-        }
-
-        // Determines whether the whole sync was successful
-        boolean success = true;
-
-        // Sync Ownership Capsules
-        String serverOwnershipCtag = null;
-        try {
-            serverOwnershipCtag = mHttpHandler.requestCtag(authToken, RequestContract.Uri.CTAG_OWNERSHIPS_URI);
-        } catch (ParseException | IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
-        String clientOwnershipCtag = mAccountManager.getUserData(account, "ownership_ctag");
-        if (serverOwnershipCtag.equals(clientOwnershipCtag)) {
-            // Sync dirty
-            List<Capsule> capsules = CapsuleOperations.getOwnerships(resolver, account.name, true /* onlyDirty */);
-            success = syncDirtyOwnerships(resolver, account, authToken, capsules);
-        } else {
-            // TODO Two-way sync
-        }
-
-        // Ownership sync was successful, so update the Ctag
-        if (success) {
-            try {
-                serverOwnershipCtag = mHttpHandler.requestCtag(authToken, RequestContract.Uri.CTAG_OWNERSHIPS_URI);
-            } catch (ParseException | IOException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            }
-            if (!serverOwnershipCtag.equals(clientOwnershipCtag)) {
-                mAccountManager.setUserData(account, "ownership_ctag", serverOwnershipCtag);
-            }
         }
     }
 
@@ -202,87 +191,62 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
 
             if (isDeleted) {
                 if (capsule.getSyncId() > 0) {
-                    int deleteStatusCode = 0;
                     try {
-                        deleteStatusCode = mHttpHandler.requestOwnershipDelete(authToken, capsule.getSyncId());
-                    } catch (IOException e) {
-                        // TODO Auto-generated catch block
-                        e.printStackTrace();
-                    }
-                    if (deleteStatusCode == HttpStatus.SC_NO_CONTENT || deleteStatusCode == HttpStatus.SC_NOT_FOUND) {
-                        int count = resolver.delete(
-                                CapsuleContract.Ownerships.CONTENT_URI,
-                                CapsuleContract.Ownerships.CAPSULE_ID + " = ?",
-                                new String[]{String.valueOf(capsule.getId())}
-                        );
-                        if (count > 0) {
-                            count = resolver.delete(
-                                    CapsuleContract.Capsules.CONTENT_URI,
-                                    CapsuleContract.Capsules._ID + " = ?",
-                                    new String[]{String.valueOf(capsule.getId())}
-                            );
-                            if (count < 1) {
+                        int deleteStatusCode = mHttpHandler.requestOwnershipDelete(authToken, capsule.getSyncId());
+                        
+                        if (deleteStatusCode == HttpStatus.SC_NO_CONTENT || deleteStatusCode == HttpStatus.SC_NOT_FOUND) {
+                            if (!CapsuleOperations.deleteCapsule(resolver, capsule.getId())) {
                                 success = false;
                             }
                         }
+                    } catch (IOException e) {
+                        // TODO Auto-generated catch block
+                        e.printStackTrace();
+                        // Flag a failure
+                        success = false;
                     }
                 } else {
-                    int count = resolver.delete(
-                            CapsuleContract.Ownerships.CONTENT_URI,
-                            CapsuleContract.Ownerships.CAPSULE_ID + " = ?",
-                            new String[]{String.valueOf(capsule.getId())}
-                    );
-                    if (count > 0) {
-                        count = resolver.delete(
-                                CapsuleContract.Capsules.CONTENT_URI,
-                                CapsuleContract.Capsules._ID + " = ?",
-                                new String[]{String.valueOf(capsule.getId())}
-                        );
-                        if (count < 1) {
-                            success = false;
-                        }
+                    if (!CapsuleOperations.deleteCapsule(resolver, capsule.getId())) {
+                        success = false;
                     }
                 }
             } else {
-                // Request an update
-                String response = null;
                 try {
-                    response = mHttpHandler.requestOwnershipUpdate(authToken, capsule);
-                } catch (ParseException | IOException e) {
+                    // Request an update to the server
+                    String response = mHttpHandler.requestOwnershipUpdate(authToken, capsule);
+
+                    // Parse the response
+                    Capsule serverCapsule = JSONParser.parseOwnershipCapsule(response);
+
+                    // Update the client Capsule
+                    ContentValues values = new ContentValues();
+                    values.put(CapsuleContract.Capsules.SYNC_ID, serverCapsule.getSyncId());
+                    int count = resolver.update(
+                            CapsuleContract.Capsules.CONTENT_URI,
+                            values,
+                            CapsuleContract.Capsules._ID + " = ?",
+                            new String[]{String.valueOf(capsule.getId())}
+                    );
+                    if (count < 1) {
+                        success = false;
+                    }
+                    // Update the client Ownership
+                    values = new ContentValues();
+                    values.put(CapsuleContract.Capsules.DIRTY, 0);
+                    values.put(CapsuleContract.Capsules.ETAG, ((CapsuleOwnershipPojo) serverCapsule).getEtag());
+                    count = resolver.update(
+                            CapsuleContract.Ownerships.CONTENT_URI,
+                            values,
+                            CapsuleContract.Ownerships.ACCOUNT_NAME + " = ? AND " + CapsuleContract.Ownerships.CAPSULE_ID + " = ?",
+                            new String[]{account.name, String.valueOf(capsule.getId())}
+                    );
+                    if (count < 1) {
+                        success = false;
+                    }
+                } catch (ParseException | IOException | JSONException e) {
                     // TODO Auto-generated catch block
                     e.printStackTrace();
-                }
-                // Parse the response
-                Capsule serverCapsule = null;
-                try {
-                    serverCapsule = JSONParser.parseOwnershipCapsule(response);
-                } catch (JSONException e) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
-                }
-                // Update the client Capsule
-                ContentValues values = new ContentValues();
-                values.put(CapsuleContract.Capsules.SYNC_ID, serverCapsule.getSyncId());
-                int count = resolver.update(
-                        CapsuleContract.Capsules.CONTENT_URI,
-                        values,
-                        CapsuleContract.Capsules._ID + " = ?",
-                        new String[]{String.valueOf(capsule.getId())}
-                );
-                if (count < 1) {
-                    success = false;
-                }
-                // Update the client Ownership
-                values = new ContentValues();
-                values.put(CapsuleContract.Capsules.DIRTY, 0);
-                values.put(CapsuleContract.Capsules.ETAG, ((CapsuleOwnershipPojo) serverCapsule).getEtag());
-                count = resolver.update(
-                        CapsuleContract.Ownerships.CONTENT_URI,
-                        values,
-                        CapsuleContract.Ownerships.ACCOUNT_NAME + " = ? AND " + CapsuleContract.Ownerships.CAPSULE_ID + " = ?",
-                        new String[]{account.name, String.valueOf(capsule.getId())}
-                );
-                if (count < 1) {
+                    // Flag a failure
                     success = false;
                 }
             }
