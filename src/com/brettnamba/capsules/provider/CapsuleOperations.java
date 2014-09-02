@@ -248,4 +248,19 @@ public class CapsuleOperations {
         return count > 0;
     }
 
+    /**
+     * DELETEs a Capsule row.
+     * 
+     * @param resolver
+     * @param capsuleId
+     * @return
+     */
+    public static boolean deleteCapsule(ContentResolver resolver, long capsuleId) {
+        return 0 < resolver.delete(
+                CapsuleContract.Capsules.CONTENT_URI,
+                CapsuleContract.Capsules._ID + " = ?",
+                new String[]{String.valueOf(capsuleId)}
+        );
+    }
+
 }
