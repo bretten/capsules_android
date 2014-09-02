@@ -723,16 +723,16 @@ public class MainActivity extends ActionBarActivity
                 
             }
             // Parse the Discovery
-            boolean success = false;
+            String etag = null;
             try {
-                success = JSONParser.parseOpenCapsule(response);
+                etag = JSONParser.parseOpenCapsule(response);
             } catch (JSONException e) {
                 e.printStackTrace();
                 this.cancel(true);
             }
             // INSERT the new Discovery
             Uri insertUri = null;
-            if (success) {
+            if (etag != null) {
                 insertUri = CapsuleOperations.insertDiscovery(getContentResolver(), this.capsule, mAccount.name);
             } else {
                 this.cancel(true);

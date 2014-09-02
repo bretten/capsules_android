@@ -34,7 +34,7 @@ public class JSONParser {
      */
     public static String parseAuthenticationToken(String body) throws JSONException {
         // Parse the response
-        JSONObject json = new JSONObject(body);
+        JSONObject json = new JSONObject(body).getJSONObject(RESOURCE_DATA);
 
         return json.getString(RequestContract.Field.AUTH_TOKEN_RESPONSE);
     }
@@ -55,7 +55,7 @@ public class JSONParser {
 
         // Extract data from individual JSON objects
         for (int i = 0; i < json.length(); i++) {
-            JSONObject jsonCapsule = json.getJSONObject(i).getJSONObject(RequestContract.Field.CAPSULE_OBJECT);
+            JSONObject jsonCapsule = json.getJSONObject(i).getJSONObject(RESOURCE_DATA);
 
             // Create Capsules
             capsules.add(new CapsulePojo()
@@ -76,11 +76,11 @@ public class JSONParser {
      * @return
      * @throws JSONException
      */
-    public static boolean parseOpenCapsule(String body) throws JSONException {
+    public static String parseOpenCapsule(String body) throws JSONException {
         // Parse the response
-        JSONObject json = new JSONObject(body);
+        JSONObject json = new JSONObject(body).getJSONObject(RESOURCE_DATA);
 
-        return json.getBoolean(RequestContract.Field.API_REQUEST_SERVER_RESULT);
+        return json.getString(RequestContract.Field.CAPSULE_ETAG);
     }
 
     /**
