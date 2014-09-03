@@ -129,13 +129,13 @@ public class CapsuleEditorFragment extends Fragment {
         protected Capsule doInBackground(Capsule... params) {
             Capsule capsule = params[0];
             if (capsule.getId() <= 0) {
-                Uri uri = CapsuleOperations.insertOwnership(this.activity.getContentResolver(), capsule, mAccountName);
+                Uri uri = CapsuleOperations.insertOwnership(this.activity.getContentResolver(), capsule, mAccountName, true /* setDirty */);
                 long capsuleId = Long.valueOf(uri.getQueryParameter(CapsuleContract.Ownerships.CAPSULE_ID));
                 if (capsuleId > 0) {
                     capsule.setId(capsuleId);
                 }
             } else {
-                CapsuleOperations.updateCapsule(this.activity.getContentResolver(), capsule);
+                CapsuleOperations.updateCapsule(this.activity.getContentResolver(), capsule, true /* setDirty */);
             }
             return capsule;
         }

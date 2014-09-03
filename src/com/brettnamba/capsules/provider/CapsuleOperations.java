@@ -99,20 +99,28 @@ public class CapsuleOperations {
      * @param resolver
      * @param capsule
      * @param account
+     * @param setDirty
      * @return
      */
-    public static Uri insertOwnership(ContentResolver resolver, Capsule capsule, String account) {
+    public static Uri insertOwnership(ContentResolver resolver, Capsule capsule, String account, boolean setDirty) {
         ContentValues values = new ContentValues();
         values.put(CapsuleContract.Capsules.NAME, capsule.getName());
         values.put(CapsuleContract.Capsules.LATITUDE, capsule.getLatitude());
         values.put(CapsuleContract.Capsules.LONGITUDE, capsule.getLongitude());
         values.put(CapsuleContract.Ownerships.ACCOUNT_NAME, account);
 
-        return resolver.insert(CapsuleContract.Ownerships.CONTENT_URI.buildUpon()
+        // The Content URI
+        Uri uri = CapsuleContract.Ownerships.CONTENT_URI.buildUpon()
                 .appendQueryParameter(CapsuleContract.QUERY_PARAM_TRANSACTION, CapsuleContract.Capsules.TABLE_NAME)
-                .build(),
-                values
-        );
+                .build();
+        // Whether or not the dirty sync flag should be set
+        if (setDirty) {
+            uri = uri.buildUpon()
+                    .appendQueryParameter(CapsuleContract.QUERY_PARAM_SET_DIRTY, CapsuleContract.QUERY_VALUE_TRUE)
+                    .build();
+        }
+
+        return resolver.insert(uri, values);
     }
 
     /**
@@ -234,13 +242,22 @@ public class CapsuleOperations {
      * 
      * @param resolver
      * @param capsule
+     * @param setDirty
      * @return
      */
-    public static boolean updateCapsule(ContentResolver resolver, Capsule capsule) {
+    public static boolean updateCapsule(ContentResolver resolver, Capsule capsule, boolean setDirty) {
         ContentValues values = new ContentValues();
         values.put(CapsuleContract.Capsules.NAME, capsule.getName());
+        // The Content URI
+        Uri uri = ContentUris.withAppendedId(CapsuleContract.Capsules.CONTENT_URI, capsule.getId());
+        // Whether or not to set the dirty sync flag
+        if (setDirty) {
+            uri = uri.buildUpon()
+                    .appendQueryParameter(CapsuleContract.QUERY_PARAM_SET_DIRTY, CapsuleContract.QUERY_VALUE_TRUE)
+                    .build();
+        }
         int count = resolver.update(
-                ContentUris.withAppendedId(CapsuleContract.Capsules.CONTENT_URI, capsule.getId()),
+                uri,
                 values,
                 null,
                 null
