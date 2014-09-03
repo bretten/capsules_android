@@ -1,8 +1,5 @@
 package com.brettnamba.capsules.provider;
 
-import java.util.List;
-import java.util.Map;
-
 import android.content.ContentProvider;
 import android.content.ContentUris;
 import android.content.ContentValues;
@@ -203,6 +200,10 @@ public class CapsuleProvider extends ContentProvider {
                     ContentValues discoveryValues = new ContentValues();
                     discoveryValues.put(CapsuleContract.Discoveries.CAPSULE_ID, capsuleId);
                     discoveryValues.put(CapsuleContract.Discoveries.ACCOUNT_NAME, values.getAsString(CapsuleContract.Discoveries.ACCOUNT_NAME));
+                    if (uri.getQueryParameter(CapsuleContract.QUERY_PARAM_SET_DIRTY) != null
+                            && uri.getQueryParameter(CapsuleContract.QUERY_PARAM_SET_DIRTY).equals(CapsuleContract.QUERY_VALUE_TRUE)) {
+                        discoveryValues.put(CapsuleContract.Discoveries.DIRTY, 1);
+                    }
                     long discoveryId = mDb.insert(CapsuleContract.Discoveries.TABLE_NAME, CapsuleContract.Discoveries.FAVORITE, discoveryValues);
                     if (discoveryId > 0) {
                         insertUri = ContentUris.withAppendedId(CapsuleContract.Discoveries.CONTENT_URI, discoveryId).buildUpon()
@@ -250,6 +251,10 @@ public class CapsuleProvider extends ContentProvider {
                     ContentValues ownershipValues = new ContentValues();
                     ownershipValues.put(CapsuleContract.Ownerships.CAPSULE_ID, capsuleId);
                     ownershipValues.put(CapsuleContract.Ownerships.ACCOUNT_NAME, values.getAsString(CapsuleContract.Ownerships.ACCOUNT_NAME));
+                    if (uri.getQueryParameter(CapsuleContract.QUERY_PARAM_SET_DIRTY) != null
+                            && uri.getQueryParameter(CapsuleContract.QUERY_PARAM_SET_DIRTY).equals(CapsuleContract.QUERY_VALUE_TRUE)) {
+                        ownershipValues.put(CapsuleContract.Ownerships.DIRTY, 1);
+                    }
                     long ownershipId = mDb.insert(CapsuleContract.Ownerships.TABLE_NAME, CapsuleContract.Ownerships.DIRTY, ownershipValues);
                     if (ownershipId > 0) {
                         insertUri = ContentUris.withAppendedId(CapsuleContract.Ownerships.CONTENT_URI, ownershipId).buildUpon()
@@ -365,43 +370,75 @@ public class CapsuleProvider extends ContentProvider {
             selection = "";
         }
 
+        mDb = mDbHelper.getWritableDatabase();
+
+        int count;
+
         switch (sUriMatcher.match(uri)) {
 
         case CODE_CAPSULES :
             table = CapsuleContract.Capsules.TABLE_NAME;
+            count = mDb.update(table, values, selection, selectionArgs);
             break;
 
         case CODE_CAPSULES_WILD :
             table = CapsuleContract.Capsules.TABLE_NAME;
-            selection += ((!TextUtils.isEmpty(selection)) ? " AND " : "") + CapsuleContract.Capsules._ID + " = " + uri.getPathSegments().get(PATH_ID_POS);
+            String capsuleId = uri.getPathSegments().get(PATH_ID_POS);
+            selection += ((!TextUtils.isEmpty(selection)) ? " AND " : "") + CapsuleContract.Capsules._ID + " = " + capsuleId;
+            mDb.beginTransaction();
+            try {
+                // UPDATE the Capsule
+                count = mDb.update(table, values, selection, selectionArgs);
+                // UPDATE the Ownerships as dirty
+                if (uri.getQueryParameter(CapsuleContract.QUERY_PARAM_SET_DIRTY) != null
+                        && uri.getQueryParameter(CapsuleContract.QUERY_PARAM_SET_DIRTY).equals(CapsuleContract.QUERY_VALUE_TRUE)) {
+                    values = new ContentValues();
+                    values.put(CapsuleContract.Ownerships.DIRTY, 1);
+                    mDb.update(
+                            CapsuleContract.Ownerships.TABLE_NAME,
+                            values,
+                            CapsuleContract.Ownerships.CAPSULE_ID + " = ?",
+                            new String[]{capsuleId}
+                    );
+                }
+                // No exceptions, so flag to commit
+                mDb.setTransactionSuccessful();
+            } finally {
+                // Commit
+                mDb.endTransaction();
+            }
             break;
 
         case CODE_DISCOVERIES :
             table = CapsuleContract.Discoveries.TABLE_NAME;
+            count = mDb.update(table, values, selection, selectionArgs);
             break;
 
         case CODE_DISCOVERIES_WILD :
             table = CapsuleContract.Discoveries.TABLE_NAME;
             selection += ((!TextUtils.isEmpty(selection)) ? " AND " : "") + CapsuleContract.Discoveries._ID + " = " + uri.getPathSegments().get(PATH_ID_POS);
+            if (uri.getQueryParameter(CapsuleContract.QUERY_PARAM_SET_DIRTY) != null
+                    && uri.getQueryParameter(CapsuleContract.QUERY_PARAM_SET_DIRTY).equals(CapsuleContract.QUERY_VALUE_TRUE)) {
+                values.put(CapsuleContract.Discoveries.DIRTY, 1);
+            }
+            count = mDb.update(table, values, selection, selectionArgs);
             break;
 
         case CODE_OWNERSHIPS :
             table = CapsuleContract.Ownerships.TABLE_NAME;
+            count = mDb.update(table, values, selection, selectionArgs);
             break;
 
         case CODE_OWNERSHIPS_WILD :
             table = CapsuleContract.Ownerships.TABLE_NAME;
             selection += ((!TextUtils.isEmpty(selection)) ? " AND " : "") + CapsuleContract.Ownerships._ID + " = " + uri.getPathSegments().get(PATH_ID_POS);
+            count = mDb.update(table, values, selection, selectionArgs);
             break;
 
         default :
             throw new IllegalArgumentException("Unknown URI: " + uri);
 
         }
-
-        mDb = mDbHelper.getWritableDatabase();
-
-        int count = mDb.update(table, values, selection, selectionArgs);
 
         getContext().getContentResolver().notifyChange(uri, null);
 

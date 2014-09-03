@@ -1,11 +1,5 @@
 package com.brettnamba.capsules.provider;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 import android.content.ContentResolver;
 import android.net.Uri;
 import android.provider.BaseColumns;
@@ -23,6 +17,10 @@ public final class CapsuleContract {
     public static final String QUERY_PARAM_JOIN = "join";
 
     public static final String QUERY_PARAM_TRANSACTION = "transaction";
+
+    public static final String QUERY_PARAM_SET_DIRTY = "set_dirty";
+
+    public static final String QUERY_VALUE_TRUE = "true";
 
     protected interface CapsuleColumns {
 
