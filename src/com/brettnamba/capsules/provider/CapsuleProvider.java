@@ -357,7 +357,7 @@ public class CapsuleProvider extends ContentProvider {
 
         mDb = mDbHelper.getWritableDatabase();
 
-        Cursor c = qb.query(mDb, null, selection, selectionArgs, null, null, sortOrder);
+        Cursor c = qb.query(mDb, projection, selection, selectionArgs, null, null, sortOrder);
 
         c.setNotificationUri(getContext().getContentResolver(), uri);
         return c;
