@@ -34,11 +34,15 @@ public final class CapsuleContract {
 
     protected interface OwnershipColumns {
 
+        public static final String OWNERSHIP_ID = "ownership_id";
+
         public static final String CAPSULE_ID = "capsule_id";
 
     }
 
     protected interface DiscoveryColumns {
+
+        public static final String DISCOVERY_ID = "discovery_id";
 
         public static final String CAPSULE_ID = "capsule_id";
 
@@ -84,6 +88,20 @@ public final class CapsuleContract {
 
         public static final Uri CONTENT_URI = Uri.parse(SCHEME + AUTHORITY + "/" + CONTENT_URI_PATH);
 
+        public static final String[] CAPSULE_JOIN_PROJECTION = new String[] {
+            TABLE_NAME + "." + _ID + " AS " + OWNERSHIP_ID,
+            CAPSULE_ID,
+            ETAG,
+            ACCOUNT_NAME,
+            DIRTY,
+            DELETED,
+            Capsules.TABLE_NAME + "." + Capsules._ID,
+            Capsules.SYNC_ID,
+            Capsules.NAME,
+            Capsules.LATITUDE,
+            Capsules.LONGITUDE
+        };
+
     }
 
     public static final class Discoveries implements BaseColumns, DiscoveryColumns, SyncColumns {
@@ -95,6 +113,21 @@ public final class CapsuleContract {
         public static final String CONTENT_URI_PATH = "discoveries";
 
         public static final Uri CONTENT_URI = Uri.parse(SCHEME + AUTHORITY + "/" + CONTENT_URI_PATH);
+
+        public static final String[] CAPSULE_JOIN_PROJECTION = new String[] {
+            TABLE_NAME + "." + _ID + " AS " + DISCOVERY_ID,
+            CAPSULE_ID,
+            ETAG,
+            ACCOUNT_NAME,
+            DIRTY,
+            FAVORITE,
+            RATING,
+            Capsules.TABLE_NAME + "." + Capsules._ID,
+            Capsules.SYNC_ID,
+            Capsules.NAME,
+            Capsules.LATITUDE,
+            Capsules.LONGITUDE
+        };
 
     }
 
