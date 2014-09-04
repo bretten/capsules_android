@@ -55,7 +55,7 @@ public class CapsuleDiscoveryPojo extends CapsulePojo {
     public CapsuleDiscoveryPojo(Cursor c) {
         super(c);
 
-        int i = c.getColumnIndex(CapsuleContract.Discoveries._ID);
+        int i = c.getColumnIndex(CapsuleContract.Discoveries.DISCOVERY_ID);
         if (i != -1) {
             this.setDiscoveryId(c.getLong(i));
         }

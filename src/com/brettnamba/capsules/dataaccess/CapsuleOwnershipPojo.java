@@ -50,7 +50,7 @@ public class CapsuleOwnershipPojo extends CapsulePojo {
     public CapsuleOwnershipPojo(Cursor c) {
         super(c);
 
-        int i = c.getColumnIndex(CapsuleContract.Ownerships._ID);
+        int i = c.getColumnIndex(CapsuleContract.Ownerships.OWNERSHIP_ID);
         if (i != -1) {
             this.setOwnershipId(c.getLong(i));
         }
