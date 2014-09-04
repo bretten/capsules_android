@@ -10,10 +10,9 @@ import android.database.Cursor;
 import android.net.Uri;
 
 import com.brettnamba.capsules.dataaccess.Capsule;
+import com.brettnamba.capsules.dataaccess.CapsuleDiscoveryPojo;
 import com.brettnamba.capsules.dataaccess.CapsuleOwnershipPojo;
 import com.brettnamba.capsules.dataaccess.CapsulePojo;
-import com.brettnamba.capsules.dataaccess.Discovery;
-import com.brettnamba.capsules.dataaccess.DiscoveryPojo;
 import com.brettnamba.capsules.provider.CapsuleContract.Capsules;
 import com.brettnamba.capsules.provider.CapsuleContract.Discoveries;
 import com.brettnamba.capsules.provider.CapsuleContract.Ownerships;
@@ -76,9 +75,10 @@ public class CapsuleOperations {
      * @param resolver
      * @param capsule
      * @param account
+     * @param setDirty
      * @return
      */
-    public static Uri insertDiscovery(ContentResolver resolver, Capsule capsule, String account) {
+    public static Uri insertDiscovery(ContentResolver resolver, Capsule capsule, String account, boolean setDirty) {
         ContentValues values = new ContentValues();
         values.put(CapsuleContract.Capsules.SYNC_ID, capsule.getSyncId());
         values.put(CapsuleContract.Capsules.NAME, capsule.getName());
@@ -86,9 +86,19 @@ public class CapsuleOperations {
         values.put(CapsuleContract.Capsules.LONGITUDE, capsule.getLongitude());
         values.put(CapsuleContract.Discoveries.ACCOUNT_NAME, account);
 
-        return resolver.insert(CapsuleContract.Discoveries.CONTENT_URI.buildUpon()
+        // Determine the Content URI
+        Uri uri = CapsuleContract.Discoveries.CONTENT_URI.buildUpon()
                 .appendQueryParameter(CapsuleContract.QUERY_PARAM_TRANSACTION, CapsuleContract.Capsules.TABLE_NAME)
-                .build(),
+                .build();
+        // Set the dirty sync flag
+        if (setDirty) {
+            uri = uri.buildUpon()
+                    .appendQueryParameter(CapsuleContract.QUERY_PARAM_SET_DIRTY, CapsuleContract.QUERY_VALUE_TRUE)
+                    .build();
+        }
+
+        return resolver.insert(
+                uri,
                 values
         );
     }
@@ -190,26 +200,20 @@ public class CapsuleOperations {
      * @param account
      * @return
      */
-    public static Discovery getDiscovery(ContentResolver resolver, long capsuleId, String account) {
+    public static Capsule getDiscovery(ContentResolver resolver, long capsuleId, String account) {
         Cursor c = resolver.query(
                 Discoveries.CONTENT_URI.buildUpon()
                 .appendQueryParameter(CapsuleContract.QUERY_PARAM_JOIN, CapsuleContract.Capsules.TABLE_NAME)
                 .build(),
-                new String[]{"*"},
+                CapsuleContract.Discoveries.CAPSULE_JOIN_PROJECTION,
                 Capsules.TABLE_NAME + "." + Capsules._ID + " = ? AND " + Discoveries.TABLE_NAME + "." + Discoveries.ACCOUNT_NAME + " = ?",
                 new String[]{String.valueOf(capsuleId), account},
                 null
         );
 
-        Discovery discovery = null;
+        Capsule discovery = null;
         if (c.moveToFirst()) {
-            discovery = new DiscoveryPojo();
-            discovery.setId(c.getLong(c.getColumnIndex(Discoveries._ID)));
-            discovery.setCapsuleId(c.getLong(c.getColumnIndex(Discoveries.CAPSULE_ID)));
-            discovery.setAccountName(c.getString(c.getColumnIndex(Discoveries.ACCOUNT_NAME)));
-            discovery.setDirty(c.getInt(c.getColumnIndex(Discoveries.DIRTY)));
-            discovery.setFavorite(c.getInt(c.getColumnIndex(Discoveries.FAVORITE)));
-            discovery.setRating(c.getInt(c.getColumnIndex(Discoveries.RATING)));
+            discovery = new CapsuleDiscoveryPojo(c);
         }
 
         c.close();
@@ -218,21 +222,29 @@ public class CapsuleOperations {
     }
 
     /**
-     * Updates an individual Discovery row given the Capsule id and the Account name.
+     * Updates an individual Discovery row given the Discovery id.
      * 
      * @param resolver
      * @param values
-     * @param capsuleId
-     * @param account
+     * @param discoveryId
+     * @param setDirty
      * @return
      */
-    public static boolean updateDiscovery(ContentResolver resolver, ContentValues values, long capsuleId, String account) {
-        // TODO Get rid of nested query
+    public static boolean updateDiscovery(ContentResolver resolver, ContentValues values, long discoveryId, boolean setDirty) {
+        // Determine the Content URI
+        Uri uri = ContentUris.withAppendedId(CapsuleContract.Discoveries.CONTENT_URI, discoveryId);
+        // Flag whether or not to set the Discovery as dirty
+        if (setDirty) {
+            uri = uri.buildUpon()
+                    .appendQueryParameter(CapsuleContract.QUERY_PARAM_SET_DIRTY, CapsuleContract.QUERY_VALUE_TRUE)
+                    .build();
+        }
+
         int count = resolver.update(
-                Discoveries.CONTENT_URI,
+                uri,
                 values,
-                Discoveries.TABLE_NAME + "." + Discoveries.CAPSULE_ID + " = ? AND " + Discoveries.TABLE_NAME + "." + Discoveries.ACCOUNT_NAME + " = ?",
-                new String[]{String.valueOf(capsuleId), account}
+                CapsuleContract.Discoveries._ID + " = ?",
+                new String[]{String.valueOf(discoveryId)}
         );
         return count > 0;
     }

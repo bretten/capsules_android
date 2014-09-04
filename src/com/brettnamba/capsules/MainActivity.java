@@ -733,7 +733,7 @@ public class MainActivity extends ActionBarActivity
             // INSERT the new Discovery
             Uri insertUri = null;
             if (etag != null) {
-                insertUri = CapsuleOperations.insertDiscovery(getContentResolver(), this.capsule, mAccount.name);
+                insertUri = CapsuleOperations.insertDiscovery(getContentResolver(), this.capsule, mAccount.name, true /* setDirty */);
             } else {
                 this.cancel(true);
             }

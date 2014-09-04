@@ -18,7 +18,7 @@ import android.widget.ToggleButton;
 
 import com.brettnamba.capsules.R;
 import com.brettnamba.capsules.dataaccess.Capsule;
-import com.brettnamba.capsules.dataaccess.Discovery;
+import com.brettnamba.capsules.dataaccess.CapsuleDiscoveryPojo;
 import com.brettnamba.capsules.provider.CapsuleContract;
 import com.brettnamba.capsules.provider.CapsuleOperations;
 
@@ -39,6 +39,11 @@ public class DiscoveryFragment extends Fragment {
      * The Account name
      */
     private String mAccountName;
+
+    /**
+     * The Discovery id
+     */
+    private long mDiscoveryId;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -65,7 +70,7 @@ public class DiscoveryFragment extends Fragment {
         public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
             ContentValues values = new ContentValues();
             values.put(CapsuleContract.Discoveries.FAVORITE, (isChecked) ? 1 : 0);
-            new UpdateDiscoveryTask(getActivity(), getView(), values).execute(String.valueOf(mCapsule.getId()), mAccountName);
+            new UpdateDiscoveryTask(getActivity(), getView(), values).execute(mDiscoveryId);
         }
 
     }
@@ -79,7 +84,7 @@ public class DiscoveryFragment extends Fragment {
         public void onItemSelected(AdapterView<?> parent, View view, int pos, long id) {
             ContentValues values = new ContentValues();
             values.put(CapsuleContract.Discoveries.RATING, Integer.valueOf((String) parent.getItemAtPosition(pos)));
-            new UpdateDiscoveryTask(getActivity(), getView(), values).execute(String.valueOf(mCapsule.getId()), mAccountName);
+            new UpdateDiscoveryTask(getActivity(), getView(), values).execute(mDiscoveryId);
         }
 
         @Override
@@ -92,7 +97,7 @@ public class DiscoveryFragment extends Fragment {
     /**
      * Queries the database for a Discovery row.
      */
-    private class LoadDiscoveryTask extends AsyncTask<String, Void, Discovery> {
+    private class LoadDiscoveryTask extends AsyncTask<String, Void, Capsule> {
 
         /**
          * The Activity containing this Fragment.
@@ -128,19 +133,21 @@ public class DiscoveryFragment extends Fragment {
         }
 
         @Override
-        protected Discovery doInBackground(String... params) {
+        protected Capsule doInBackground(String... params) {
             return CapsuleOperations.getDiscovery(this.activity.getContentResolver(), Long.valueOf(params[0]), params[1]);
         }
 
         @Override
-        protected void onPostExecute(final Discovery discovery) {
+        protected void onPostExecute(final Capsule discovery) {
             if (this.progress.isShown()) {
                 this.progress.setVisibility(View.GONE);
             }
+            // Keep a reference to the Discovery id
+            mDiscoveryId = ((CapsuleDiscoveryPojo) discovery).getDiscoveryId();
             // Set up the favorite toggle
             ToggleButton favoriteToggle = (ToggleButton) this.view.findViewById(R.id.fragment_discovery_favorite);
             favoriteToggle.setOnCheckedChangeListener(new FavoriteListener());
-            favoriteToggle.setChecked((discovery.getFavorite() > 0) ? true : false);
+            favoriteToggle.setChecked((((CapsuleDiscoveryPojo) discovery).getFavorite() > 0) ? true : false);
             favoriteToggle.setVisibility(View.VISIBLE);
             // Set up the rating input
             Spinner ratingSpinner = (Spinner) this.view.findViewById(R.id.fragment_discovery_rating);
@@ -149,7 +156,7 @@ public class DiscoveryFragment extends Fragment {
             ratingsArrayAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
             ratingSpinner.setAdapter(ratingsArrayAdapter);
             ratingSpinner.setOnItemSelectedListener(new RatingListener());
-            ratingSpinner.setSelection(ratingsArrayAdapter.getPosition(String.valueOf(discovery.getRating())));
+            ratingSpinner.setSelection(ratingsArrayAdapter.getPosition(String.valueOf(((CapsuleDiscoveryPojo) discovery).getRating())));
             ratingSpinner.setVisibility(View.VISIBLE);
         }
 
@@ -158,7 +165,7 @@ public class DiscoveryFragment extends Fragment {
     /**
      * Updates the Discovery row in the database.
      */
-    private class UpdateDiscoveryTask extends AsyncTask<String, Void, Boolean> {
+    private class UpdateDiscoveryTask extends AsyncTask<Long, Void, Boolean> {
 
         /**
          * The Activity containing this Fragment.
@@ -194,8 +201,8 @@ public class DiscoveryFragment extends Fragment {
         }
 
         @Override
-        protected Boolean doInBackground(String... params) {
-            return CapsuleOperations.updateDiscovery(this.activity.getContentResolver(), this.values, Long.valueOf(params[0]), params[1]);
+        protected Boolean doInBackground(Long... params) {
+            return CapsuleOperations.updateDiscovery(this.activity.getContentResolver(), this.values, params[0], true /* setDirty */);
         }
 
         @Override
