@@ -72,6 +72,32 @@ public class CapsuleOwnershipPojo extends CapsulePojo {
         }
     }
 
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + (int) (mSyncId ^ (mSyncId >>> 32));
+        return result;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        CapsuleOwnershipPojo other = (CapsuleOwnershipPojo) obj;
+        if (mSyncId != other.mSyncId) {
+            return false;
+        }
+        return true;
+    }
+
     /**
      * Returns the Ownership id
      * 
