@@ -134,6 +134,85 @@ public class CapsuleOperations {
     }
 
     /**
+     * Given a Capsule, determines if it needs to INSERT or UPDATE both the Capsule and the Ownership
+     * 
+     * TODO This function will be rewritten
+     *  - Use a transaction
+     *  - Possibly move this to the CapsuleProvider
+     * 
+     * @param resolver
+     * @param account
+     * @param capsule
+     * @param setDirty
+     * @return
+     */
+    public static boolean insertUpdateOwnership(ContentResolver resolver, String account, Capsule capsule, boolean setDirty) {
+        boolean success = true;
+
+        Cursor c = resolver.query(
+                Capsules.CONTENT_URI,
+                new String[]{CapsuleContract.Capsules._ID},
+                CapsuleContract.Capsules.SYNC_ID + " = ?",
+                new String[]{String.valueOf(capsule.getSyncId())},
+                null
+        );
+        long capsuleId;
+        if (c.getCount() > 0 && c.moveToFirst()) {
+            capsuleId = c.getLong(c.getColumnIndex(CapsuleContract.Capsules._ID));
+            ContentValues values = new ContentValues();
+            values.put(CapsuleContract.Capsules.NAME, capsule.getName());
+            int count = resolver.update(
+                    CapsuleContract.Capsules.CONTENT_URI,
+                    values,
+                    CapsuleContract.Capsules._ID + " = ?",
+                    new String[]{String.valueOf(capsuleId)}
+            );
+            if (count < 1) {
+                success = false;
+            }
+        } else {
+            capsuleId = CapsuleOperations.insertCapsule(resolver, capsule);
+        }
+        c.close();
+        if (capsuleId < 1) {
+            success = false;
+        }
+
+        c = resolver.query(
+                Ownerships.CONTENT_URI.buildUpon()
+                .appendQueryParameter(CapsuleContract.QUERY_PARAM_JOIN, CapsuleContract.Capsules.TABLE_NAME)
+                .build(),
+                new String[]{CapsuleContract.Ownerships.TABLE_NAME + "." + CapsuleContract.Ownerships._ID},
+                Capsules.TABLE_NAME + "." + Capsules.SYNC_ID + " = ? AND " + Ownerships.TABLE_NAME + "." + Ownerships.ACCOUNT_NAME + " = ?",
+                new String[]{String.valueOf(capsule.getSyncId()), account},
+                null
+        );
+        ContentValues values = new ContentValues();
+        values.put(CapsuleContract.Ownerships.ACCOUNT_NAME, account);
+        values.put(CapsuleContract.Ownerships.CAPSULE_ID, capsuleId);
+        values.put(CapsuleContract.Ownerships.ETAG, ((CapsuleOwnershipPojo) capsule).getEtag());
+        if (c.getCount() > 0 && c.moveToFirst()) {
+            int count = resolver.update(
+                    Ownerships.CONTENT_URI,
+                    values,
+                    Ownerships._ID + " = ?",
+                    new String[]{String.valueOf(c.getLong(c.getColumnIndex(Ownerships._ID)))}
+            );
+            if (count < 1) {
+                success = false;
+            }
+        } else {
+            Uri uri = resolver.insert(Ownerships.CONTENT_URI, values);
+            if (uri == null) {
+                success = false;
+            }
+        }
+        c.close();
+
+        return success;
+    }
+
+    /**
      * Gets an individual Capsule by id.
      * 
      * @param resolver
