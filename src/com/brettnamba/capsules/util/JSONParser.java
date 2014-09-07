@@ -105,4 +105,63 @@ public class JSONParser {
         return capsule;
     }
 
+    /**
+     * Parses a server response holding Capsule Ownership status information
+     * 
+     * @param body
+     * @return
+     * @throws JSONException
+     */
+    public static List<Capsule> parseOwnershipStatus(String body) throws JSONException {
+        // Parse the response
+        JSONArray json = new JSONArray(body);
+
+        // Will hold the Capsule objects
+        List<Capsule> capsules = new ArrayList<Capsule>();
+
+        // Extract data from individual JSON objects
+        for (int i = 0; i < json.length(); i++) {
+            JSONObject jsonCapsule = json.getJSONObject(i).getJSONObject(RESOURCE_DATA);
+
+            // Create Capsules
+            capsules.add(((CapsuleOwnershipPojo) new CapsuleOwnershipPojo()
+                .setSyncId(jsonCapsule.getLong(RequestContract.Field.CAPSULE_SYNC_ID)))
+                .setEtag(jsonCapsule.getString(RequestContract.Field.CAPSULE_ETAG))
+            );
+        }
+
+        return capsules;
+    }
+
+    /**
+     * Parses a server response holding a Capsule Ownership REPORT
+     * 
+     * @param body
+     * @return
+     * @throws JSONException
+     */
+    public static List<Capsule> parseOwnershipReport(String body) throws JSONException {
+        // Parse the response
+        JSONArray json = new JSONArray(body);
+
+        // Will hold the Capsule objects
+        List<Capsule> capsules = new ArrayList<Capsule>();
+
+        // Extract data from individual JSON objects
+        for (int i = 0; i < json.length(); i++) {
+            JSONObject jsonCapsule = json.getJSONObject(i).getJSONObject(RESOURCE_DATA);
+
+            // Create Capsules
+            capsules.add(((CapsuleOwnershipPojo) new CapsuleOwnershipPojo()
+                .setSyncId(jsonCapsule.getLong(RequestContract.Field.CAPSULE_SYNC_ID))
+                .setName(jsonCapsule.getString(RequestContract.Field.CAPSULE_NAME))
+                .setLatitude(jsonCapsule.getDouble(RequestContract.Field.CAPSULE_LATITUDE))
+                .setLongitude(jsonCapsule.getDouble(RequestContract.Field.CAPSULE_LONGITUDE)))
+                .setEtag(jsonCapsule.getString(RequestContract.Field.CAPSULE_ETAG))
+            );
+        }
+
+        return capsules;
+    }
+
 }

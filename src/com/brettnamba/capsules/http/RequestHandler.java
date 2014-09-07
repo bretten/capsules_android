@@ -2,6 +2,7 @@ package com.brettnamba.capsules.http;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
@@ -207,6 +208,57 @@ public class RequestHandler {
         // Send and get the response
         HttpResponse response = mClient.execute(request);
         return response.getStatusLine().getStatusCode();
+    }
+
+    /**
+     * Requests the Capsule Ownership status information
+     * 
+     * @param authToken
+     * @return
+     * @throws ClientProtocolException
+     * @throws IOException
+     */
+    public String requestOwnershipStatus(String authToken) throws ClientProtocolException, IOException {
+        // GET
+        HttpGet request = new HttpGet(RequestContract.BASE_URL + RequestContract.Uri.OWNERSHIP_STATUS_URI);
+
+        // Headers
+        request.addHeader(HTTP.TARGET_HOST, RequestContract.HOST);
+        request.addHeader(RequestContract.AUTH_HEADER, Base64.encodeToString((authToken).getBytes(), Base64.URL_SAFE|Base64.NO_WRAP));
+
+        // Send and get the response
+        HttpResponse response = mClient.execute(request);
+        return EntityUtils.toString(response.getEntity());
+    }
+
+    /**
+     * Requests a REPORT on the given Capsule Ownerships
+     * 
+     * @param authToken
+     * @param capsules
+     * @return
+     * @throws ClientProtocolException
+     * @throws IOException
+     */
+    public String requestOwnershipReport(String authToken, List<Capsule> capsules) throws ClientProtocolException, IOException {
+        // POST
+        HttpPost request = new HttpPost(RequestContract.BASE_URL + RequestContract.Uri.OWNERSHIP_REPORT_URI);
+
+        // Headers
+        request.addHeader(HTTP.TARGET_HOST, RequestContract.HOST);
+        request.addHeader(RequestContract.AUTH_HEADER, Base64.encodeToString((authToken).getBytes(), Base64.URL_SAFE|Base64.NO_WRAP));
+        request.addHeader(HTTP.CONTENT_TYPE, URLEncodedUtils.CONTENT_TYPE);
+
+        // POST body
+        ArrayList<NameValuePair> params = new ArrayList<NameValuePair>();
+        for (int i = 0; i < capsules.size(); i++) {
+            params.add(new BasicNameValuePair("data[" + RequestContract.Field.CAPSULE_SYNC_ID + "][" + i + "]", Long.toString(capsules.get(i).getSyncId())));
+        }
+        request.setEntity(new UrlEncodedFormEntity(params));
+
+        // Send and get the response
+        HttpResponse response = mClient.execute(request);
+        return EntityUtils.toString(response.getEntity());
     }
 
 }

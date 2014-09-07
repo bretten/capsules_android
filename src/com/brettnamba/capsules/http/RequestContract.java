@@ -51,6 +51,16 @@ public final class RequestContract {
          * The URI that handles single Capsules
          */
         public static final String OWNERSHIP_URI = "/api/capsule";
+
+        /**
+         * URI that gives the status of Ownership Capsules
+         */
+        public static final String OWNERSHIP_STATUS_URI = "/api/status/capsules";
+
+        /**
+         * URI that for REPORTing on Ownership Capsules
+         */
+        public static final String OWNERSHIP_REPORT_URI = "/api/report/capsules";
     }
 
     /**
