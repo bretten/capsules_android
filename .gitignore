@@ -26,6 +26,12 @@ proguard/
 #Log Files
 *.log
 
+### Android Studio ###
+*.iml
+
+## Directory-based project format:
+.idea/
+
 ### Eclipse ###
 *.pydevproject
 .metadata
