@@ -41,11 +41,10 @@ import com.brettnamba.capsules.provider.CapsuleContract;
 import com.brettnamba.capsules.provider.CapsuleOperations;
 import com.brettnamba.capsules.util.JSONParser;
 import com.google.android.gms.common.ConnectionResult;
-import com.google.android.gms.common.GooglePlayServicesClient.ConnectionCallbacks;
-import com.google.android.gms.common.GooglePlayServicesClient.OnConnectionFailedListener;
-import com.google.android.gms.location.LocationClient;
+import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationRequest;
+import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.GoogleMap.OnInfoWindowClickListener;
@@ -65,11 +64,10 @@ import com.google.maps.android.SphericalUtil;
  * @author Brett
  *
  */
-public class MainActivity extends ActionBarActivity
-    implements
-    ConnectionCallbacks,
-    OnConnectionFailedListener,
-    LocationListener {
+public class MainActivity extends ActionBarActivity implements
+        LocationListener,
+        GoogleApiClient.ConnectionCallbacks,
+        GoogleApiClient.OnConnectionFailedListener {
 
     /**
      * Reference to the GoogleMap.
@@ -82,9 +80,9 @@ public class MainActivity extends ActionBarActivity
     private Circle mUserCircle;
 
     /**
-     * Reference to the LocationClient.
+     * Reference to the GoogleApiClient.
      */
-    private LocationClient mLocationClient;
+    private GoogleApiClient mGoogleApiClient;
 
     /**
      * Reference to the AccountManager.
@@ -205,8 +203,8 @@ public class MainActivity extends ActionBarActivity
 	    super.onResume();
 
 	    // Reconnect the LocationClient
-	    if (mLocationClient != null && !mLocationClient.isConnected()) {
-	        mLocationClient.connect();
+	    if (mGoogleApiClient != null && !mGoogleApiClient.isConnected()) {
+	        mGoogleApiClient.connect();
 	    }
 	}
 
@@ -216,8 +214,8 @@ public class MainActivity extends ActionBarActivity
 	    super.onPause();
 
         // Disconnect the LocationClient
-	    if (mLocationClient != null && mLocationClient.isConnected()) {
-	        mLocationClient.disconnect();
+	    if (mGoogleApiClient != null && mGoogleApiClient.isConnected()) {
+	        mGoogleApiClient.disconnect();
 	    }
 	    // To re-center the map onResume(), set the flag
 	    mNeedsCentering = true;
@@ -343,13 +341,13 @@ public class MainActivity extends ActionBarActivity
     @Override
     public void onConnected(Bundle connectionHint) {
         Log.i(TAG, "onConnected()");
-        mLocationClient.requestLocationUpdates(REQUEST, this);
+        LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, REQUEST, this);
     }
 
     @Override
-    public void onDisconnected() {
-        Log.i(TAG, "onDisconnected()");
-        mLocationClient.removeLocationUpdates(this);
+    public void onConnectionSuspended(int i) {
+        Log.i(TAG, "onConnectionSuspended()");
+        LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, this);
     }
 
     @Override
@@ -404,8 +402,12 @@ public class MainActivity extends ActionBarActivity
      */
     private void setLocationClient() {
         // Only get the client if it is not already set
-        if (mLocationClient == null) {
-            mLocationClient = new LocationClient(getApplicationContext(), this, this);
+        if (mGoogleApiClient == null) {
+            mGoogleApiClient = new GoogleApiClient.Builder(this)
+                    .addApi(LocationServices.API)
+                    .addConnectionCallbacks(this)
+                    .addOnConnectionFailedListener(this)
+                    .build();
         }
     }
 
@@ -575,7 +577,7 @@ public class MainActivity extends ActionBarActivity
 
             // Undiscovered Marker
             if (mUndiscoveredMarkers.containsKey(marker)) {
-                Location location = mLocationClient.getLastLocation();
+                Location location = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
                 if (location != null) {
                     double distance = SphericalUtil.computeDistanceBetween(
                             new LatLng(location.getLatitude(), location.getLongitude()),
@@ -643,8 +645,8 @@ public class MainActivity extends ActionBarActivity
         protected List<Capsule> doInBackground(String... params) {
             Log.i(TAG, "CapsuleRequestTask.doInBackground()");
             // Attempt to get the last Location if the LocationClient is connected
-            if (mLocationClient.isConnected()) {
-                Location location = mLocationClient.getLastLocation();
+            if (mGoogleApiClient.isConnected()) {
+                Location location = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
                 if (location != null) {
                     // Request the undiscovered Capsules
                     String response = null;
@@ -711,7 +713,7 @@ public class MainActivity extends ActionBarActivity
         protected Uri doInBackground(String... params) {
             Log.i(TAG, "OpenCapsuleTask.doInBackground()");
             // Attempt to get the last location
-            Location location = mLocationClient.getLastLocation();
+            Location location = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
             String response = null;
             if (location != null) {
                 try {
