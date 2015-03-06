@@ -49,6 +49,7 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.GoogleMap.OnInfoWindowClickListener;
 import com.google.android.gms.maps.GoogleMap.OnMapLongClickListener;
+import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.Circle;
@@ -65,6 +66,7 @@ import com.google.maps.android.SphericalUtil;
  *
  */
 public class MainActivity extends ActionBarActivity implements
+        OnMapReadyCallback,
         LocationListener,
         GoogleApiClient.ConnectionCallbacks,
         GoogleApiClient.OnConnectionFailedListener {
@@ -184,7 +186,8 @@ public class MainActivity extends ActionBarActivity implements
         setContentView(R.layout.activity_main);
 
         // Set up the GoogleMap and LocationClient
-        this.setMap();
+        SupportMapFragment mapFragment = ((SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map));
+        mapFragment.getMapAsync(this);
         this.setLocationClient();
 
         // Initialize
@@ -334,6 +337,26 @@ public class MainActivity extends ActionBarActivity implements
     }
 
     @Override
+    public void onMapReady(GoogleMap map) {
+        Log.i(TAG, "onMapReady()");
+        mMap = map;
+
+        // Specify map settings
+        mMap.setMyLocationEnabled(true);
+        // Create the circle
+        mUserCircle = mMap.addCircle(new CircleOptions()
+                        .center(new LatLng(0, 0))
+                        .radius(DISCOVERY_RADIUS)
+                        .strokeWidth(0)
+                        .fillColor(USER_CIRCLE_COLOR)
+        );
+        // Create the info window listener
+        mMap.setOnInfoWindowClickListener(new InfoWindowListener());
+        // Create the long click listener
+        mMap.setOnMapLongClickListener(new MapLongClickListener());
+    }
+
+    @Override
     public void onConnectionFailed(ConnectionResult result) {
         Log.i(TAG, "onConnectionFailed()");
     }
@@ -369,31 +392,6 @@ public class MainActivity extends ActionBarActivity implements
             new CapsuleRequestTask().execute(mAuthToken);
         } else {
             new AuthTask(this).execute();
-        }
-    }
-
-    /**
-     * Gets a reference (if necessary) to the map Fragment.
-     */
-    private void setMap() {
-        // Only get the map if it is not already set
-        if (mMap == null) {
-            mMap = ((SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map)).getMap();
-            // Specify map settings
-            if (mMap != null) {
-                mMap.setMyLocationEnabled(true);
-                // Create the circle
-                mUserCircle = mMap.addCircle(new CircleOptions()
-                    .center(new LatLng(0, 0))
-                    .radius(DISCOVERY_RADIUS)
-                    .strokeWidth(0)
-                    .fillColor(USER_CIRCLE_COLOR)
-                );
-                // Create the info window listener
-                mMap.setOnInfoWindowClickListener(new InfoWindowListener());
-                // Create the long click listener
-                mMap.setOnMapLongClickListener(new MapLongClickListener());
-            }
         }
     }
 
