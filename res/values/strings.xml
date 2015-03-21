@@ -52,4 +52,22 @@
     <string name="title_activity_capsule_editor">Capsule Editor</string>
     <string name="activity_capsule_editor_save_button">Save</string>
 
+    <!--
+        Navigation Drawer
+    -->
+    <!-- Headers Items -->
+    <string name="navigation_drawer_header_toggles">TOGGLES</string>
+    <string name="navigation_drawer_header_links">LINKS</string>
+    <!-- Toggle Items -->
+    <string-array name="navigation_drawer_toggles">
+        <item>Capsules</item>
+        <item>Discoveries</item>
+        <item>Satellite</item>
+    </string-array>
+    <!-- Link Items -->
+    <string-array name="navigation_drawer_links">
+        <item>My Collection</item>
+        <item>Drop Capsule Here</item>
+        <item>Settings</item>
+    </string-array>
 </resources>

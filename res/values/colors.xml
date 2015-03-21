@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+        Navigation Drawer
+    -->
+    <!-- Header text -->
+    <color name="navigation_drawer_header_text">#aaa</color>
+    <!-- Header divider -->
+    <color name="navigation_drawer_header_divider">#aaa</color>
+    <!-- Item text states -->
+    <color name="navigation_drawer_item_text">#000000</color>
+    <color name="navigation_drawer_item_text_pressed">#000000</color>
+    <color name="navigation_drawer_item_text_selected">#000000</color>
+    <!-- Item background states -->
+    <color name="navigation_drawer_item_background_pressed">#ffcfe2e5</color>
+    <color name="navigation_drawer_item_background_selected">#ffcfe2e5</color>
+    <!-- Item icon tints -->
+    <color name="navigation_drawer_item_icon_tint">#0099cc</color>
+</resources>

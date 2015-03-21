@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+        Navigation Drawer
+    -->
+    <!-- Toggle Item Drawables -->
+    <array name="navigation_drawer_toggle_icons">
+        <item>@drawable/ic_beenhere_black</item>
+        <item>@drawable/ic_pin_drop_black</item>
+        <item>@drawable/ic_beenhere_black</item>
+    </array>
+    <!-- Link Item Drawables -->
+    <array name="navigation_drawer_link_icons">
+        <item>@drawable/ic_beenhere_black</item>
+        <item>@drawable/ic_pin_drop_black</item>
+        <item>@drawable/ic_beenhere_black</item>
+    </array>
+</resources>

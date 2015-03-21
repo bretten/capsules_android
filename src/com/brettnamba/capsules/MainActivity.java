@@ -24,6 +24,8 @@ import android.location.Location;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.support.v4.app.FragmentActivity;
+import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarActivity;
 import android.util.Log;
 import android.view.Menu;
@@ -35,6 +37,7 @@ import com.brettnamba.capsules.activities.CapsuleEditorActivity;
 import com.brettnamba.capsules.activities.CapsuleListActivity;
 import com.brettnamba.capsules.dataaccess.Capsule;
 import com.brettnamba.capsules.dataaccess.CapsulePojo;
+import com.brettnamba.capsules.fragments.NavigationDrawerFragment;
 import com.brettnamba.capsules.http.HttpFactory;
 import com.brettnamba.capsules.http.RequestHandler;
 import com.brettnamba.capsules.provider.CapsuleContract;
@@ -65,7 +68,7 @@ import com.google.maps.android.SphericalUtil;
  * @author Brett
  *
  */
-public class MainActivity extends ActionBarActivity implements
+public class MainActivity extends FragmentActivity implements
         OnMapReadyCallback,
         LocationListener,
         GoogleApiClient.ConnectionCallbacks,
@@ -195,6 +198,10 @@ public class MainActivity extends ActionBarActivity implements
         mAccount = mAccountManager.getAccountsByType(Constants.ACCOUNT_TYPE)[0];
         mHttpClient = HttpFactory.getInstance();
         mRequestHandler = new RequestHandler(mHttpClient);
+
+        // Navigation Drawer
+        NavigationDrawerFragment drawerFragment = (NavigationDrawerFragment) getSupportFragmentManager().findFragmentById(R.id.navigation_drawer);
+        drawerFragment.initialize(this.findViewById(R.id.navigation_drawer), (DrawerLayout) this.findViewById(R.id.drawer_layout), mAccount);
 
         // Populate the stored Markers
         this.populateStoredMarkers();

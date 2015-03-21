@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@android:color/white"
+    android:orientation="vertical">
+    <ImageView
+        android:id="@+id/navigation_drawer_avatar"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentStart="true"
+        android:layout_marginRight="10dp"
+        android:layout_marginEnd="10dp"
+        android:layout_marginBottom="10dp"
+        android:padding="20dp"
+        android:src="@android:drawable/ic_menu_mylocation"
+        tools:ignore="ContentDescription" />
+    <TextView
+        android:id="@+id/navigation_drawer_account"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="10dp"
+        android:layout_toRightOf="@id/navigation_drawer_avatar"
+        android:layout_toEndOf="@id/navigation_drawer_avatar"
+        android:padding="20dp"
+        android:textSize="20sp" />
+    <ListView
+        android:id="@+id/navigation_drawer_list"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/navigation_drawer_account"
+        android:choiceMode="multipleChoice"
+        android:divider="@android:color/transparent"
+        tools:context="com.brettnamba.capsules.fragments.NavigationDrawerFragment" />
+</RelativeLayout>
