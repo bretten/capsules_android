@@ -70,4 +70,9 @@
         <item>Drop Capsule Here</item>
         <item>Settings</item>
     </string-array>
+
+    <!--
+        Content Descriptions
+    -->
+    <string name="description_map_menu_button">Open Map Menu</string>
 </resources>

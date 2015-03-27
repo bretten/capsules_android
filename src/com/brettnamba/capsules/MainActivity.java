@@ -30,6 +30,8 @@ import android.support.v7.app.ActionBarActivity;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+import android.widget.ImageView;
 import android.widget.Toast;
 
 import com.brettnamba.capsules.activities.CapsuleActivity;
@@ -201,7 +203,18 @@ public class MainActivity extends FragmentActivity implements
 
         // Navigation Drawer
         NavigationDrawerFragment drawerFragment = (NavigationDrawerFragment) getSupportFragmentManager().findFragmentById(R.id.navigation_drawer);
-        drawerFragment.initialize(this.findViewById(R.id.navigation_drawer), (DrawerLayout) this.findViewById(R.id.drawer_layout), mAccount);
+        final DrawerLayout drawerLayout = (DrawerLayout) this.findViewById(R.id.drawer_layout);
+        final View drawerView = this.findViewById(R.id.navigation_drawer);
+        drawerFragment.initialize(drawerView, drawerLayout, mAccount);
+
+        // Setup buttons to place over the GoogleMap
+        ImageView drawerButton = (ImageView) this.findViewById(R.id.map_drawer_button);
+        drawerButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                drawerLayout.openDrawer(drawerView);
+            }
+        });
 
         // Populate the stored Markers
         this.populateStoredMarkers();

@@ -16,4 +16,13 @@
     <color name="navigation_drawer_item_background_selected">#ffcfe2e5</color>
     <!-- Item icon tints -->
     <color name="navigation_drawer_item_icon_tint">#0099cc</color>
+
+    <!--
+        Map
+    -->
+    <!-- Map buttons -->
+    <color name="map_button_normal">#ccffffff</color>
+    <color name="map_button_pressed">#ccaaaaaa</color>
+    <color name="map_button_border">#ccdddddd</color>
+
 </resources>
