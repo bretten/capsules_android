@@ -1,6 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!--
+        Base Colors
+    -->
+    <!-- Main -->
+    <color name="primary_color">#94a391</color>
+    <color name="secondary_color">#728a8b</color>
+
+    <!--
+        Messages
+    -->
+    <!-- Error -->
+    <color name="message_error_background">#f2dede</color>
+    <color name="message_error_border">#ebccd1</color>
+    <color name="message_error_text">#a94442</color>
+
+    <!--
         Navigation Drawer
     -->
     <!-- Header text -->

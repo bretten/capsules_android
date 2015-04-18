@@ -72,12 +72,13 @@
 		        android:resource="@xml/syncadapter" />
 		</service>
         <activity
-            android:name=".authenticator.AuthenticatorActivity"
-            android:label="@string/ui_activity_title"
-            android:theme="@android:style/Theme.Dialog"
+            android:name=".authenticator.LoginActivity"
             android:excludeFromRecents="true"
             android:configChanges="orientation"
             >
+        </activity>
+        <activity
+            android:name=".authenticator.RegisterActivity">
         </activity>
         <activity
             android:name="com.brettnamba.capsules.MainActivity"

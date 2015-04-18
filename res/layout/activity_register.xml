@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <android.support.v7.widget.Toolbar
+        android:id="@+id/toolbar"
+        style="@style/AppTheme.Toolbar" />
+
+    <TextView
+        android:id="@+id/messages"
+        style="@style/AppTheme.Input.Error" />
+
+    <TextView
+        android:text="@string/label_username"
+        style="@style/AppTheme.Input.Label" />
+    <EditText
+        android:id="@+id/activity_register_username"
+        android:inputType="text"
+        android:digits="@string/alphanumeric_digits"
+        style="@style/AppTheme.Input.EditText" />
+
+    <TextView
+        android:text="@string/label_email"
+        style="@style/AppTheme.Input.Label" />
+    <EditText
+        android:id="@+id/activity_register_email"
+        android:inputType="textEmailAddress"
+        style="@style/AppTheme.Input.EditText" />
+
+    <TextView
+        android:text="@string/label_password"
+        style="@style/AppTheme.Input.Label" />
+    <EditText
+        android:id="@+id/activity_register_password"
+        android:inputType="textPassword"
+        style="@style/AppTheme.Input.EditText" />
+
+    <TextView
+        android:text="@string/label_confirm_password"
+        style="@style/AppTheme.Input.Label" />
+    <EditText
+        android:id="@+id/activity_register_confirm_password"
+        android:inputType="textPassword"
+        style="@style/AppTheme.Input.EditText" />
+
+    <Button
+        android:id="@+id/activity_register_submit"
+        android:text="@string/label_register"
+        style="@style/AppTheme.Input.Button" />
+
+</LinearLayout>

@@ -25,7 +25,7 @@ public class Authenticator extends AbstractAccountAuthenticator {
     public Bundle addAccount(AccountAuthenticatorResponse response, String accountType, 
             String authTokenType, String[] requiredFeatures, Bundle options) throws NetworkErrorException {
         Log.v(TAG, "addAccount()");
-        final Intent intent = new Intent(mContext, AuthenticatorActivity.class);
+        final Intent intent = new Intent(mContext, LoginActivity.class);
         intent.putExtra(AccountManager.KEY_ACCOUNT_AUTHENTICATOR_RESPONSE, response);
         final Bundle bundle = new Bundle();
         bundle.putParcelable(AccountManager.KEY_INTENT, intent);

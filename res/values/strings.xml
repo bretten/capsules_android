@@ -11,27 +11,19 @@
     <string name="action_discovered">Toggle Discoveries</string>
     <string name="action_satellite">Toggle Satellite</string>
     <string name="action_collection">My Collection</string>
-    
-    <!-- AuthenticatorActivity -->
-    <!-- Title string for Login activity-->
-    <string name="ui_activity_title">Login</string>
-    <!-- Message shown in progress dialog while app connects to the server -->
-    <string name="ui_activity_authenticating">Authenticating\u2026</string>
-    <!-- Label above username EditText -->
-    <string name="login_activity_username_label">Username</string>
-    <!-- Label above password EditText -->
-    <string name="login_activity_password_label">Password</string>
-    <!-- Button to sign in after entering username and password -->
-    <string name="login_activity_ok_button">Login</string>
-    <!-- Message shown in dialog if the username or password is invalid. -->
-	<string name="login_activity_loginfail_text_both">Incorrect credentials.</string>
-	<!-- Message shown in dialog if the password is invalid -->
-	<string name="login_activity_loginfail_text_pwonly">Incorrect password.</string>
-	<!-- Message shown in dialog to prompt the user for their password -->
-	<string name="login_activity_loginfail_text_pwmissing">Please enter your password.</string>
-	<!-- Message shown if the provided account doesn't support the current activity. -->
-	<string name="login_activity_newaccount_text">Please login.</string>
 
+    <!--
+        UI screen titles
+    -->
+    <!-- Main titles -->
+    <string name="title_login">Login</string>
+    <string name="title_register">Register</string>
+    <string name="title_forgot_password">Forgot Password</string>
+    <string name="title_about">About</string>
+
+    <!--
+        Activities
+    -->
     <!-- MainActivity -->
     <string name="map_outside_capsule_radius">You cannot open that at this distance.  Make sure it is within your open radius.</string>
     <string name="map_during_open_capsule">Discovering...</string>
@@ -39,18 +31,49 @@
     <string name="map_new_capsule_dialog_message">After dropping a new Capsule, you may alter its position by holding and dragging it.  When you find the correct placement, you can click on the Capsule to finish creating it.</string>
     <string name="map_new_capsule_marker_infowindow_title">New Capsule</string>
     <string name="map_new_capsule_marker_infowindow_snippet">Click to finalize</string>
-
     <!-- CapsuleActivity -->
     <string name="title_activity_capsule">CapsuleActivity</string>
-
     <!-- CapsuleListActivity -->
     <string name="title_activity_capsule_list">My Collection</string>
     <string name="tab_ownerships">My Capsules</string>
     <string name="tab_discoveries">My Discoveries</string>
-
     <!-- CapsuleEditorActivity -->
     <string name="title_activity_capsule_editor">Capsule Editor</string>
     <string name="activity_capsule_editor_save_button">Save</string>
+
+    <!--
+        Input controls
+    -->
+    <!-- User labels -->
+    <string name="label_username">Username</string>
+    <string name="label_email">E-mail Address</string>
+    <string name="label_password">Password</string>
+    <string name="label_confirm_password">Confirm Password</string>
+    <!-- Buttons -->
+    <string name="label_login">Login</string>
+    <string name="label_register">Register</string>
+    <!-- Digits -->
+    <string name="alphanumeric_digits">abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789</string>
+
+    <!--
+        Progress indicators
+    -->
+    <!-- General -->
+    <string name="progress_please_wait">Please wait...</string>
+
+    <!--
+        Error messages
+    -->
+    <!-- General validation -->
+    <string name="validation_fill_all">Please fill out all the fields.</string>
+    <string name="validation_email">Please enter a valid e-mail address.</string>
+    <!-- User validation -->
+    <string name="validation_username">Please enter a username.</string>
+    <string name="validation_password">Please enter a password.</string>
+    <string name="validation_password_confirmation">Please confirm the password.</string>
+    <string name="validation_password_match">The passwords do not match.</string>
+    <!-- Authentication -->
+    <string name="error_missing_auth_token">A valid authentication token was not received.</string>
 
     <!--
         Navigation Drawer

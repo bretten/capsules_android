@@ -21,9 +21,59 @@ import com.brettnamba.capsules.http.RequestContract;
 public class JSONParser {
 
     /**
-     * The name of the JSONObject that contains a web resource's data.
+     * The key of a JSON object that contains any data entities.
      */
     public static final String RESOURCE_DATA = "data";
+
+    /**
+     * The key of a JSON object that contains any messages.
+     */
+    public static final String MESSAGE_KEY = "messages";
+
+    /**
+     * Parses API response messages from a JSONObject
+     *
+     * @param jsonObject JSONObject representing a Web API JSON response
+     * @return Collection of messages
+     * @throws JSONException
+     */
+    public static List<String> parseMessages(JSONObject jsonObject) throws JSONException {
+        // Will hold the messages
+        List<String> messages = new ArrayList<String>();
+
+        // Get the messages
+        if (jsonObject.has(MESSAGE_KEY)) {
+            JSONArray jsonMessages = jsonObject.getJSONArray(MESSAGE_KEY);
+            for (int i = 0; i < jsonMessages.length(); i++) {
+                messages.add(jsonMessages.getString(i));
+            }
+        }
+
+        return messages;
+    }
+
+    /**
+     * Parses an authentication token from a JSONObject
+     *
+     * @param jsonObject JSONObject representing a Web API JSON response
+     * @return String An authentication token
+     * @throws JSONException
+     */
+    public static String parseAuthToken(JSONObject jsonObject) throws JSONException {
+        if (!jsonObject.has(RESOURCE_DATA)) {
+            return null;
+        }
+
+        // Get the JSON data object
+        JSONObject dataObject = jsonObject.getJSONObject(RESOURCE_DATA);
+
+        // Return the token if it exists
+        if (dataObject.has(RequestContract.Field.AUTH_TOKEN_RESPONSE)) {
+            return dataObject.getString(RequestContract.Field.AUTH_TOKEN_RESPONSE);
+        } else {
+            return null;
+        }
+    }
 
     /**
      * Parses an authentication response to retrieve an authentication token.

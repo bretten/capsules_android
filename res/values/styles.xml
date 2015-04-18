@@ -17,4 +17,50 @@
         <!-- All customizations that are NOT specific to a particular API-level can go here. -->
     </style>
 
+    <!--
+        Toolbar Widget
+    -->
+    <style name="AppTheme.Toolbar" parent="AppTheme">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:background">@color/primary_color</item>
+    </style>
+
+    <!--
+        General input
+    -->
+    <!-- Base -->
+    <style name="AppTheme.Input" parent="AppTheme">
+        <item name="android:layout_width">fill_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:padding">5dp</item>
+    </style>
+    <!-- Label -->
+    <style name="AppTheme.Input.Label" parent="AppTheme.Input">
+        <item name="android:textSize">18sp</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+    <!-- EditText -->
+    <style name="AppTheme.Input.EditText" parent="AppTheme.Input">
+        <item name="android:layout_marginLeft">20dp</item>
+        <item name="android:layout_marginRight">20dp</item>
+        <item name="android:layout_marginBottom">10dp</item>
+    </style>
+    <!-- Submit button -->
+    <style name="AppTheme.Input.Button" parent="AppTheme.Input">
+        <item name="android:layout_marginLeft">20dp</item>
+        <item name="android:layout_marginRight">20dp</item>
+        <item name="android:layout_marginBottom">10dp</item>
+        <item name="android:background">@drawable/button</item>
+        <item name="android:textColor">@android:color/white</item>
+    </style>
+    <!-- Error message -->
+    <style name="AppTheme.Input.Error" parent="AppTheme.Input">
+        <item name="android:layout_margin">10dp</item>
+        <item name="android:padding">5dp</item>
+        <item name="android:textColor">@color/message_error_text</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:background">@drawable/error_message</item>
+        <item name="android:visibility">gone</item>
+    </style>
 </resources>

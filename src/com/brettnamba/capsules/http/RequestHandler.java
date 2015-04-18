@@ -1,6 +1,7 @@
 package com.brettnamba.capsules.http;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -54,11 +55,11 @@ public class RequestHandler {
      * 
      * @param username
      * @param password
-     * @return String
+     * @return HttpResponse
      * @throws ParseException 
      * @throws IOException
      */
-    public String authenticate(String username, String password) throws ParseException, IOException {
+    public HttpResponse authenticate(String username, String password) throws IOException {
         // GET
         HttpGet request = new HttpGet(RequestContract.BASE_URL + RequestContract.Uri.AUTH_URI);
 
@@ -67,8 +68,37 @@ public class RequestHandler {
         request.addHeader(RequestContract.AUTH_HEADER, "Basic " + Base64.encodeToString((username + ":" + password).getBytes(), Base64.DEFAULT));
 
         // Send and get the response
-        HttpResponse response = mClient.execute(request);
-        return EntityUtils.toString(response.getEntity());
+        return mClient.execute(request);
+    }
+
+    /**
+     * Registers a user and returns an authentication token.
+     *
+     * @param username
+     * @param email
+     * @param password
+     * @param passwordConfirm
+     * @return
+     * @throws IOException
+     */
+    public HttpResponse register(String username, String email, String password, String passwordConfirm) throws IOException {
+        // POST
+        HttpPost request = new HttpPost(RequestContract.BASE_URL + RequestContract.Uri.REGISTER_URI);
+
+        // Headers
+        request.addHeader(HTTP.TARGET_HOST, RequestContract.HOST);
+        request.addHeader(HTTP.CONTENT_TYPE, URLEncodedUtils.CONTENT_TYPE);
+
+        // POST body
+        ArrayList<NameValuePair> params = new ArrayList<NameValuePair>();
+        params.add(new BasicNameValuePair("data[" + RequestContract.Field.USERNAME + "]", username));
+        params.add(new BasicNameValuePair("data[" + RequestContract.Field.EMAIL + "]", email));
+        params.add(new BasicNameValuePair("data[" + RequestContract.Field.PASSWORD + "]", password));
+        params.add(new BasicNameValuePair("data[" + RequestContract.Field.PASSWORD_CONFIRMATION + "]", passwordConfirm));
+        request.setEntity(new UrlEncodedFormEntity(params));
+
+        // Send and get the response
+        return mClient.execute(request);
     }
 
     /**

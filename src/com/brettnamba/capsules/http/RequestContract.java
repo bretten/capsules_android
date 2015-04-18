@@ -10,7 +10,7 @@ public final class RequestContract {
     /**
      * The HTTP Host.
      */
-    public static final String HOST = "192.168.0.120";
+    public static final String HOST = "192.168.0.250";
 
     /**
      * The base URL of the API.
@@ -30,7 +30,12 @@ public final class RequestContract {
         /**
          * The URI for user authentication.
          */
-        public static final String AUTH_URI = "/users/authenticate";
+        public static final String AUTH_URI = "/api/authenticate";
+
+        /**
+         * The URI for user registration.
+         */
+        public static final String REGISTER_URI = "/api/register";
     
         /**
          * The URI for getting nearby undiscovered Capsules.
@@ -72,6 +77,26 @@ public final class RequestContract {
          * The name of the field storing the authentication token in the authentication response JSON body.
          */
         public static final String AUTH_TOKEN_RESPONSE = "token";
+
+        /**
+         * The name of the field storing a username in a JSON response body.
+         */
+        public static final String USERNAME = "username";
+
+        /**
+         * The name of the field storing an e-mail address in a JSON response body.
+         */
+        public static final String EMAIL = "email";
+
+        /**
+         * The name of the field storing a password in a JSON response body.
+         */
+        public static final String PASSWORD = "password";
+
+        /**
+         * The name of the field storing a password confirmation in a JSON response body.
+         */
+        public static final String PASSWORD_CONFIRMATION = "confirm_password";
 
         /**
          * The field storing a Capsule object.

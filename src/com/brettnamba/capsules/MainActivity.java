@@ -819,7 +819,7 @@ public class MainActivity extends FragmentActivity implements
 
         @Override
         protected void onPreExecute() {
-            this.dialog.setMessage(getText(R.string.ui_activity_authenticating));
+            this.dialog.setMessage(getText(R.string.progress_please_wait));
             this.dialog.show();
         }
 
