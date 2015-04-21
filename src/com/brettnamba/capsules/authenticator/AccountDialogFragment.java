@@ -91,7 +91,7 @@ public class AccountDialogFragment extends DialogFragment {
     }
 
     /**
-     * onCreate
+     * onAttach
      *
      * Sets the host Activity as the listener that implements the callback interface
      *

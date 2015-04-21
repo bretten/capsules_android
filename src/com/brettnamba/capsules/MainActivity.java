@@ -45,6 +45,7 @@ import com.brettnamba.capsules.http.RequestHandler;
 import com.brettnamba.capsules.provider.CapsuleContract;
 import com.brettnamba.capsules.provider.CapsuleOperations;
 import com.brettnamba.capsules.util.JSONParser;
+import com.brettnamba.capsules.widget.NavigationDrawerItem;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.LocationListener;
@@ -75,7 +76,8 @@ public class MainActivity extends FragmentActivity implements
         LocationListener,
         GoogleApiClient.ConnectionCallbacks,
         GoogleApiClient.OnConnectionFailedListener,
-        AccountDialogFragment.AccountDialogListener {
+        AccountDialogFragment.AccountDialogListener,
+        NavigationDrawerFragment.NavigationDrawerListener {
 
     /**
      * Reference to the GoogleMap.
@@ -116,6 +118,16 @@ public class MainActivity extends FragmentActivity implements
      * Reference to the HTTP RequestHandler.
      */
     private RequestHandler mRequestHandler;
+
+    /**
+     * Navigation DrawerLayout
+     */
+    private DrawerLayout mDrawerLayout;
+
+    /**
+     * The View for the navigation drawer
+     */
+    private View mDrawerView;
 
     /**
      * The navigation drawer Fragment
@@ -213,16 +225,16 @@ public class MainActivity extends FragmentActivity implements
 
         // Navigation Drawer
         this.mDrawerFragment = (NavigationDrawerFragment) getSupportFragmentManager().findFragmentById(R.id.navigation_drawer);
-        final DrawerLayout drawerLayout = (DrawerLayout) this.findViewById(R.id.drawer_layout);
-        final View drawerView = this.findViewById(R.id.navigation_drawer);
-        this.mDrawerFragment.initialize(drawerView, drawerLayout, mAccount);
+        this.mDrawerLayout = (DrawerLayout) this.findViewById(R.id.drawer_layout);
+        this.mDrawerView = this.findViewById(R.id.navigation_drawer);
+        this.mDrawerFragment.switchAccount(this.mAccount);
 
         // Setup buttons to place over the GoogleMap
         ImageView drawerButton = (ImageView) this.findViewById(R.id.map_drawer_button);
         drawerButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                drawerLayout.openDrawer(drawerView);
+                MainActivity.this.mDrawerLayout.openDrawer(MainActivity.this.mDrawerView);
             }
         });
 
@@ -422,6 +434,35 @@ public class MainActivity extends FragmentActivity implements
             new CapsuleRequestTask().execute(mAuthToken);
         } else {
             new AuthTask(this).execute();
+        }
+    }
+
+    /**
+     * Handles clicks on the navigation drawer
+     *
+     * @param drawerFragment The NavigationDrawerFragment
+     * @param position The position of the item that was clicked
+     * @param item The item that was clicked
+     */
+    @Override
+    public void onNavigationDrawerItemClick(NavigationDrawerFragment drawerFragment, int position, NavigationDrawerItem item) {
+        // Check if the selected item is in a group
+        if (item.isInGroup()) {
+            // See if the item is checked
+            if (drawerFragment.getListView().isItemChecked(position)) {
+                // TODO Perform the on-check action
+            } else {
+                // TODO Perform the un-check action
+            }
+        } else {
+            // Prevent items not in a group from remaining checked
+            drawerFragment.getListView().setItemChecked(position, false);
+            // TODO Perform the action
+        }
+
+        // Close the drawer
+        if (this.mDrawerLayout != null && this.mDrawerView != null) {
+            this.mDrawerLayout.closeDrawer(this.mDrawerView);
         }
     }
 

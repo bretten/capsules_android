@@ -1,6 +1,7 @@
 package com.brettnamba.capsules.fragments;
 
 import android.accounts.Account;
+import android.app.Activity;
 import android.content.res.Resources;
 import android.content.res.TypedArray;
 import android.os.Bundle;
@@ -32,16 +33,6 @@ import java.util.ArrayList;
 public class NavigationDrawerFragment extends Fragment {
 
     /**
-     * The View containing this Fragment
-     */
-    private View mFragmentView;
-
-    /**
-     * The DrawerLayout View
-     */
-    private DrawerLayout mDrawerLayout;
-
-    /**
      * Collection of items that will be listed in the drawer
      */
     private ArrayList<NavigationDrawerItem> mNavItems;
@@ -55,6 +46,11 @@ public class NavigationDrawerFragment extends Fragment {
      * The TextView that displays the Account
      */
     private TextView mAccountTextView;
+
+    /**
+     * Host Activity that implements the callback interface
+     */
+    private NavigationDrawerListener mListener;
 
     /**
      * onCreateView
@@ -97,17 +93,21 @@ public class NavigationDrawerFragment extends Fragment {
     }
 
     /**
-     * Sets up the Fragment
+     * onAttach
      *
-     * @param view
-     * @param drawerLayout
+     * Sets the host Activity as the listener that implements the callback interface
+     *
+     * @param activity The new host Activity
      */
-    public void initialize(View view, DrawerLayout drawerLayout, Account account) {
-        this.mFragmentView = view;
-        this.mDrawerLayout = drawerLayout;
-
-        // Set the current Account in the corresponding TextView
-        this.switchAccount(account);
+    @Override
+    public void onAttach(Activity activity) {
+        super.onAttach(activity);
+        // Make sure the Activity implements this Fragment's listener interface
+        try {
+            this.mListener = (NavigationDrawerListener) activity;
+        } catch (ClassCastException e) {
+            throw new ClassCastException(activity.toString() + " does not implement NavigationDrawerListener");
+        }
     }
 
     /**
@@ -119,6 +119,15 @@ public class NavigationDrawerFragment extends Fragment {
         if (this.mAccountTextView != null) {
             this.mAccountTextView.setText(account.name);
         }
+    }
+
+    /**
+     * Returns the ListView
+     *
+     * @return The ListView containing that navigation items
+     */
+    public ListView getListView() {
+        return this.mListView;
     }
 
     /**
@@ -167,29 +176,23 @@ public class NavigationDrawerFragment extends Fragment {
      * @param position
      */
     private void clickItem(int position) {
-        if (this.mNavItems != null) {
-            // Check if the selected item is in a group
-            if (this.mNavItems.get(position).isInGroup()) {
-                // See if the item is checked
-                if (this.mListView.isItemChecked(position)) {
-                    // Perform the on-check action
-                    // TODO: On-check action
-                } else {
-                    // Perform the un-check action
-                    // TODO: Un-check action
-                }
-            } else {
-                // Prevent items in a group from remaining checked
-                this.mListView.setItemChecked(position, false);
-                // Perform the action
-                // TODO: Perform the action
-            }
+        if (this.mNavItems != null && this.mListener != null) {
+            this.mListener.onNavigationDrawerItemClick(this, position, this.mNavItems.get(position));
         }
+    }
 
-        // Close the drawer
-        if (this.mDrawerLayout != null) {
-            this.mDrawerLayout.closeDrawer(this.mFragmentView);
-        }
+    /**
+     * Callback interface that should be implemented by the host Activity
+     */
+    public interface NavigationDrawerListener {
+        /**
+         * Should handle clicks on NavigationDrawerItems
+         *
+         * @param drawerFragment The NavigationDrawerFragment
+         * @param position The position of the item that was clicked
+         * @param item The item that was clicked
+         */
+        public void onNavigationDrawerItemClick(NavigationDrawerFragment drawerFragment, int position, NavigationDrawerItem item);
     }
 
 }
