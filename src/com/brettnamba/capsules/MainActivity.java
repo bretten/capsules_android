@@ -26,7 +26,6 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.widget.DrawerLayout;
-import android.support.v7.app.ActionBarActivity;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -39,6 +38,7 @@ import com.brettnamba.capsules.activities.CapsuleEditorActivity;
 import com.brettnamba.capsules.activities.CapsuleListActivity;
 import com.brettnamba.capsules.dataaccess.Capsule;
 import com.brettnamba.capsules.dataaccess.CapsulePojo;
+import com.brettnamba.capsules.authenticator.AccountDialogFragment;
 import com.brettnamba.capsules.fragments.NavigationDrawerFragment;
 import com.brettnamba.capsules.http.HttpFactory;
 import com.brettnamba.capsules.http.RequestHandler;
@@ -74,7 +74,8 @@ public class MainActivity extends FragmentActivity implements
         OnMapReadyCallback,
         LocationListener,
         GoogleApiClient.ConnectionCallbacks,
-        GoogleApiClient.OnConnectionFailedListener {
+        GoogleApiClient.OnConnectionFailedListener,
+        AccountDialogFragment.AccountDialogListener {
 
     /**
      * Reference to the GoogleMap.
@@ -115,6 +116,11 @@ public class MainActivity extends FragmentActivity implements
      * Reference to the HTTP RequestHandler.
      */
     private RequestHandler mRequestHandler;
+
+    /**
+     * The navigation drawer Fragment
+     */
+    private NavigationDrawerFragment mDrawerFragment;
 
     /**
      * Mapping of undiscovered Capsule sync id's to Marker.
@@ -197,15 +203,19 @@ public class MainActivity extends FragmentActivity implements
 
         // Initialize
         mAccountManager = AccountManager.get(this);
-        mAccount = mAccountManager.getAccountsByType(Constants.ACCOUNT_TYPE)[0];
+        Account[] accounts = mAccountManager.getAccountsByType(Constants.ACCOUNT_TYPE);
+        if (accounts.length > 0) {
+            // TODO Set the current Account to the last one that was used
+            this.mAccount = accounts[0];
+        }
         mHttpClient = HttpFactory.getInstance();
         mRequestHandler = new RequestHandler(mHttpClient);
 
         // Navigation Drawer
-        NavigationDrawerFragment drawerFragment = (NavigationDrawerFragment) getSupportFragmentManager().findFragmentById(R.id.navigation_drawer);
+        this.mDrawerFragment = (NavigationDrawerFragment) getSupportFragmentManager().findFragmentById(R.id.navigation_drawer);
         final DrawerLayout drawerLayout = (DrawerLayout) this.findViewById(R.id.drawer_layout);
         final View drawerView = this.findViewById(R.id.navigation_drawer);
-        drawerFragment.initialize(drawerView, drawerLayout, mAccount);
+        this.mDrawerFragment.initialize(drawerView, drawerLayout, mAccount);
 
         // Setup buttons to place over the GoogleMap
         ImageView drawerButton = (ImageView) this.findViewById(R.id.map_drawer_button);
@@ -413,6 +423,21 @@ public class MainActivity extends FragmentActivity implements
         } else {
             new AuthTask(this).execute();
         }
+    }
+
+    /**
+     * Handles choosing an Account in the account switcher
+     *
+     * @param dialog The DialogFragment containing the switcher
+     * @param account The Account that was at the selected position
+     */
+    @Override
+    public void onAccountItemClick(AccountDialogFragment dialog, Account account) {
+        // Switch the Account
+        this.mAccount = account;
+        this.mDrawerFragment.switchAccount(account);
+        // Close the dialog
+        dialog.dismiss();
     }
 
     /**

@@ -10,11 +10,13 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
+import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import com.brettnamba.capsules.R;
+import com.brettnamba.capsules.authenticator.AccountDialogFragment;
 import com.brettnamba.capsules.widget.HeaderDrawerItem;
 import com.brettnamba.capsules.widget.NavigationDrawerItem;
 import com.brettnamba.capsules.widget.NavigationItemArrayAdapter;
@@ -78,6 +80,15 @@ public class NavigationDrawerFragment extends Fragment {
                 NavigationDrawerFragment.this.clickItem(position);
             }
         });
+        // Set the click listener for the account switcher
+        ImageView accountSwitcher = (ImageView) view.findViewById(R.id.navigation_drawer_avatar);
+        accountSwitcher.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                AccountDialogFragment accountDialog = new AccountDialogFragment();
+                accountDialog.show(NavigationDrawerFragment.this.getFragmentManager(), "AccountDialogFragment");
+            }
+        });
         // Add the ListView items
         this.mNavItems = this.createNavigationItemCollection();
         // Set the ListView Adapter
@@ -97,6 +108,17 @@ public class NavigationDrawerFragment extends Fragment {
 
         // Set the current Account in the corresponding TextView
         this.switchAccount(account);
+    }
+
+    /**
+     * Switches the active Account for this Fragment
+     *
+     * @param account The Account being switched to
+     */
+    public void switchAccount(Account account) {
+        if (this.mAccountTextView != null) {
+            this.mAccountTextView.setText(account.name);
+        }
     }
 
     /**
@@ -167,17 +189,6 @@ public class NavigationDrawerFragment extends Fragment {
         // Close the drawer
         if (this.mDrawerLayout != null) {
             this.mDrawerLayout.closeDrawer(this.mFragmentView);
-        }
-    }
-
-    /**
-     * Switches the active account for this Fragment
-     *
-     * @param account
-     */
-    private void switchAccount(Account account) {
-        if (this.mAccountTextView != null) {
-            this.mAccountTextView.setText(account.name);
         }
     }
 

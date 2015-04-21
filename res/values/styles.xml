@@ -63,4 +63,36 @@
         <item name="android:background">@drawable/error_message</item>
         <item name="android:visibility">gone</item>
     </style>
+
+    <!--
+        ListView
+    -->
+    <!-- Base -->
+    <style name="AppTheme.List" parent="AppTheme">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:fadeScrollbars">false</item>
+        <item name="android:choiceMode">singleChoice</item>
+    </style>
+    <!-- Accounts -->
+    <style name="AppTheme.List.Accounts" parent="AppTheme.List">
+        <item name="android:layout_height">200dp</item>
+    </style>
+
+    <!--
+        ListView items
+    -->
+    <!-- Base -->
+    <style name="AppTheme.ListItem" parent="AppTheme">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:gravity">center_vertical</item>
+        <item name="android:padding">15dp</item>
+        <item name="android:textSize">25sp</item>
+    </style>
+    <!-- Accounts -->
+    <style name="AppTheme.ListItem.Account" parent="AppTheme.ListItem">
+        <item name="android:textColor">@android:color/black</item>
+    </style>
+
 </resources>
