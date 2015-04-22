@@ -140,20 +140,6 @@ public class RegisterActivity extends FragmentActivity implements AsyncListenerT
     }
 
     /**
-     * onResume
-     *
-     * Sets the TaskListener for any retained Fragments that are persisting AsyncTasks
-     */
-    @Override
-    protected void onResume() {
-        super.onResume();
-        // Update any AsyncTasks contained in RetainedTaskFragments with a reference to the newly created Activity
-        if (this.mAuthenticationTaskFragment != null && this.mAuthenticationTaskFragment.getTask() != null) {
-            this.mAuthenticationTaskFragment.getTask().setListener(this);
-        }
-    }
-
-    /**
      * Handles clicking on the "register" button
      */
     private void handleRegistration() {

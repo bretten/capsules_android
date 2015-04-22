@@ -34,6 +34,14 @@ public class AuthenticationTask extends AsyncListenerTask<String, Void, Authenti
     }
 
     /**
+     * Removes the listener that handles the callbacks
+     */
+    @Override
+    public void removeListener() {
+        this.mListener = null;
+    }
+
+    /**
      * Delegates the process to the listener's callback
      *
      * @param params Credentials for authentication

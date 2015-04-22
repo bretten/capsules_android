@@ -73,9 +73,7 @@
 		</service>
         <activity
             android:name=".authenticator.LoginActivity"
-            android:excludeFromRecents="true"
-            android:configChanges="orientation"
-            >
+            android:excludeFromRecents="true">
         </activity>
         <activity
             android:name=".authenticator.RegisterActivity">

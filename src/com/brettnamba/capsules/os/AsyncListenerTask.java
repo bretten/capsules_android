@@ -25,6 +25,11 @@ public abstract class AsyncListenerTask<Params, Progress, Result> extends AsyncT
     public abstract void setListener(TaskListener listener);
 
     /**
+     * Removes the listener that handles the callbacks
+     */
+    public abstract void removeListener();
+
+    /**
      * Base TaskListener interface that all listeners should extend from
      */
     public interface TaskListener {}

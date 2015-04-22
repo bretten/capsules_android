@@ -52,11 +52,16 @@ public class RetainedTaskFragment extends Fragment {
     @Override
     public void onAttach(Activity activity) {
         super.onAttach(activity);
-        // Instantiate a new ProgressDialog and show it
+        // Instantiate a new ProgressDialog
         this.mProgressDialog = new ProgressDialog(activity);
         this.mProgressDialog.setMessage(activity.getString(R.string.progress_please_wait));
-        if (this.mTask != null && this.mTask.getStatus() == AsyncTask.Status.RUNNING) {
-            this.mProgressDialog.show();
+        if (this.mTask != null) {
+            // Set the newly attached Activity as the listener for the AsyncTask
+            this.mTask.setListener((AsyncListenerTask.TaskListener) activity);
+            // If the AsyncTask is running, show the progress indicator
+            if (this.mTask.getStatus() == AsyncTask.Status.RUNNING) {
+                this.mProgressDialog.show();
+            }
         }
     }
 
@@ -73,6 +78,8 @@ public class RetainedTaskFragment extends Fragment {
             this.mProgressDialog.cancel();
             this.mProgressDialog = null;
         }
+        // Remove the listener from the AsyncTask
+        this.mTask.removeListener();
     }
 
     /**
@@ -82,15 +89,6 @@ public class RetainedTaskFragment extends Fragment {
      */
     public void setTask(AsyncListenerTask task) {
         this.mTask = task;
-    }
-
-    /**
-     * Gets the AsyncTask
-     *
-     * @return AsyncListenerTask The retained AsyncTask
-     */
-    public AsyncListenerTask getTask() {
-        return this.mTask;
     }
 
     /**

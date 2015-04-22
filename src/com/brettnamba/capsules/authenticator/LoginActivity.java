@@ -160,20 +160,6 @@ public class LoginActivity extends FragmentActivity implements AsyncListenerTask
     }
 
     /**
-     * onResume
-     *
-     * Sets the TaskListener for any retained Fragments that are persisting AsyncTasks
-     */
-    @Override
-    protected void onResume() {
-        super.onResume();
-        // Update any AsyncTasks contained in RetainedTaskFragments with a reference to the newly created Activity
-        if (this.mAuthenticationTaskFragment != null && this.mAuthenticationTaskFragment.getTask() != null) {
-            this.mAuthenticationTaskFragment.getTask().setListener(this);
-        }
-    }
-
-    /**
      * finish
      *
      * Handles the AccountAuthenticatorResponse
