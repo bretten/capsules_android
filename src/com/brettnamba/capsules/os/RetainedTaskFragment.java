@@ -79,7 +79,9 @@ public class RetainedTaskFragment extends Fragment {
             this.mProgressDialog = null;
         }
         // Remove the listener from the AsyncTask
-        this.mTask.removeListener();
+        if (this.mTask != null) {
+            this.mTask.removeListener();
+        }
     }
 
     /**
