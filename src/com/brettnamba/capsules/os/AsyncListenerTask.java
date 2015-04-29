@@ -1,5 +1,6 @@
 package com.brettnamba.capsules.os;
 
+import android.accounts.Account;
 import android.os.AsyncTask;
 
 import com.brettnamba.capsules.http.response.AuthenticationResponse;
@@ -62,6 +63,36 @@ public abstract class AsyncListenerTask<Params, Progress, Result> extends AsyncT
          * Should be called from onCancelled()
          */
         void onAuthenticationCancelled();
+    }
+
+    /**
+     * Listener for an AsyncTask that will retrieve an authentication token
+     */
+    public interface AuthTokenRetrievalTaskListener extends TaskListener {
+        /**
+         * To be called from doInBackground()
+         *
+         * @param params Account to retrieve an authentication token for
+         * @return String The auth token
+         */
+        String duringAuthTokenRetrieval(Account... params);
+
+        /**
+         * Should be called from onPreExecute()
+         */
+        void onPreAuthTokenRetrieval();
+
+        /**
+         * Should be called from onPostExecute()
+         *
+         * @param authToken The retrieved authentication token
+         */
+        void onPostAuthTokenRetrieval(String authToken);
+
+        /**
+         * Should be called from onCancelled()
+         */
+        void onAuthTokenRetrievalCancelled();
     }
 
 }

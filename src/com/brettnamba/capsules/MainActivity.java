@@ -1,14 +1,5 @@
 package com.brettnamba.capsules;
 
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import org.apache.http.ParseException;
-import org.apache.http.client.HttpClient;
-import org.json.JSONException;
-
 import android.accounts.Account;
 import android.accounts.AccountManager;
 import android.accounts.AuthenticatorException;
@@ -23,8 +14,10 @@ import android.graphics.Color;
 import android.location.Location;
 import android.net.Uri;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
 import android.support.v4.app.FragmentActivity;
+import android.support.v4.app.FragmentManager;
 import android.support.v4.widget.DrawerLayout;
 import android.util.Log;
 import android.view.Menu;
@@ -36,14 +29,17 @@ import android.widget.Toast;
 import com.brettnamba.capsules.activities.CapsuleActivity;
 import com.brettnamba.capsules.activities.CapsuleEditorActivity;
 import com.brettnamba.capsules.activities.CapsuleListActivity;
+import com.brettnamba.capsules.authenticator.AccountDialogFragment;
 import com.brettnamba.capsules.dataaccess.Capsule;
 import com.brettnamba.capsules.dataaccess.CapsulePojo;
-import com.brettnamba.capsules.authenticator.AccountDialogFragment;
 import com.brettnamba.capsules.fragments.NavigationDrawerFragment;
+import com.brettnamba.capsules.fragments.RetainedMapFragment;
 import com.brettnamba.capsules.http.HttpFactory;
 import com.brettnamba.capsules.http.RequestHandler;
+import com.brettnamba.capsules.os.AsyncListenerTask;
 import com.brettnamba.capsules.provider.CapsuleContract;
 import com.brettnamba.capsules.provider.CapsuleOperations;
+import com.brettnamba.capsules.util.Accounts;
 import com.brettnamba.capsules.util.JSONParser;
 import com.brettnamba.capsules.widget.NavigationDrawerItem;
 import com.google.android.gms.common.ConnectionResult;
@@ -65,6 +61,15 @@ import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.maps.android.SphericalUtil;
 
+import org.apache.http.ParseException;
+import org.apache.http.client.HttpClient;
+import org.json.JSONException;
+
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 /**
  * The main Activity that displays a GoogleMap and capsules to the user.
  * 
@@ -77,7 +82,13 @@ public class MainActivity extends FragmentActivity implements
         GoogleApiClient.ConnectionCallbacks,
         GoogleApiClient.OnConnectionFailedListener,
         AccountDialogFragment.AccountDialogListener,
-        NavigationDrawerFragment.NavigationDrawerListener {
+        NavigationDrawerFragment.NavigationDrawerListener,
+        AsyncListenerTask.AuthTokenRetrievalTaskListener {
+
+    /**
+     * Fragment used to retain the state of the Map and the user
+     */
+    private RetainedMapFragment mRetainedFragment;
 
     /**
      * Reference to the GoogleMap.
@@ -198,6 +209,11 @@ public class MainActivity extends FragmentActivity implements
     private static final int REQUEST_CODE_CAPSULE_LIST = 3;
 
     /**
+     * Tag for the Fragment retaining state about this Activity
+     */
+    private static final String RETAINED_MAP_FRAGMENT_TAG = "retained_map";
+
+    /**
      * The tag used for logging.
      */
     private static final String TAG = "MainActivity";
@@ -208,26 +224,33 @@ public class MainActivity extends FragmentActivity implements
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        // Fragment manager
+        FragmentManager fragmentManager = this.getSupportFragmentManager();
+
+        // If the Activity is being recreated, see if the retained already Fragment exists
+        this.mRetainedFragment = ((RetainedMapFragment) fragmentManager.findFragmentByTag(RETAINED_MAP_FRAGMENT_TAG));
+        // If the Activity is being created for the first time, create the retainer Fragments
+        if (this.mRetainedFragment == null) {
+            this.mRetainedFragment = new RetainedMapFragment();
+            fragmentManager.beginTransaction().add(this.mRetainedFragment, RETAINED_MAP_FRAGMENT_TAG).commit();
+        }
+
         // Set up the GoogleMap and LocationClient
-        SupportMapFragment mapFragment = ((SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map));
+        SupportMapFragment mapFragment = ((SupportMapFragment) fragmentManager.findFragmentById(R.id.map));
         mapFragment.getMapAsync(this);
         this.setLocationClient();
 
-        // Initialize
-        mAccountManager = AccountManager.get(this);
-        Account[] accounts = mAccountManager.getAccountsByType(Constants.ACCOUNT_TYPE);
-        if (accounts.length > 0) {
-            // TODO Set the current Account to the last one that was used
-            this.mAccount = accounts[0];
-        }
+        // AccountManager
+        this.mAccountManager = AccountManager.get(this);
+
+        // HTTP client and request handler
         mHttpClient = HttpFactory.getInstance();
         mRequestHandler = new RequestHandler(mHttpClient);
 
         // Navigation Drawer
-        this.mDrawerFragment = (NavigationDrawerFragment) getSupportFragmentManager().findFragmentById(R.id.navigation_drawer);
+        this.mDrawerFragment = (NavigationDrawerFragment) fragmentManager.findFragmentById(R.id.navigation_drawer);
         this.mDrawerLayout = (DrawerLayout) this.findViewById(R.id.drawer_layout);
         this.mDrawerView = this.findViewById(R.id.navigation_drawer);
-        this.mDrawerFragment.switchAccount(this.mAccount);
 
         // Setup buttons to place over the GoogleMap
         ImageView drawerButton = (ImageView) this.findViewById(R.id.map_drawer_button);
@@ -239,13 +262,19 @@ public class MainActivity extends FragmentActivity implements
         });
 
         // Populate the stored Markers
-        this.populateStoredMarkers();
+//        this.populateStoredMarkers();
 	}
 
 	@Override
 	protected void onResume() {
 	    Log.i(TAG, "onResume()");
 	    super.onResume();
+
+        // Switch to the last used or default Account if there is one
+        Account lastUsedAccount = Accounts.getLastUsedOrFirstAccount(this);
+        if (lastUsedAccount != null) {
+            this.switchAccount(lastUsedAccount);
+        }
 
 	    // Reconnect the LocationClient
 	    if (mGoogleApiClient != null && !mGoogleApiClient.isConnected()) {
@@ -258,6 +287,15 @@ public class MainActivity extends FragmentActivity implements
 	    Log.i(TAG, "onPause()");
 	    super.onPause();
 
+        // Store the last used Account
+        if (this.mAccount != null) {
+            Accounts.setLastUsedAccount(this, this.mAccount);
+            // Retain the Account
+            if (this.mRetainedFragment != null) {
+                this.mRetainedFragment.setAccount(this.mAccount);
+            }
+        }
+
         // Disconnect the LocationClient
 	    if (mGoogleApiClient != null && mGoogleApiClient.isConnected()) {
 	        mGoogleApiClient.disconnect();
@@ -266,7 +304,25 @@ public class MainActivity extends FragmentActivity implements
 	    mNeedsCentering = true;
 	}
 
-	@Override
+    @Override
+    protected void onStop() {
+        Log.i(TAG, "onStop()");
+        super.onStop();
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
+            if (this.mRetainedFragment != null && !this.isChangingConfigurations()) {
+                Log.i(TAG, "onStop: cancelling tasks");
+                this.mRetainedFragment.cancelTasks();
+            }
+        } else {
+            if (this.mRetainedFragment != null) {
+                Log.i(TAG, "onStop: cancelling tasks");
+                this.mRetainedFragment.cancelTasks();
+            }
+        }
+    }
+
+    @Override
 	public boolean onCreateOptionsMenu(Menu menu) {
 	    Log.i(TAG, "onCreateOptionsMenu()");
 		// Inflate the menu; this adds items to the action bar if it is present.
@@ -431,9 +487,64 @@ public class MainActivity extends FragmentActivity implements
 
         // Refresh the undiscovered capsules
         if (mAuthToken != null) {
-            new CapsuleRequestTask().execute(mAuthToken);
+//            new CapsuleRequestTask().execute(mAuthToken);
         } else {
-            new AuthTask(this).execute();
+//            new AuthTask(this).execute();
+        }
+    }
+
+    /**
+     * Handles AuthTokenRetrievalTask doInBackground()
+     *
+     * @param params Account to retrieve an authentication token for
+     * @return String The auth token
+     */
+    @Override
+    public String duringAuthTokenRetrieval(Account... params) {
+        Log.i(TAG, "duringAuthTokenRetrieval()");
+        if (this.mAccountManager != null & this.mAccount != null) {
+            try {
+                return this.mAccountManager.blockingGetAuthToken(this.mAccount, Constants.AUTH_TOKEN_TYPE, true);
+            } catch (OperationCanceledException|IOException|AuthenticatorException e) {
+                return null;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Handles AuthTokenRetrievalTask onPreExecute()
+     */
+    @Override
+    public void onPreAuthTokenRetrieval() {
+        Log.i(TAG, "onPreAuthTokenRetrieval()");
+        if (this.mRetainedFragment != null) {
+            this.mRetainedFragment.showProgress();
+        }
+    }
+
+    /**
+     * Handles AuthTokenRetrievalTask onPostExecute()
+     *
+     * @param authToken The retrieved authentication token
+     */
+    @Override
+    public void onPostAuthTokenRetrieval(String authToken) {
+        Log.i(TAG, "onPostAuthTokenRetrieval()");
+        this.mAuthToken = authToken;
+        if (this.mRetainedFragment != null) {
+            this.mRetainedFragment.hideProgress();
+        }
+    }
+
+    /**
+     * Handles AuthTokenRetrievalTask onCancelled()
+     */
+    @Override
+    public void onAuthTokenRetrievalCancelled() {
+        Log.i(TAG, "onAuthTokenRetrievalCancelled()");
+        if (this.mRetainedFragment != null) {
+            this.mRetainedFragment.hideProgress();
         }
     }
 
@@ -475,8 +586,7 @@ public class MainActivity extends FragmentActivity implements
     @Override
     public void onAccountItemClick(AccountDialogFragment dialog, Account account) {
         // Switch the Account
-        this.mAccount = account;
-        this.mDrawerFragment.switchAccount(account);
+        this.switchAccount(account);
         // Close the dialog
         dialog.dismiss();
     }
@@ -627,6 +737,36 @@ public class MainActivity extends FragmentActivity implements
             );
             // Maintain a mapping of the Capsule to the Marker
             mUndiscoveredMarkers.put(marker, capsule);
+        }
+    }
+
+    /**
+     * Switches the Account for the Activity
+     *
+     * @param account The Account to switch to
+     */
+    private void switchAccount(Account account) {
+        // Set the new Account
+        this.mAccount = account;
+        // Clear out the auth token
+        this.mAuthToken = null;
+        // If an Account was retained and it differs from the Account being switched to, reset any Account-dependent members
+        if (this.mRetainedFragment != null) {
+            // Get the retained Account
+            Account retainedAccount = this.mRetainedFragment.getAccount();
+            // If the retained Account is different than the last used one, reset any Account-dependent members
+            if (retainedAccount == null || !account.name.equals(retainedAccount.name)) {
+                // Cancel any running tasks
+                this.mRetainedFragment.cancelTasks();
+            }
+            // If authentication is not already happening, do it on the background thread
+            if (!this.mRetainedFragment.isRetrievingAuthToken()) {
+                this.mRetainedFragment.startAuthTokenRetrieval(this, account);
+            }
+        }
+        // Update the drawer Fragment
+        if (this.mDrawerFragment != null) {
+            this.mDrawerFragment.switchAccount(account);
         }
     }
 

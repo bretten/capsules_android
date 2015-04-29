@@ -1,7 +1,5 @@
 package com.brettnamba.capsules.os;
 
-import android.content.Context;
-
 import com.brettnamba.capsules.http.response.AuthenticationResponse;
 
 /**
@@ -15,12 +13,12 @@ public class AuthenticationTask extends AsyncListenerTask<String, Void, Authenti
     private AuthenticationTaskListener mListener;
 
     /**
-     * Constructor to be passed an Activity which implements the listener
+     * Constructor to be passed the listener
      *
-     * @param context Activity that implements the listener
+     * @param listener Listener that handles the callbacks
      */
-    public AuthenticationTask(Context context) {
-        this.mListener = (AuthenticationTaskListener) context;
+    public AuthenticationTask(TaskListener listener) {
+        this.mListener = (AuthenticationTaskListener) listener;
     }
 
     /**
