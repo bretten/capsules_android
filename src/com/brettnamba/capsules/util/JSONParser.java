@@ -1,16 +1,16 @@
 package com.brettnamba.capsules.util;
 
-import java.util.ArrayList;
-import java.util.List;
+import com.brettnamba.capsules.dataaccess.Capsule;
+import com.brettnamba.capsules.dataaccess.CapsuleOwnershipPojo;
+import com.brettnamba.capsules.dataaccess.CapsulePojo;
+import com.brettnamba.capsules.http.RequestContract;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import com.brettnamba.capsules.dataaccess.Capsule;
-import com.brettnamba.capsules.dataaccess.CapsuleOwnershipPojo;
-import com.brettnamba.capsules.dataaccess.CapsulePojo;
-import com.brettnamba.capsules.http.RequestContract;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Handles parsing server responses into application-specific data structures.
@@ -29,6 +29,11 @@ public class JSONParser {
      * The key of a JSON object that contains any messages.
      */
     public static final String MESSAGE_KEY = "messages";
+
+    /**
+     * The key of a JSON object that contains Capsules.
+     */
+    public static final String CAPSULES_KEY = "capsules";
 
     /**
      * Parses API response messages from a JSONObject
@@ -90,30 +95,36 @@ public class JSONParser {
     }
 
     /**
-     * Parses a response for undiscovered Capsules and places them in a Collection.
-     * 
-     * @param body
-     * @return List<Capsule>
+     * Parses a JSON response from the API that holds undiscovered Capsules
+     *
+     * @param json JSON object created from the HTTP response
+     * @return A collection of undiscovered Capsules
      * @throws JSONException
      */
-    public static List<Capsule> parseUndiscoveredCapsules(String body) throws JSONException {
-        // Parse the response
-        JSONArray json = new JSONArray(body);
-
+    public static List<Capsule> parseUndiscoveredCapsules(JSONObject json) throws JSONException {
         // Will hold the Capsule objects
         List<Capsule> capsules = new ArrayList<Capsule>();
 
-        // Extract data from individual JSON objects
-        for (int i = 0; i < json.length(); i++) {
-            JSONObject jsonCapsule = json.getJSONObject(i).getJSONObject(RESOURCE_DATA);
-
-            // Create Capsules
-            capsules.add(new CapsulePojo()
-                .setSyncId(jsonCapsule.getLong(RequestContract.Field.CAPSULE_SYNC_ID))
-                .setName(jsonCapsule.getString(RequestContract.Field.CAPSULE_NAME))
-                .setLatitude(jsonCapsule.getDouble(RequestContract.Field.CAPSULE_LATITUDE))
-                .setLongitude(jsonCapsule.getDouble(RequestContract.Field.CAPSULE_LONGITUDE))
-            );
+        // Make sure the JSON object has the resource key
+        if (json.has(RESOURCE_DATA)) {
+            // Get the JSON data object
+            JSONObject data = json.getJSONObject(RESOURCE_DATA);
+            // Make sure the Capsules key exists
+            if (data.has(CAPSULES_KEY)) {
+                // Get the array of Capsules from the data object
+                JSONArray jsonCapsules = data.getJSONArray(CAPSULES_KEY);
+                // Iterate through the array and build Capsules from the JSON objects
+                for (int i = 0; i < jsonCapsules.length(); i++) {
+                    JSONObject jsonCapsule = jsonCapsules.getJSONObject(i);
+                    // Parse the Capsule and add it to the collection
+                    capsules.add(new CapsulePojo()
+                                    .setSyncId(jsonCapsule.getLong(RequestContract.Field.CAPSULE_SYNC_ID))
+                                    .setName(jsonCapsule.getString(RequestContract.Field.CAPSULE_NAME))
+                                    .setLatitude(jsonCapsule.getDouble(RequestContract.Field.CAPSULE_LATITUDE))
+                                    .setLongitude(jsonCapsule.getDouble(RequestContract.Field.CAPSULE_LONGITUDE))
+                    );
+                }
+            }
         }
 
         return capsules;

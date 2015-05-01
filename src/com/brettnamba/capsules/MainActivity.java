@@ -36,6 +36,7 @@ import com.brettnamba.capsules.fragments.NavigationDrawerFragment;
 import com.brettnamba.capsules.fragments.RetainedMapFragment;
 import com.brettnamba.capsules.http.HttpFactory;
 import com.brettnamba.capsules.http.RequestHandler;
+import com.brettnamba.capsules.http.response.CapsulePingResponse;
 import com.brettnamba.capsules.os.AsyncListenerTask;
 import com.brettnamba.capsules.provider.CapsuleContract;
 import com.brettnamba.capsules.provider.CapsuleOperations;
@@ -61,11 +62,13 @@ import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.maps.android.SphericalUtil;
 
+import org.apache.http.HttpResponse;
 import org.apache.http.ParseException;
 import org.apache.http.client.HttpClient;
 import org.json.JSONException;
 
 import java.io.IOException;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -83,7 +86,8 @@ public class MainActivity extends FragmentActivity implements
         GoogleApiClient.OnConnectionFailedListener,
         AccountDialogFragment.AccountDialogListener,
         NavigationDrawerFragment.NavigationDrawerListener,
-        AsyncListenerTask.AuthTokenRetrievalTaskListener {
+        AsyncListenerTask.AuthTokenRetrievalTaskListener,
+        AsyncListenerTask.CapsulePingTaskListener {
 
     /**
      * Fragment used to retain the state of the Map and the user
@@ -260,9 +264,6 @@ public class MainActivity extends FragmentActivity implements
                 MainActivity.this.mDrawerLayout.openDrawer(MainActivity.this.mDrawerView);
             }
         });
-
-        // Populate the stored Markers
-//        this.populateStoredMarkers();
 	}
 
 	@Override
@@ -485,11 +486,22 @@ public class MainActivity extends FragmentActivity implements
             mNeedsCentering = false;
         }
 
-        // Refresh the undiscovered capsules
-        if (mAuthToken != null) {
-//            new CapsuleRequestTask().execute(mAuthToken);
-        } else {
-//            new AuthTask(this).execute();
+        // If there is an auth token, get undiscovered Capsules in the new location
+        if (this.mRetainedFragment != null) {
+            // Make sure there is an auth token
+            if (this.mAuthToken != null) {
+                // Make sure there is a connection to the Google API
+                if (this.mGoogleApiClient.isConnected()) {
+                    this.mRetainedFragment.startCapsulePing(this, this.mAuthToken, location);
+                } else {
+                    Toast.makeText(this, this.getString(R.string.error_google_api_cannot_connect), Toast.LENGTH_SHORT).show();
+                }
+            } else {
+                // There is no auth token, so get it on the background thread
+                if (this.mAccount != null) {
+                    this.mRetainedFragment.startAuthTokenRetrieval(this, this.mAccount);
+                }
+            }
         }
     }
 
@@ -505,7 +517,11 @@ public class MainActivity extends FragmentActivity implements
         if (this.mAccountManager != null & this.mAccount != null) {
             try {
                 return this.mAccountManager.blockingGetAuthToken(this.mAccount, Constants.AUTH_TOKEN_TYPE, true);
-            } catch (OperationCanceledException|IOException|AuthenticatorException e) {
+            } catch (OperationCanceledException | IOException | AuthenticatorException e) {
+                // Cancel the auth token background task
+                if (this.mRetainedFragment != null) {
+                    this.mRetainedFragment.cancelAuthTokenRetrieval();
+                }
                 return null;
             }
         }
@@ -546,6 +562,64 @@ public class MainActivity extends FragmentActivity implements
         if (this.mRetainedFragment != null) {
             this.mRetainedFragment.hideProgress();
         }
+    }
+
+    /**
+     * Handles CapsulePingTask doInBackground()
+     *
+     * Sends HTTP request to API to get undiscovered Capsules
+     *
+     * @param params Authentication token, latitude, longitude
+     * @return HTTP response object
+     */
+    @Override
+    public CapsulePingResponse duringCapsulePing(String... params) {
+        try {
+            final String authToken = params[0];
+            final String lat = params[1];
+            final String lng = params[2];
+            HttpResponse response = this.mRequestHandler.requestUndiscoveredCapsules(authToken, lat, lng);
+            return new CapsulePingResponse(response);
+        } catch (IOException | JSONException e) {
+            // Cancel the task
+            if (this.mRetainedFragment != null) {
+                this.mRetainedFragment.cancelCapsulePing();
+            }
+            return null;
+        }
+    }
+
+    /**
+     * Handles CapsulePingTask onPreExecute()
+     */
+    @Override
+    public void onPreCapsulePing() {
+        Log.i(TAG, "onPreCapsulePing()");
+    }
+
+    /**
+     * Handles CapsulePingTask onPostExecute()
+     *
+     * @param response HTTP response object for a Capsule ping
+     */
+    @Override
+    public void onPostCapsulePing(CapsulePingResponse response) {
+        if (response != null) {
+            if (response.isClientError() || response.isServerError()) {
+                // TODO If unauthenticated, prompt for login
+                Toast.makeText(this, this.getString(R.string.error_cannot_retrieve_undiscovered), Toast.LENGTH_SHORT).show();
+            } else {
+                this.populateUndiscoveredMarkers(response.getCapsules());
+            }
+        }
+    }
+
+    /**
+     * Handles CapsulePingTask onCancelled()
+     */
+    @Override
+    public void onCapsulePingCancelled() {
+        Log.i(TAG, "onCapsulePingCancelled()");
     }
 
     /**
@@ -640,16 +714,7 @@ public class MainActivity extends FragmentActivity implements
      */
     private void populateStoredMarkers() {
         // Remove any previous Markers
-        if (mDiscoveredMarkers != null && mDiscoveredMarkers.size() > 0) {
-            for (Marker marker : mDiscoveredMarkers.keySet()) {
-                marker.remove();
-            }
-        }
-        if (mOwnedMarkers != null && mOwnedMarkers.size() > 0) {
-            for (Marker marker : mOwnedMarkers.keySet()) {
-                marker.remove();
-            }
-        }
+        this.removeStoredMarkers();
         // (Re)initialize the collections
         mDiscoveredMarkers = new HashMap<Marker, Capsule>();
         mOwnedMarkers = new HashMap<Marker, Capsule>();
@@ -717,11 +782,7 @@ public class MainActivity extends FragmentActivity implements
      */
     private void populateUndiscoveredMarkers(List<Capsule> capsules) {
         // Remove all the old Markers
-        if (mUndiscoveredMarkers != null && mUndiscoveredMarkers.size() > 0) {
-            for (Marker marker : mUndiscoveredMarkers.keySet()) {
-                marker.remove();
-            }
-        }
+        this.removeUndiscoveredMarkers();
         // (Re)initialize the collection
         mUndiscoveredMarkers = new HashMap<Marker, Capsule>();
 
@@ -741,11 +802,48 @@ public class MainActivity extends FragmentActivity implements
     }
 
     /**
+     * Removes stored Capsule Markers from the Map
+     */
+    private void removeStoredMarkers() {
+        if (this.mDiscoveredMarkers != null) {
+            this.removeMarkers(this.mDiscoveredMarkers.keySet());
+        }
+        if (this.mOwnedMarkers != null) {
+            this.removeMarkers(this.mOwnedMarkers.keySet());
+        }
+    }
+
+    /**
+     * Removes undiscovered Capsule Markers from the Map
+     */
+    private void removeUndiscoveredMarkers() {
+        if (this.mUndiscoveredMarkers != null) {
+            this.removeMarkers(this.mUndiscoveredMarkers.keySet());
+        }
+    }
+
+    /**
+     * Given a colleciton of Markers, removes them from the Map
+     *
+     * @param markers Collection of markers to remove
+     */
+    private void removeMarkers(Collection<Marker> markers) {
+        if (markers != null && markers.size() > 0) {
+            for (Marker marker : markers) {
+                marker.remove();
+            }
+        }
+    }
+
+    /**
      * Switches the Account for the Activity
      *
      * @param account The Account to switch to
      */
     private void switchAccount(Account account) {
+        // Clear out all the Markers
+        this.removeStoredMarkers();
+        this.removeUndiscoveredMarkers();
         // Set the new Account
         this.mAccount = account;
         // Clear out the auth token
@@ -860,50 +958,6 @@ public class MainActivity extends FragmentActivity implements
 
     }
 
-    /**
-     * Background task for sending a HTTP request to the server to get undiscovered capsules.
-     */
-    public class CapsuleRequestTask extends AsyncTask<String, Void, List<Capsule>> {
-
-        @Override
-        protected List<Capsule> doInBackground(String... params) {
-            Log.i(TAG, "CapsuleRequestTask.doInBackground()");
-            // Attempt to get the last Location if the LocationClient is connected
-            if (mGoogleApiClient.isConnected()) {
-                Location location = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
-                if (location != null) {
-                    // Request the undiscovered Capsules
-                    String response = null;
-                    try {
-                        response = mRequestHandler.requestUndiscoveredCapsules(params[0], location.getLatitude(), location.getLongitude());
-                    } catch (ParseException | IOException e) {
-                        e.printStackTrace();
-                        this.cancel(true);
-                    }
-    
-                    // Parse the response
-                    List<Capsule> capsules = null;
-                    try {
-                        capsules = JSONParser.parseUndiscoveredCapsules(response);
-                    } catch (JSONException e) {
-                        e.printStackTrace();
-                        this.cancel(true);
-                    }
-                    return capsules;
-                }
-            }
-            return null;
-        }
-
-        @Override
-        protected void onPostExecute(final List<Capsule> capsules) {
-            Log.i(TAG, "CapsuleRequestTask.onPostExecute()");
-            // Add the markers to the map
-            populateUndiscoveredMarkers(capsules);
-        }
-
-    }
-
     public class OpenCapsuleTask extends AsyncTask<String, Void, Uri> {
 
         /**
@@ -1009,56 +1063,4 @@ public class MainActivity extends FragmentActivity implements
 
     }
 
-    /**
-     * Background task for getting the current Account's authentication token.
-     */
-    public class AuthTask extends AsyncTask<Void, Void, String> {
-
-        /**
-         * Dialog to notify the user of the authentication process.
-         */
-        private ProgressDialog dialog;
-
-        public AuthTask(Activity activity) {
-            this.dialog = new ProgressDialog(activity);
-        }
-
-        @Override
-        protected void onPreExecute() {
-            this.dialog.setMessage(getText(R.string.progress_please_wait));
-            this.dialog.show();
-        }
-
-        @Override
-        protected String doInBackground(Void... params) {
-            Log.i(TAG, "AuthTask.doInBackground()");
-            // Return the auth token
-            try {
-                return mAccountManager.blockingGetAuthToken(mAccount, Constants.AUTH_TOKEN_TYPE, true);
-            } catch (OperationCanceledException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            } catch (AuthenticatorException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            } catch (IOException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            }
-            return null;
-        }
-
-        @Override
-        protected void onPostExecute(final String authToken) {
-            Log.i(TAG, "AuthTask.onPostExecute()");
-            // Hide the dialog
-            if (this.dialog.isShowing()) {
-                this.dialog.hide();
-                this.dialog.dismiss();
-            }
-            // Set the auth token on the corresponding activity property
-            mAuthToken = authToken;
-        }
-
-    }
 }

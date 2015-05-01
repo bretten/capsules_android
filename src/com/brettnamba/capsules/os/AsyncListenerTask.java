@@ -4,6 +4,7 @@ import android.accounts.Account;
 import android.os.AsyncTask;
 
 import com.brettnamba.capsules.http.response.AuthenticationResponse;
+import com.brettnamba.capsules.http.response.CapsulePingResponse;
 
 /**
  * Abstraction of AsyncTask that is meant to use listeners when the
@@ -40,7 +41,7 @@ public abstract class AsyncListenerTask<Params, Progress, Result> extends AsyncT
      */
     public interface AuthenticationTaskListener extends TaskListener {
         /**
-         * To be called from doInBackground()
+         * Should handle doInBackground() work
          *
          * @param params Credentials to be used in the authentication HTTP request
          * @return AuthenticationResponse
@@ -48,19 +49,19 @@ public abstract class AsyncListenerTask<Params, Progress, Result> extends AsyncT
         AuthenticationResponse duringAuthentication(String... params);
 
         /**
-         * Should be called from onPreExecute()
+         * Should handle onPreExecute() work
          */
         void onPreAuthentication();
 
         /**
-         * Should be called from onPostExecute()
+         * Should handle onPostExecute() work
          *
          * @param response The HTTP response from the authentication request
          */
         void onPostAuthentication(AuthenticationResponse response);
 
         /**
-         * Should be called from onCancelled()
+         * Should handle onCancelled() work
          */
         void onAuthenticationCancelled();
     }
@@ -70,7 +71,7 @@ public abstract class AsyncListenerTask<Params, Progress, Result> extends AsyncT
      */
     public interface AuthTokenRetrievalTaskListener extends TaskListener {
         /**
-         * To be called from doInBackground()
+         * Should handle doInBackground() work
          *
          * @param params Account to retrieve an authentication token for
          * @return String The auth token
@@ -78,21 +79,51 @@ public abstract class AsyncListenerTask<Params, Progress, Result> extends AsyncT
         String duringAuthTokenRetrieval(Account... params);
 
         /**
-         * Should be called from onPreExecute()
+         * Should handle onPreExecute() work
          */
         void onPreAuthTokenRetrieval();
 
         /**
-         * Should be called from onPostExecute()
+         * Should handle onPostExecute() work
          *
          * @param authToken The retrieved authentication token
          */
         void onPostAuthTokenRetrieval(String authToken);
 
         /**
-         * Should be called from onCancelled()
+         * Should handle onCancelled() work
          */
         void onAuthTokenRetrievalCancelled();
+    }
+
+    /**
+     * Listener for AsyncTask that will request undiscovered Capsules from the API
+     */
+    public interface CapsulePingTaskListener extends TaskListener {
+        /**
+         * Should handle doInBackground() work
+         *
+         * @param params User's authentication and location information
+         * @return HTTP response object
+         */
+        CapsulePingResponse duringCapsulePing(String... params);
+
+        /**
+         * Should handle onPreExecute() work
+         */
+        void onPreCapsulePing();
+
+        /**
+         * Should handle onPostExecute() work
+         *
+         * @param response HTTP response object for a Capsule ping
+         */
+        void onPostCapsulePing(CapsulePingResponse response);
+
+        /**
+         * Should handle onCancelled() work
+         */
+        void onCapsulePingCancelled();
     }
 
 }

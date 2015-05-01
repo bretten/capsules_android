@@ -3,6 +3,7 @@ package com.brettnamba.capsules.fragments;
 import android.accounts.Account;
 import android.app.Activity;
 import android.app.ProgressDialog;
+import android.location.Location;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
@@ -11,6 +12,7 @@ import android.util.Log;
 import com.brettnamba.capsules.R;
 import com.brettnamba.capsules.os.AsyncListenerTask;
 import com.brettnamba.capsules.os.AuthTokenRetrievalTask;
+import com.brettnamba.capsules.os.CapsulePingTask;
 
 /**
  * Fragment to be retained along with the main Activity that displays the map
@@ -26,6 +28,11 @@ public class RetainedMapFragment extends Fragment {
      * AsyncTask that retrieves the authentication token on the background thread
      */
     private AuthTokenRetrievalTask mAuthTokenTask;
+
+    /**
+     * AsyncTask that retrieves undiscovered Capsules on the background thread
+     */
+    private CapsulePingTask mCapsulePingTask;
 
     /**
      * Progress indicator to show when a background task is running
@@ -74,6 +81,10 @@ public class RetainedMapFragment extends Fragment {
                 this.mProgressDialog.show();
             }
         }
+        if (this.mCapsulePingTask != null) {
+            // Set the newly attached Activity as the listener for the Capsule ping task
+            this.mCapsulePingTask.setListener((AsyncListenerTask.TaskListener) activity);
+        }
     }
 
     /**
@@ -91,6 +102,9 @@ public class RetainedMapFragment extends Fragment {
         // Remove the listener from the AsyncTask
         if (this.mAuthTokenTask != null) {
             this.mAuthTokenTask.removeListener();
+        }
+        if (this.mCapsulePingTask != null) {
+            this.mCapsulePingTask.removeListener();
         }
     }
 
@@ -119,10 +133,8 @@ public class RetainedMapFragment extends Fragment {
      */
     public void cancelTasks() {
         Log.i(TAG, "cancelTasks()");
-        if (this.mAuthTokenTask != null && this.mAuthTokenTask.getStatus() == AsyncTask.Status.RUNNING) {
-            this.mAuthTokenTask.cancel(true);
-            this.mAuthTokenTask = null;
-        }
+        this.cancelAuthTokenRetrieval();
+        this.cancelCapsulePing();
     }
 
     /**
@@ -139,6 +151,17 @@ public class RetainedMapFragment extends Fragment {
     }
 
     /**
+     * Flags the authentication token task to be cancelled if it is running
+     */
+    public void cancelAuthTokenRetrieval() {
+        Log.i(TAG, "cancelAuthTokenRetrieval()");
+        if (this.mAuthTokenTask != null && this.mAuthTokenTask.getStatus() == AsyncTask.Status.RUNNING) {
+            this.mAuthTokenTask.cancel(true);
+            this.mAuthTokenTask = null;
+        }
+    }
+
+    /**
      * Checks if the authentication token is being retrieved
      *
      * @return True if it is, false if it is not
@@ -148,6 +171,36 @@ public class RetainedMapFragment extends Fragment {
             return this.mAuthTokenTask.getStatus() == AsyncTask.Status.RUNNING;
         }
         return false;
+    }
+
+    /**
+     * Starts a Capsule ping background task
+     *
+     * @param activity  The Activity to use as the listener
+     * @param authToken The authentication token
+     * @param location  Location object containing the user's location
+     */
+    public void startCapsulePing(Activity activity, String authToken, Location location) {
+        Log.i(TAG, "startCapsulePing()");
+        // Send a request for the undiscovered Capsules on the background thread
+        if (this.mCapsulePingTask == null || this.mCapsulePingTask.getStatus() != AsyncTask.Status.RUNNING) {
+            Log.i(TAG, "Looking for new capsules...");
+            this.mCapsulePingTask = new CapsulePingTask((AsyncListenerTask.TaskListener) activity);
+            String lat = Double.toString(location.getLatitude());
+            String lng = Double.toString(location.getLongitude());
+            this.mCapsulePingTask.execute(authToken, lat, lng);
+        }
+    }
+
+    /**
+     * Flags the Capsule ping background task to be cancelled
+     */
+    public void cancelCapsulePing() {
+        Log.i(TAG, "cancelCapsulePing()");
+        if (this.mCapsulePingTask != null && this.mCapsulePingTask.getStatus() == AsyncTask.Status.RUNNING) {
+            this.mCapsulePingTask.cancel(true);
+            this.mCapsulePingTask = null;
+        }
     }
 
     /**

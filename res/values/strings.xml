@@ -77,6 +77,10 @@
     <string name="validation_password_match">The passwords do not match.</string>
     <!-- Authentication -->
     <string name="error_missing_auth_token">A valid authentication token was not received.</string>
+    <!-- Capsules -->
+    <string name="error_cannot_retrieve_undiscovered">There was a problem scanning the area for new Capsules</string>
+    <!-- Google API -->
+    <string name="error_google_api_cannot_connect">The Google API services cannot be reached.</string>
 
     <!--
         Navigation Drawer
