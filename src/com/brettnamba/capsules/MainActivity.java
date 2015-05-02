@@ -110,6 +110,11 @@ public class MainActivity extends FragmentActivity implements
     private GoogleApiClient mGoogleApiClient;
 
     /**
+     * Determines the accuracy of the location updates
+     */
+    private LocationRequest mLocationRequest;
+
+    /**
      * Reference to the AccountManager.
      */
     private AccountManager mAccountManager;
@@ -170,11 +175,6 @@ public class MainActivity extends FragmentActivity implements
     private Marker mNewCapsuleMarker;
 
     /**
-     * Flag to determine if the map needs centering on the user's location during onCreate or onResume.
-     */
-    private boolean mNeedsCentering = true;
-
-    /**
      * The radius around the user's location in which capsules can be opened (meters).
      */
     private static final int DISCOVERY_RADIUS = 161;
@@ -190,12 +190,14 @@ public class MainActivity extends FragmentActivity implements
     private static final int ZOOM = 15;
 
     /**
-     * Quality of Location service settings.
+     * Slow interval for the LocationRequest (ms)
      */
-    private static final LocationRequest REQUEST = LocationRequest.create()
-            .setInterval(10000)
-            .setFastestInterval(5000)
-            .setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
+    private static final int LOCATION_REQUEST_INTERVAL_SLOW = 10000;
+
+    /**
+     * Fast interval for the LocationRequest (ms)
+     */
+    private static final int LOCATION_REQUEST_INTERVAL_FAST = 5000;
 
     /**
      * Request code for CapsuleActivity
@@ -239,10 +241,15 @@ public class MainActivity extends FragmentActivity implements
             fragmentManager.beginTransaction().add(this.mRetainedFragment, RETAINED_MAP_FRAGMENT_TAG).commit();
         }
 
-        // Set up the GoogleMap and LocationClient
+        // Set up the GoogleMap
         SupportMapFragment mapFragment = ((SupportMapFragment) fragmentManager.findFragmentById(R.id.map));
         mapFragment.getMapAsync(this);
-        this.setLocationClient();
+
+        // Build the Google Play services API client
+        this.buildApiClient();
+
+        // Build the LocationRequest
+        this.buildLocationRequest();
 
         // AccountManager
         this.mAccountManager = AccountManager.get(this);
@@ -297,12 +304,13 @@ public class MainActivity extends FragmentActivity implements
             }
         }
 
-        // Disconnect the LocationClient
-	    if (mGoogleApiClient != null && mGoogleApiClient.isConnected()) {
-	        mGoogleApiClient.disconnect();
+        // Disconnect from the Google Play services location API
+	    if (this.mGoogleApiClient != null && this.mGoogleApiClient.isConnected()) {
+            // Remove location listener updates
+            LocationServices.FusedLocationApi.removeLocationUpdates(this.mGoogleApiClient, this);
+            // Disconnect
+	        this.mGoogleApiClient.disconnect();
 	    }
-	    // To re-center the map onResume(), set the flag
-	    mNeedsCentering = true;
 	}
 
     @Override
@@ -458,18 +466,29 @@ public class MainActivity extends FragmentActivity implements
     @Override
     public void onConnectionFailed(ConnectionResult result) {
         Log.i(TAG, "onConnectionFailed()");
+        // Notify the user the Google API services could not be reached
+        Toast.makeText(this, this.getString(R.string.error_google_api_cannot_connect), Toast.LENGTH_SHORT).show();
     }
 
     @Override
     public void onConnected(Bundle connectionHint) {
         Log.i(TAG, "onConnected()");
-        LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, REQUEST, this);
+        // Request location updates
+        LocationServices.FusedLocationApi.requestLocationUpdates(this.mGoogleApiClient, this.mLocationRequest, this);
+        // If the user's last known location is known, move there
+        Location location = LocationServices.FusedLocationApi.getLastLocation(this.mGoogleApiClient);
+        if (location != null) {
+            this.focusOnLocation(location);
+        }
     }
 
     @Override
     public void onConnectionSuspended(int i) {
         Log.i(TAG, "onConnectionSuspended()");
-        LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, this);
+        // If a request for undiscovered Capsules is running on the background thread, stop it
+        if (this.mRetainedFragment != null) {
+            this.mRetainedFragment.cancelCapsulePing();
+        }
     }
 
     @Override
@@ -480,29 +499,8 @@ public class MainActivity extends FragmentActivity implements
             mUserCircle.setCenter(new LatLng(location.getLatitude(), location.getLongitude()));
         }
 
-        // Center the map
-        if (mNeedsCentering) {
-            this.focusMyLocation(location);
-            mNeedsCentering = false;
-        }
-
-        // If there is an auth token, get undiscovered Capsules in the new location
-        if (this.mRetainedFragment != null) {
-            // Make sure there is an auth token
-            if (this.mAuthToken != null) {
-                // Make sure there is a connection to the Google API
-                if (this.mGoogleApiClient.isConnected()) {
-                    this.mRetainedFragment.startCapsulePing(this, this.mAuthToken, location);
-                } else {
-                    Toast.makeText(this, this.getString(R.string.error_google_api_cannot_connect), Toast.LENGTH_SHORT).show();
-                }
-            } else {
-                // There is no auth token, so get it on the background thread
-                if (this.mAccount != null) {
-                    this.mRetainedFragment.startAuthTokenRetrieval(this, this.mAccount);
-                }
-            }
-        }
+        // Request undiscovered Capsules
+        this.requestUndiscoveredCapsules(location);
     }
 
     /**
@@ -575,6 +573,7 @@ public class MainActivity extends FragmentActivity implements
     @Override
     public CapsulePingResponse duringCapsulePing(String... params) {
         try {
+            // Get the parameters for the HTTP request
             final String authToken = params[0];
             final String lat = params[1];
             final String lng = params[2];
@@ -612,6 +611,8 @@ public class MainActivity extends FragmentActivity implements
                 this.populateUndiscoveredMarkers(response.getCapsules());
             }
         }
+        // Set the LocationRequest fastest interval back to a quicker value now that the request is done
+        this.setLocationRequestFastestInterval(LOCATION_REQUEST_INTERVAL_FAST);
     }
 
     /**
@@ -620,6 +621,8 @@ public class MainActivity extends FragmentActivity implements
     @Override
     public void onCapsulePingCancelled() {
         Log.i(TAG, "onCapsulePingCancelled()");
+        // Set the LocationRequest fastest interval back to a faster value
+        this.setLocationRequestFastestInterval(LOCATION_REQUEST_INTERVAL_FAST);
     }
 
     /**
@@ -666,12 +669,12 @@ public class MainActivity extends FragmentActivity implements
     }
 
     /**
-     * Gets a reference (if necessary) to the LocationClient.
+     * Builds the Google Play services API client
      */
-    private void setLocationClient() {
+    private void buildApiClient() {
         // Only get the client if it is not already set
-        if (mGoogleApiClient == null) {
-            mGoogleApiClient = new GoogleApiClient.Builder(this)
+        if (this.mGoogleApiClient == null) {
+            this.mGoogleApiClient = new GoogleApiClient.Builder(this)
                     .addApi(LocationServices.API)
                     .addConnectionCallbacks(this)
                     .addOnConnectionFailedListener(this)
@@ -680,13 +683,68 @@ public class MainActivity extends FragmentActivity implements
     }
 
     /**
-     * Focuses the GoogleMap on user's location.
-     * 
-     * @param Location location
+     * Builds the LocationRequest that determines the accuracy and frequency of the
+     * location updates
      */
-    private void focusMyLocation(Location location) {
-        if (location != null && mMap != null) {
-            mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(location.getLatitude(), location.getLongitude()), ZOOM));
+    private void buildLocationRequest() {
+        if (this.mLocationRequest == null) {
+            this.mLocationRequest = LocationRequest.create()
+                    .setInterval(LOCATION_REQUEST_INTERVAL_SLOW)
+                    .setFastestInterval(LOCATION_REQUEST_INTERVAL_FAST)
+                    .setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
+        }
+    }
+
+    /**
+     * Sets the fastest interval on the LocationRequest
+     *
+     * @param ms The new fastest interval in milliseconds
+     */
+    private void setLocationRequestFastestInterval(int ms) {
+        // Make sure the LocationRequest member is instantiated
+        this.buildLocationRequest();
+        // Set the fastest interval
+        this.mLocationRequest.setFastestInterval(ms);
+        // Request location updates with the new parameters
+        LocationServices.FusedLocationApi.requestLocationUpdates(this.mGoogleApiClient, this.mLocationRequest, this);
+    }
+
+    /**
+     * Tries to make a request for undiscovered Capsules for the specified Location
+     *
+     * @param location The location object for the Capsule ping network request to the API
+     */
+    private void requestUndiscoveredCapsules(Location location) {
+        // If there is an auth token, get undiscovered Capsules in the new location
+        if (this.mMap != null && this.mRetainedFragment != null) {
+            // Make sure there is an auth token
+            if (this.mAuthToken != null) {
+                // Make sure there is a connection to the Google API
+                if (this.mGoogleApiClient.isConnected()) {
+                    // Set the LocationServices fastest interval to a slower value during the network request
+                    this.setLocationRequestFastestInterval(LOCATION_REQUEST_INTERVAL_SLOW);
+                    // Start the Capsule ping
+                    this.mRetainedFragment.startCapsulePing(this, this.mAuthToken, location);
+                } else {
+                    Toast.makeText(this, this.getString(R.string.error_google_api_cannot_connect), Toast.LENGTH_SHORT).show();
+                }
+            } else {
+                // There is no auth token, so get it on the background thread
+                if (this.mAccount != null) {
+                    this.mRetainedFragment.startAuthTokenRetrieval(this, this.mAccount);
+                }
+            }
+        }
+    }
+
+    /**
+     * Moves the Map camera to the specified Location.
+     *
+     * @param location The location to move the camera to
+     */
+    private void focusOnLocation(Location location) {
+        if (location != null && this.mMap != null) {
+            this.mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(location.getLatitude(), location.getLongitude()), ZOOM));
         }
     }
 
