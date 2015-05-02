@@ -2,7 +2,6 @@ package com.brettnamba.capsules.http.response;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
-import org.json.JSONException;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -35,9 +34,8 @@ public abstract class ApiResponse {
      *
      * @param httpResponse The HttpResponse that will be parsed
      * @throws IOException
-     * @throws JSONException
      */
-    protected ApiResponse(HttpResponse httpResponse) throws IOException, JSONException {
+    protected ApiResponse(HttpResponse httpResponse) throws IOException {
         this.mHttpResponse = httpResponse;
         this.mMessages = new ArrayList<String>();
         this.parse(this.mHttpResponse);
@@ -100,8 +98,7 @@ public abstract class ApiResponse {
      *
      * @param response The HTTP response object
      * @throws IOException
-     * @throws JSONException
      */
-    protected abstract void parse(HttpResponse response) throws IOException, JSONException;
+    protected abstract void parse(HttpResponse response) throws IOException;
 
 }

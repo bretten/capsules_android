@@ -579,7 +579,7 @@ public class MainActivity extends FragmentActivity implements
             final String lng = params[2];
             HttpResponse response = this.mRequestHandler.requestUndiscoveredCapsules(authToken, lat, lng);
             return new CapsulePingResponse(response);
-        } catch (IOException | JSONException e) {
+        } catch (IOException e) {
             // Cancel the task
             if (this.mRetainedFragment != null) {
                 this.mRetainedFragment.cancelCapsulePing();

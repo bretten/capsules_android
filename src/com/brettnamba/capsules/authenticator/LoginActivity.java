@@ -25,7 +25,6 @@ import com.brettnamba.capsules.os.AuthenticationTask;
 import com.brettnamba.capsules.os.RetainedTaskFragment;
 
 import org.apache.http.HttpResponse;
-import org.json.JSONException;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -298,7 +297,7 @@ public class LoginActivity extends FragmentActivity implements AsyncListenerTask
             final String password = params[1];
             HttpResponse httpResponse = this.mRequestHandler.authenticate(username, password);
             return new AuthenticationResponse(httpResponse);
-        } catch (IOException|JSONException ex) {
+        } catch (IOException e) {
             return null;
         }
     }

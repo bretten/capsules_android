@@ -8,6 +8,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
+import java.util.ArrayList;
 
 /**
  * Represents an authentication HTTP response from the API
@@ -24,9 +25,8 @@ public class AuthenticationResponse extends ApiResponse {
      *
      * @param httpResponse Represents the HTTP response
      * @throws IOException
-     * @throws JSONException
      */
-    public AuthenticationResponse(HttpResponse httpResponse) throws IOException, JSONException {
+    public AuthenticationResponse(HttpResponse httpResponse) throws IOException {
         super(httpResponse);
     }
 
@@ -48,12 +48,16 @@ public class AuthenticationResponse extends ApiResponse {
      * @throws JSONException
      */
     @Override
-    protected void parse(HttpResponse response) throws IOException, JSONException {
+    protected void parse(HttpResponse response) throws IOException {
         if (response.getEntity() != null) {
             String body = EntityUtils.toString(response.getEntity());
-            JSONObject jsonObject = new JSONObject(body);
-            this.mAuthToken = JSONParser.parseAuthToken(jsonObject);
-            this.mMessages = JSONParser.parseMessages(jsonObject);
+            try {
+                JSONObject jsonObject = new JSONObject(body);
+                this.mAuthToken = JSONParser.parseAuthToken(jsonObject);
+                this.mMessages = JSONParser.parseMessages(jsonObject);
+            } catch (JSONException e) {
+                this.mMessages = new ArrayList<String>();
+            }
         }
     }
 

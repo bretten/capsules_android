@@ -9,6 +9,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -28,9 +29,8 @@ public class CapsulePingResponse extends ApiResponse {
      *
      * @param httpResponse HttpResponse object
      * @throws IOException
-     * @throws JSONException
      */
-    public CapsulePingResponse(HttpResponse httpResponse) throws IOException, JSONException {
+    public CapsulePingResponse(HttpResponse httpResponse) throws IOException {
         super(httpResponse);
     }
 
@@ -51,12 +51,17 @@ public class CapsulePingResponse extends ApiResponse {
      * @throws org.json.JSONException
      */
     @Override
-    protected void parse(HttpResponse response) throws IOException, JSONException {
+    protected void parse(HttpResponse response) throws IOException {
         if (response.getEntity() != null) {
             String body = EntityUtils.toString(response.getEntity());
-            JSONObject jsonObject = new JSONObject(body);
-            this.mCapsules = JSONParser.parseUndiscoveredCapsules(jsonObject);
-            this.mMessages = JSONParser.parseMessages(jsonObject);
+            try {
+                JSONObject jsonObject = new JSONObject(body);
+                this.mCapsules = JSONParser.parseUndiscoveredCapsules(jsonObject);
+                this.mMessages = JSONParser.parseMessages(jsonObject);
+            } catch (JSONException e) {
+                this.mCapsules = new ArrayList<Capsule>();
+                this.mMessages = new ArrayList<String>();
+            }
         }
     }
 
