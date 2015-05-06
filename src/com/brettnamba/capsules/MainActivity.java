@@ -724,7 +724,7 @@ public class MainActivity extends FragmentActivity implements
                     // Set the LocationServices fastest interval to a slower value during the network request
                     this.setLocationRequestFastestInterval(LOCATION_REQUEST_INTERVAL_SLOW);
                     // Start the Capsule ping
-                    this.mRetainedFragment.startCapsulePing(this, this.mAuthToken, location);
+                    this.mRetainedFragment.startCapsulePing(this, this.mAccount, this.mAuthToken, location);
                 } else {
                     Toast.makeText(this, this.getString(R.string.error_google_api_cannot_connect), Toast.LENGTH_SHORT).show();
                 }
@@ -906,19 +906,9 @@ public class MainActivity extends FragmentActivity implements
         this.mAccount = account;
         // Clear out the auth token
         this.mAuthToken = null;
-        // If an Account was retained and it differs from the Account being switched to, reset any Account-dependent members
+        // Get the auth token for the Account
         if (this.mRetainedFragment != null) {
-            // Get the retained Account
-            Account retainedAccount = this.mRetainedFragment.getAccount();
-            // If the retained Account is different than the last used one, reset any Account-dependent members
-            if (retainedAccount == null || !account.name.equals(retainedAccount.name)) {
-                // Cancel any running tasks
-                this.mRetainedFragment.cancelTasks();
-            }
-            // If authentication is not already happening, do it on the background thread
-            if (!this.mRetainedFragment.isRetrievingAuthToken()) {
-                this.mRetainedFragment.startAuthTokenRetrieval(this, account);
-            }
+            this.mRetainedFragment.startAuthTokenRetrieval(this, account);
         }
         // Update the drawer Fragment
         if (this.mDrawerFragment != null) {

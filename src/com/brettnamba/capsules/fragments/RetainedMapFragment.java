@@ -145,9 +145,19 @@ public class RetainedMapFragment extends Fragment {
      */
     public void startAuthTokenRetrieval(Activity activity, Account account) {
         Log.i(TAG, "startAuthTokenRetrieval()");
-        // Get the auth token on the background thread
-        this.mAuthTokenTask = new AuthTokenRetrievalTask((AsyncListenerTask.TaskListener) activity);
-        this.mAuthTokenTask.execute(account);
+        // If the retained Account is different than the last used one, reset any Account-dependent members
+        if (this.isAccountDifferent(account)) {
+            // Cancel any running tasks
+            this.cancelTasks();
+            // Retain the new Account
+            this.setAccount(account);
+        }
+        // If authentication is not already happening, do it on the background thread
+        if (!this.isRetrievingAuthToken()) {
+            // Get the auth token on the background thread
+            this.mAuthTokenTask = new AuthTokenRetrievalTask((AsyncListenerTask.TaskListener) activity);
+            this.mAuthTokenTask.execute(account);
+        }
     }
 
     /**
@@ -167,28 +177,33 @@ public class RetainedMapFragment extends Fragment {
      * @return True if it is, false if it is not
      */
     public boolean isRetrievingAuthToken() {
-        if (this.mAuthTokenTask != null) {
-            return this.mAuthTokenTask.getStatus() == AsyncTask.Status.RUNNING;
-        }
-        return false;
+        return this.mAuthTokenTask != null && this.mAuthTokenTask.getStatus() == AsyncTask.Status.RUNNING;
     }
 
     /**
      * Starts a Capsule ping background task
      *
      * @param activity  The Activity to use as the listener
+     * @param account   The Account to make the request for
      * @param authToken The authentication token
      * @param location  Location object containing the user's location
      */
-    public void startCapsulePing(Activity activity, String authToken, Location location) {
+    public void startCapsulePing(Activity activity, Account account, String authToken, Location location) {
         Log.i(TAG, "startCapsulePing()");
-        // Send a request for the undiscovered Capsules on the background thread
-        if (this.mCapsulePingTask == null || this.mCapsulePingTask.getStatus() != AsyncTask.Status.RUNNING) {
-            Log.i(TAG, "Looking for new capsules...");
-            this.mCapsulePingTask = new CapsulePingTask((AsyncListenerTask.TaskListener) activity);
-            String lat = Double.toString(location.getLatitude());
-            String lng = Double.toString(location.getLongitude());
-            this.mCapsulePingTask.execute(authToken, lat, lng);
+        if (this.isAccountDifferent(account)) {
+            // Cancel any running tasks
+            this.cancelTasks();
+            // Retain the new Account
+            this.setAccount(account);
+        } else {
+            // Send a request for the undiscovered Capsules on the background thread
+            if (!this.isPingingCapsules()) {
+                Log.i(TAG, "Looking for new capsules...");
+                this.mCapsulePingTask = new CapsulePingTask((AsyncListenerTask.TaskListener) activity);
+                String lat = Double.toString(location.getLatitude());
+                String lng = Double.toString(location.getLongitude());
+                this.mCapsulePingTask.execute(authToken, lat, lng);
+            }
         }
     }
 
@@ -197,10 +212,19 @@ public class RetainedMapFragment extends Fragment {
      */
     public void cancelCapsulePing() {
         Log.i(TAG, "cancelCapsulePing()");
-        if (this.mCapsulePingTask != null && this.mCapsulePingTask.getStatus() == AsyncTask.Status.RUNNING) {
+        if (this.isPingingCapsules()) {
             this.mCapsulePingTask.cancel(true);
             this.mCapsulePingTask = null;
         }
+    }
+
+    /**
+     * Checks if the background task for pinging Capsules is running
+     *
+     * @return True if it is running, false if it is not
+     */
+    public boolean isPingingCapsules() {
+        return this.mCapsulePingTask != null && this.mCapsulePingTask.getStatus() == AsyncTask.Status.RUNNING;
     }
 
     /**
@@ -219,6 +243,16 @@ public class RetainedMapFragment extends Fragment {
         if (this.mProgressDialog != null) {
             this.mProgressDialog.cancel();
         }
+    }
+
+    /**
+     * Checks if the specified Account is different than the current Account member
+     *
+     * @param account The account to check
+     * @return True if they are different, false if they are not
+     */
+    private boolean isAccountDifferent(Account account) {
+        return this.mAccount == null || !account.name.equals(this.mAccount.name);
     }
 
 }
