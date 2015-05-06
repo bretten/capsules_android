@@ -30,6 +30,7 @@ import com.brettnamba.capsules.activities.CapsuleActivity;
 import com.brettnamba.capsules.activities.CapsuleEditorActivity;
 import com.brettnamba.capsules.activities.CapsuleListActivity;
 import com.brettnamba.capsules.authenticator.AccountDialogFragment;
+import com.brettnamba.capsules.authenticator.LoginActivity;
 import com.brettnamba.capsules.dataaccess.Capsule;
 import com.brettnamba.capsules.dataaccess.CapsulePojo;
 import com.brettnamba.capsules.fragments.NavigationDrawerFragment;
@@ -63,6 +64,7 @@ import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.maps.android.SphericalUtil;
 
 import org.apache.http.HttpResponse;
+import org.apache.http.HttpStatus;
 import org.apache.http.ParseException;
 import org.apache.http.client.HttpClient;
 import org.json.JSONException;
@@ -605,7 +607,11 @@ public class MainActivity extends FragmentActivity implements
     public void onPostCapsulePing(CapsulePingResponse response) {
         if (response != null) {
             if (response.isClientError() || response.isServerError()) {
-                // TODO If unauthenticated, prompt for login
+                // If unauthenticated, prompt for credentials
+                if (response.getResponse().getStatusLine().getStatusCode() == HttpStatus.SC_UNAUTHORIZED) {
+                    final Intent intent = new Intent(this, LoginActivity.class);
+                    this.startActivity(intent);
+                }
                 Toast.makeText(this, this.getString(R.string.error_cannot_retrieve_undiscovered), Toast.LENGTH_SHORT).show();
             } else {
                 this.populateUndiscoveredMarkers(response.getCapsules());
