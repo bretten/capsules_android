@@ -6,9 +6,8 @@ import com.brettnamba.capsules.provider.CapsuleContract;
 
 /**
  * Represents a Discovery Capsule
- * 
- * @author Brett Namba
  *
+ * @author Brett Namba
  */
 public class CapsuleDiscoveryPojo extends CapsulePojo {
 
@@ -45,17 +44,18 @@ public class CapsuleDiscoveryPojo extends CapsulePojo {
     /**
      * Constructor
      */
-    public CapsuleDiscoveryPojo() {}
+    public CapsuleDiscoveryPojo() {
+    }
 
     /**
      * Constructs a CapsuleDiscoveryPojo by pulling values from a Cursor
-     * 
+     *
      * @param c
      */
     public CapsuleDiscoveryPojo(Cursor c) {
         super(c);
 
-        int i = c.getColumnIndex(CapsuleContract.Discoveries.DISCOVERY_ID);
+        int i = c.getColumnIndex(CapsuleContract.Discoveries.DISCOVERY_ID_ALIAS);
         if (i != -1) {
             this.setDiscoveryId(c.getLong(i));
         }
@@ -83,60 +83,61 @@ public class CapsuleDiscoveryPojo extends CapsulePojo {
 
     /**
      * Gets the Discovery primary key
+     *
      * @return
      */
     public long getDiscoveryId() {
-        return mDiscoveryId;
+        return this.mDiscoveryId;
     }
 
     /**
      * Gets the etag
-     * 
+     *
      * @return
      */
     public String getEtag() {
-        return mEtag;
+        return this.mEtag;
     }
 
     /**
      * Gets the owner Account name
-     * 
+     *
      * @return
      */
     public String getAccountName() {
-        return mAccountName;
+        return this.mAccountName;
     }
 
     /**
      * Gets the server sync status flag
-     * 
+     *
      * @return
      */
     public int getDirty() {
-        return mDirty;
+        return this.mDirty;
     }
 
     /**
      * Gets the favorite flag
-     * 
+     *
      * @return
      */
     public int getFavorite() {
-        return mFavorite;
+        return this.mFavorite;
     }
 
     /**
      * Gets the rating
-     * 
+     *
      * @return
      */
     public int getRating() {
-        return mRating;
+        return this.mRating;
     }
 
     /**
      * Sets the Discovery primary key
-     * 
+     *
      * @param discoveryId
      */
     public void setDiscoveryId(long discoveryId) {
@@ -145,7 +146,7 @@ public class CapsuleDiscoveryPojo extends CapsulePojo {
 
     /**
      * Sets the etag
-     * 
+     *
      * @param etag
      */
     public void setEtag(String etag) {
@@ -154,7 +155,7 @@ public class CapsuleDiscoveryPojo extends CapsulePojo {
 
     /**
      * Sets the Account name
-     * 
+     *
      * @param accountName
      */
     public void setAccountName(String accountName) {
@@ -163,7 +164,7 @@ public class CapsuleDiscoveryPojo extends CapsulePojo {
 
     /**
      * Sets the server sync status flag
-     * 
+     *
      * @param dirty
      */
     public void setDirty(int dirty) {
@@ -172,7 +173,7 @@ public class CapsuleDiscoveryPojo extends CapsulePojo {
 
     /**
      * Sets the favorite flag
-     * 
+     *
      * @param favorite
      */
     public void setFavorite(int favorite) {
@@ -181,7 +182,7 @@ public class CapsuleDiscoveryPojo extends CapsulePojo {
 
     /**
      * Sets the rating
-     * 
+     *
      * @param rating
      */
     public void setRating(int rating) {

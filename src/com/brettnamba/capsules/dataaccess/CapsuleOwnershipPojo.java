@@ -6,9 +6,8 @@ import com.brettnamba.capsules.provider.CapsuleContract;
 
 /**
  * Represents an Ownership Capsule
- * 
- * @author Brett Namba
  *
+ * @author Brett Namba
  */
 public class CapsuleOwnershipPojo extends CapsulePojo {
 
@@ -40,17 +39,18 @@ public class CapsuleOwnershipPojo extends CapsulePojo {
     /**
      * Constructor
      */
-    public CapsuleOwnershipPojo() {}
+    public CapsuleOwnershipPojo() {
+    }
 
     /**
      * Constructor for instantiating a Ownership Capsule from a Cursor
-     * 
+     *
      * @param c
      */
     public CapsuleOwnershipPojo(Cursor c) {
         super(c);
 
-        int i = c.getColumnIndex(CapsuleContract.Ownerships.OWNERSHIP_ID);
+        int i = c.getColumnIndex(CapsuleContract.Ownerships.OWNERSHIP_ID_ALIAS);
         if (i != -1) {
             this.setOwnershipId(c.getLong(i));
         }
@@ -76,7 +76,7 @@ public class CapsuleOwnershipPojo extends CapsulePojo {
     public int hashCode() {
         final int prime = 31;
         int result = 1;
-        result = prime * result + (int) (mSyncId ^ (mSyncId >>> 32));
+        result = prime * result + (int) (this.mSyncId ^ (this.mSyncId >>> 32));
         return result;
     }
 
@@ -92,7 +92,7 @@ public class CapsuleOwnershipPojo extends CapsulePojo {
             return false;
         }
         CapsuleOwnershipPojo other = (CapsuleOwnershipPojo) obj;
-        if (mSyncId != other.mSyncId) {
+        if (this.mSyncId != other.mSyncId) {
             return false;
         }
         return true;
@@ -100,7 +100,7 @@ public class CapsuleOwnershipPojo extends CapsulePojo {
 
     /**
      * Returns the Ownership id
-     * 
+     *
      * @return
      */
     public long getOwnershipId() {
@@ -109,7 +109,7 @@ public class CapsuleOwnershipPojo extends CapsulePojo {
 
     /**
      * Returns the Ownership etag
-     * 
+     *
      * @return
      */
     public String getEtag() {
@@ -118,7 +118,7 @@ public class CapsuleOwnershipPojo extends CapsulePojo {
 
     /**
      * Returns the Ownership Account name
-     * 
+     *
      * @return
      */
     public String getAccountName() {
@@ -127,7 +127,7 @@ public class CapsuleOwnershipPojo extends CapsulePojo {
 
     /**
      * Returns the sync flag
-     * 
+     *
      * @return
      */
     public int getDirty() {
@@ -136,7 +136,7 @@ public class CapsuleOwnershipPojo extends CapsulePojo {
 
     /**
      * Returns the deleted flag
-     * 
+     *
      * @return
      */
     public int getDeleted() {
@@ -145,7 +145,7 @@ public class CapsuleOwnershipPojo extends CapsulePojo {
 
     /**
      * Sets the Ownership id
-     * 
+     *
      * @param ownershipId
      * @return
      */
@@ -156,7 +156,7 @@ public class CapsuleOwnershipPojo extends CapsulePojo {
 
     /**
      * Sets the Ownership etag
-     * 
+     *
      * @param etag
      * @return
      */
@@ -167,7 +167,7 @@ public class CapsuleOwnershipPojo extends CapsulePojo {
 
     /**
      * Sets the Account name
-     * 
+     *
      * @param accountName
      * @return
      */
@@ -178,7 +178,7 @@ public class CapsuleOwnershipPojo extends CapsulePojo {
 
     /**
      * Sets the sync status
-     * 
+     *
      * @param dirty
      * @return
      */
@@ -189,7 +189,7 @@ public class CapsuleOwnershipPojo extends CapsulePojo {
 
     /**
      * Sets the deleted flag
-     * 
+     *
      * @param deleted
      * @return
      */
