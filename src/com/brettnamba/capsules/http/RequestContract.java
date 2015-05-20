@@ -36,7 +36,7 @@ public final class RequestContract {
          * The URI for user registration.
          */
         public static final String REGISTER_URI = "/api/register";
-    
+
         /**
          * The URI for getting nearby undiscovered Capsules.
          */
@@ -66,12 +66,23 @@ public final class RequestContract {
          * URI that for REPORTing on Ownership Capsules
          */
         public static final String OWNERSHIP_REPORT_URI = "/api/report/capsules";
+
     }
 
     /**
      * Field names for HTTP requests and responses
      */
     public static final class Field {
+
+        /**
+         * The key for a data object
+         */
+        public static final String DATA = "data";
+
+        /**
+         * The key for a collection of messages
+         */
+        public static final String MESSAGES = "messages";
 
         /**
          * The name of the field storing the authentication token in the authentication response JSON body.
@@ -99,9 +110,14 @@ public final class RequestContract {
         public static final String PASSWORD_CONFIRMATION = "confirm_password";
 
         /**
-         * The field storing a Capsule object.
+         * The key for a single Capsule
          */
-        public static final String CAPSULE_OBJECT = "Capsule";
+        public static final String CAPSULE = "capsule";
+
+        /**
+         * The key for a collection of Capsules
+         */
+        public static final String CAPSULE_COLLECTION = "capsules";
 
         /**
          * The field storing a Capsule's external primary key.
@@ -127,6 +143,32 @@ public final class RequestContract {
          * The field for storing a Capsule's etag.
          */
         public static final String CAPSULE_ETAG = "etag";
+
+        /**
+         * The key for a single Discovery object
+         */
+        public static final String DISCOVERY = "discovery";
+
+        /**
+         * The key for a collection of Discovery objects
+         */
+        public static final String DISCOVERY_COLLECTION = "discoveries";
+
+        /**
+         * The field for a Discovery etag
+         */
+        public static final String DISCOVERY_ETAG = "etag";
+
+        /**
+         * The field for the Discovery favorite flag
+         */
+        public static final String DISCOVERY_FAVORITE = "favorite";
+
+        /**
+         * The field for the rating of the Discovery
+         */
+        public static final String DISCOVERY_RATING = "rating";
+
     }
 
 }
