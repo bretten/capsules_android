@@ -2,7 +2,11 @@ package com.brettnamba.capsules.dataaccess;
 
 import android.database.Cursor;
 
+import com.brettnamba.capsules.http.RequestContract;
 import com.brettnamba.capsules.provider.CapsuleContract;
+
+import org.json.JSONException;
+import org.json.JSONObject;
 
 /**
  * Represents a Discovery Capsule
@@ -48,6 +52,22 @@ public class CapsuleDiscoveryPojo extends CapsulePojo {
     }
 
     /**
+     * Constructs a CapsuleDiscoveryPojo given another instance of Capsule.  It will only get
+     * common properties from the Capsule instance that was passed in
+     *
+     * @param capsule An instance of a Capsule
+     */
+    public CapsuleDiscoveryPojo(Capsule capsule) {
+        this.setId(capsule.getId());
+        this.setSyncId(capsule.getSyncId());
+        if (capsule.getName() != null) {
+            this.setName(capsule.getName());
+        }
+        this.setLatitude(capsule.getLatitude());
+        this.setLongitude(capsule.getLongitude());
+    }
+
+    /**
      * Constructs a CapsuleDiscoveryPojo by pulling values from a Cursor
      *
      * @param c
@@ -78,6 +98,25 @@ public class CapsuleDiscoveryPojo extends CapsulePojo {
         i = c.getColumnIndex(CapsuleContract.Discoveries.RATING);
         if (i != -1) {
             this.setRating(c.getInt(i));
+        }
+    }
+
+    /**
+     * Constructs a CapsuleDiscoveryPojo given a JSONObject
+     *
+     * @param jsonCapsule A JSONObject representing a Discovery
+     * @throws JSONException
+     */
+    public CapsuleDiscoveryPojo(JSONObject jsonCapsule) throws JSONException {
+        super(jsonCapsule);
+        if (jsonCapsule.has(RequestContract.Field.DISCOVERY_ETAG)) {
+            this.setEtag(jsonCapsule.getString(RequestContract.Field.DISCOVERY_ETAG));
+        }
+        if (jsonCapsule.has(RequestContract.Field.DISCOVERY_FAVORITE)) {
+            this.setFavorite(jsonCapsule.getInt(RequestContract.Field.DISCOVERY_FAVORITE));
+        }
+        if (jsonCapsule.has(RequestContract.Field.DISCOVERY_RATING)) {
+            this.setRating(jsonCapsule.getInt(RequestContract.Field.DISCOVERY_RATING));
         }
     }
 
