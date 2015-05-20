@@ -4,6 +4,7 @@ import android.accounts.Account;
 import android.os.AsyncTask;
 
 import com.brettnamba.capsules.http.response.AuthenticationResponse;
+import com.brettnamba.capsules.http.response.CapsuleOpenResponse;
 import com.brettnamba.capsules.http.response.CapsulePingResponse;
 
 /**
@@ -34,7 +35,8 @@ public abstract class AsyncListenerTask<Params, Progress, Result> extends AsyncT
     /**
      * Base TaskListener interface that all listeners should extend from
      */
-    public interface TaskListener {}
+    public interface TaskListener {
+    }
 
     /**
      * Listener for any AsyncTasks that perform authentication using AuthenticationResponse
@@ -124,6 +126,36 @@ public abstract class AsyncListenerTask<Params, Progress, Result> extends AsyncT
          * Should handle onCancelled() work
          */
         void onCapsulePingCancelled();
+    }
+
+    /**
+     * Listener for AsyncTask that will make an HTTP request to open a Capsule
+     */
+    public interface CapsuleOpenTaskListener extends TaskListener {
+        /**
+         * Should handle doInBackground() work
+         *
+         * @param params User's authentication, location and the Capsule being opened
+         * @return HTTP response object
+         */
+        CapsuleOpenResponse duringCapsuleOpen(String... params);
+
+        /**
+         * Should handle onPreExecute() work
+         */
+        void onPreCapsuleOpen();
+
+        /**
+         * Should handle onPostExecute() work
+         *
+         * @param response HTTP response object from opening the Capsule
+         */
+        void onPostCapsuleOpen(CapsuleOpenResponse response);
+
+        /**
+         * Should handle onCancelled() work
+         */
+        void onCapsuleOpenCancelled();
     }
 
 }

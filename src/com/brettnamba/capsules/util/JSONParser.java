@@ -1,6 +1,7 @@
 package com.brettnamba.capsules.util;
 
 import com.brettnamba.capsules.dataaccess.Capsule;
+import com.brettnamba.capsules.dataaccess.CapsuleDiscoveryPojo;
 import com.brettnamba.capsules.dataaccess.CapsuleOwnershipPojo;
 import com.brettnamba.capsules.dataaccess.CapsulePojo;
 import com.brettnamba.capsules.http.RequestContract;
@@ -14,26 +15,10 @@ import java.util.List;
 
 /**
  * Handles parsing server responses into application-specific data structures.
- * 
- * @author Brett
  *
+ * @author Brett Namba
  */
 public class JSONParser {
-
-    /**
-     * The key of a JSON object that contains any data entities.
-     */
-    public static final String RESOURCE_DATA = "data";
-
-    /**
-     * The key of a JSON object that contains any messages.
-     */
-    public static final String MESSAGE_KEY = "messages";
-
-    /**
-     * The key of a JSON object that contains Capsules.
-     */
-    public static final String CAPSULES_KEY = "capsules";
 
     /**
      * Parses API response messages from a JSONObject
@@ -47,8 +32,8 @@ public class JSONParser {
         List<String> messages = new ArrayList<String>();
 
         // Get the messages
-        if (jsonObject.has(MESSAGE_KEY)) {
-            JSONArray jsonMessages = jsonObject.getJSONArray(MESSAGE_KEY);
+        if (jsonObject.has(RequestContract.Field.MESSAGES)) {
+            JSONArray jsonMessages = jsonObject.getJSONArray(RequestContract.Field.MESSAGES);
             for (int i = 0; i < jsonMessages.length(); i++) {
                 messages.add(jsonMessages.getString(i));
             }
@@ -65,12 +50,12 @@ public class JSONParser {
      * @throws JSONException
      */
     public static String parseAuthToken(JSONObject jsonObject) throws JSONException {
-        if (!jsonObject.has(RESOURCE_DATA)) {
+        if (!jsonObject.has(RequestContract.Field.DATA)) {
             return null;
         }
 
         // Get the JSON data object
-        JSONObject dataObject = jsonObject.getJSONObject(RESOURCE_DATA);
+        JSONObject dataObject = jsonObject.getJSONObject(RequestContract.Field.DATA);
 
         // Return the token if it exists
         if (dataObject.has(RequestContract.Field.AUTH_TOKEN_RESPONSE)) {
@@ -82,14 +67,14 @@ public class JSONParser {
 
     /**
      * Parses an authentication response to retrieve an authentication token.
-     * 
+     *
      * @param body
      * @return String
      * @throws JSONException
      */
     public static String parseAuthenticationToken(String body) throws JSONException {
         // Parse the response
-        JSONObject json = new JSONObject(body).getJSONObject(RESOURCE_DATA);
+        JSONObject json = new JSONObject(body).getJSONObject(RequestContract.Field.DATA);
 
         return json.getString(RequestContract.Field.AUTH_TOKEN_RESPONSE);
     }
@@ -106,13 +91,13 @@ public class JSONParser {
         List<Capsule> capsules = new ArrayList<Capsule>();
 
         // Make sure the JSON object has the resource key
-        if (json.has(RESOURCE_DATA)) {
+        if (json.has(RequestContract.Field.DATA)) {
             // Get the JSON data object
-            JSONObject data = json.getJSONObject(RESOURCE_DATA);
+            JSONObject data = json.getJSONObject(RequestContract.Field.DATA);
             // Make sure the Capsules key exists
-            if (data.has(CAPSULES_KEY)) {
+            if (data.has(RequestContract.Field.CAPSULE_COLLECTION)) {
                 // Get the array of Capsules from the data object
-                JSONArray jsonCapsules = data.getJSONArray(CAPSULES_KEY);
+                JSONArray jsonCapsules = data.getJSONArray(RequestContract.Field.CAPSULE_COLLECTION);
                 // Iterate through the array and build Capsules from the JSON objects
                 for (int i = 0; i < jsonCapsules.length(); i++) {
                     JSONObject jsonCapsule = jsonCapsules.getJSONObject(i);
@@ -131,44 +116,57 @@ public class JSONParser {
     }
 
     /**
-     * Parses an "open Capsule" response.
-     * 
-     * @param body
-     * @return
+     * Parses a JSON response from a Capsule open request
+     *
+     * @param json The JSON response object
+     * @return The newly opened Capsule or null if nothing was opened
      * @throws JSONException
      */
-    public static String parseOpenCapsule(String body) throws JSONException {
-        // Parse the response
-        JSONObject json = new JSONObject(body).getJSONObject(RESOURCE_DATA);
+    public static CapsuleDiscoveryPojo parseOpenCapsule(JSONObject json) throws JSONException {
+        // The Capsule that was opened
+        CapsuleDiscoveryPojo capsule = null;
 
-        return json.getString(RequestContract.Field.CAPSULE_ETAG);
+        // Check for the resource data key
+        if (json.has(RequestContract.Field.DATA)) {
+            // Get the resource data object
+            JSONObject data = json.getJSONObject(RequestContract.Field.DATA);
+            // Check for the Capsule object
+            if (data.has(RequestContract.Field.DISCOVERY)) {
+                // Get the JSON Capsule object
+                JSONObject jsonCapsule = data.getJSONObject(RequestContract.Field.DISCOVERY);
+                // Get the Capsule data from the JSON
+                capsule = new CapsuleDiscoveryPojo(jsonCapsule);
+            }
+        }
+
+        return capsule;
     }
 
     /**
      * Parses a server response for updating an Ownership Capsule.
-     * 
+     *
      * @param body
      * @return
      * @throws JSONException
      */
     public static Capsule parseOwnershipCapsule(String body) throws JSONException {
         // Parse the response
-        JSONObject json = new JSONObject(body).getJSONObject(RESOURCE_DATA);
+        JSONObject json = new JSONObject(body).getJSONObject(RequestContract.Field.DATA);
 
         // Build the Capsule
         Capsule capsule = new CapsuleOwnershipPojo();
         ((CapsuleOwnershipPojo) capsule.setSyncId(json.getLong(RequestContract.Field.CAPSULE_SYNC_ID))
-            .setName(json.getString(RequestContract.Field.CAPSULE_NAME))
-            .setLatitude(json.getDouble(RequestContract.Field.CAPSULE_LATITUDE))
-            .setLongitude(json.getDouble(RequestContract.Field.CAPSULE_LONGITUDE)))
-            .setEtag(json.getString(RequestContract.Field.CAPSULE_ETAG));
+                .setName(json.getString(RequestContract.Field.CAPSULE_NAME))
+                .setLatitude(json.getDouble(RequestContract.Field.CAPSULE_LATITUDE))
+                .setLongitude(json.getDouble(RequestContract.Field.CAPSULE_LONGITUDE)))
+                .setEtag(json.getString(RequestContract.Field.CAPSULE_ETAG));
 
         return capsule;
     }
 
     /**
      * Parses a server response holding Capsule Ownership status information
-     * 
+     *
      * @param body
      * @return
      * @throws JSONException
@@ -182,12 +180,12 @@ public class JSONParser {
 
         // Extract data from individual JSON objects
         for (int i = 0; i < json.length(); i++) {
-            JSONObject jsonCapsule = json.getJSONObject(i).getJSONObject(RESOURCE_DATA);
+            JSONObject jsonCapsule = json.getJSONObject(i).getJSONObject(RequestContract.Field.DATA);
 
             // Create Capsules
             capsules.add(((CapsuleOwnershipPojo) new CapsuleOwnershipPojo()
-                .setSyncId(jsonCapsule.getLong(RequestContract.Field.CAPSULE_SYNC_ID)))
-                .setEtag(jsonCapsule.getString(RequestContract.Field.CAPSULE_ETAG))
+                            .setSyncId(jsonCapsule.getLong(RequestContract.Field.CAPSULE_SYNC_ID)))
+                            .setEtag(jsonCapsule.getString(RequestContract.Field.CAPSULE_ETAG))
             );
         }
 
@@ -196,7 +194,7 @@ public class JSONParser {
 
     /**
      * Parses a server response holding a Capsule Ownership REPORT
-     * 
+     *
      * @param body
      * @return
      * @throws JSONException
@@ -210,15 +208,15 @@ public class JSONParser {
 
         // Extract data from individual JSON objects
         for (int i = 0; i < json.length(); i++) {
-            JSONObject jsonCapsule = json.getJSONObject(i).getJSONObject(RESOURCE_DATA);
+            JSONObject jsonCapsule = json.getJSONObject(i).getJSONObject(RequestContract.Field.DATA);
 
             // Create Capsules
             capsules.add(((CapsuleOwnershipPojo) new CapsuleOwnershipPojo()
-                .setSyncId(jsonCapsule.getLong(RequestContract.Field.CAPSULE_SYNC_ID))
-                .setName(jsonCapsule.getString(RequestContract.Field.CAPSULE_NAME))
-                .setLatitude(jsonCapsule.getDouble(RequestContract.Field.CAPSULE_LATITUDE))
-                .setLongitude(jsonCapsule.getDouble(RequestContract.Field.CAPSULE_LONGITUDE)))
-                .setEtag(jsonCapsule.getString(RequestContract.Field.CAPSULE_ETAG))
+                            .setSyncId(jsonCapsule.getLong(RequestContract.Field.CAPSULE_SYNC_ID))
+                            .setName(jsonCapsule.getString(RequestContract.Field.CAPSULE_NAME))
+                            .setLatitude(jsonCapsule.getDouble(RequestContract.Field.CAPSULE_LATITUDE))
+                            .setLongitude(jsonCapsule.getDouble(RequestContract.Field.CAPSULE_LONGITUDE)))
+                            .setEtag(jsonCapsule.getString(RequestContract.Field.CAPSULE_ETAG))
             );
         }
 

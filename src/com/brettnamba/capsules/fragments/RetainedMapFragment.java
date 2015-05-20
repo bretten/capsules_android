@@ -10,8 +10,10 @@ import android.support.v4.app.Fragment;
 import android.util.Log;
 
 import com.brettnamba.capsules.R;
+import com.brettnamba.capsules.dataaccess.Capsule;
 import com.brettnamba.capsules.os.AsyncListenerTask;
 import com.brettnamba.capsules.os.AuthTokenRetrievalTask;
+import com.brettnamba.capsules.os.CapsuleOpenTask;
 import com.brettnamba.capsules.os.CapsulePingTask;
 
 /**
@@ -33,6 +35,11 @@ public class RetainedMapFragment extends Fragment {
      * AsyncTask that retrieves undiscovered Capsules on the background thread
      */
     private CapsulePingTask mCapsulePingTask;
+
+    /**
+     * AsyncTask that opens an undiscovered Capsule on the background thread
+     */
+    private CapsuleOpenTask mCapsuleOpenTask;
 
     /**
      * Progress indicator to show when a background task is running
@@ -85,6 +92,10 @@ public class RetainedMapFragment extends Fragment {
             // Set the newly attached Activity as the listener for the Capsule ping task
             this.mCapsulePingTask.setListener((AsyncListenerTask.TaskListener) activity);
         }
+        if (this.mCapsuleOpenTask != null) {
+            // Set the newly attached Activity as the listener
+            this.mCapsuleOpenTask.setListener((AsyncListenerTask.TaskListener) activity);
+        }
     }
 
     /**
@@ -105,6 +116,9 @@ public class RetainedMapFragment extends Fragment {
         }
         if (this.mCapsulePingTask != null) {
             this.mCapsulePingTask.removeListener();
+        }
+        if (this.mCapsuleOpenTask != null) {
+            this.mCapsuleOpenTask.removeListener();
         }
     }
 
@@ -135,13 +149,14 @@ public class RetainedMapFragment extends Fragment {
         Log.i(TAG, "cancelTasks()");
         this.cancelAuthTokenRetrieval();
         this.cancelCapsulePing();
+        this.cancelCapsuleOpen();
     }
 
     /**
      * Starts the task to retrieve the authentication token
      *
      * @param activity The Activity to use as the listener
-     * @param account The Account to get the authentication token for
+     * @param account  The Account to get the authentication token for
      */
     public void startAuthTokenRetrieval(Activity activity, Account account) {
         Log.i(TAG, "startAuthTokenRetrieval()");
@@ -225,6 +240,55 @@ public class RetainedMapFragment extends Fragment {
      */
     public boolean isPingingCapsules() {
         return this.mCapsulePingTask != null && this.mCapsulePingTask.getStatus() == AsyncTask.Status.RUNNING;
+    }
+
+    /**
+     * Starts a Capsule open background task
+     *
+     * @param activity  The Activity to use as the listener
+     * @param account   The Account to make the request for
+     * @param authToken The authentication token
+     * @param location  Location object containing the user's location
+     * @param capsule   The Capsule to open
+     */
+    public void startCapsuleOpen(Activity activity, Account account, String authToken, Location location, Capsule capsule) {
+        Log.i(TAG, "startCapsuleOpen()");
+        if (this.isAccountDifferent(account)) {
+            // Cancel any running tasks
+            this.cancelTasks();
+            // Retain the new Account
+            this.setAccount(account);
+        } else {
+            // Send a request on the background thread to open the Capsule
+            if (!this.isOpeningCapsule()) {
+                Log.i(TAG, "Opening capsule...");
+                this.mCapsuleOpenTask = new CapsuleOpenTask((AsyncListenerTask.TaskListener) activity);
+                String lat = Double.toString(location.getLatitude());
+                String lng = Double.toString(location.getLongitude());
+                String syncId = Long.toString(capsule.getSyncId());
+                this.mCapsuleOpenTask.execute(authToken, syncId, lat, lng);
+            }
+        }
+    }
+
+    /**
+     * Cancels the Capsule open background task if it is running
+     */
+    public void cancelCapsuleOpen() {
+        Log.i(TAG, "cancelCapsuleOpen()");
+        if (this.isOpeningCapsule()) {
+            this.mCapsuleOpenTask.cancel(true);
+            this.mCapsuleOpenTask = null;
+        }
+    }
+
+    /**
+     * Checks if the Capsule open background task is running
+     *
+     * @return True if it is running, otherwise false
+     */
+    public boolean isOpeningCapsule() {
+        return this.mCapsuleOpenTask != null && this.mCapsuleOpenTask.getStatus() == AsyncTask.Status.RUNNING;
     }
 
     /**

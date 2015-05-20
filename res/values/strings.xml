@@ -27,7 +27,6 @@
         Activities
     -->
     <!-- MainActivity -->
-    <string name="map_outside_capsule_radius">You cannot open that at this distance.  Make sure it is within your open radius.</string>
     <string name="map_during_open_capsule">Discovering...</string>
     <string name="map_new_capsule_dialog_title">Add a Capsule?</string>
     <string name="map_new_capsule_dialog_message">After dropping a new Capsule, you may alter its position by holding and dragging it.  When you find the correct placement, you can click on the Capsule to finish creating it.</string>
@@ -79,8 +78,12 @@
     <string name="error_missing_auth_token">A valid authentication token was not received.</string>
     <!-- Capsules -->
     <string name="error_cannot_retrieve_undiscovered">There was a problem scanning the area for new Capsules</string>
+    <string name="error_cannot_open_capsule">The capsule could not be opened.</string>
     <!-- Google API -->
     <string name="error_google_api_cannot_connect">The Google API services cannot be reached.</string>
+    <string name="error_cannot_retrieve_location">Your current location could no be retrieved.</string>
+    <!-- Map -->
+    <string name="error_marker_too_far">The capsule is too far away to open.</string>
 
     <!--
         Navigation Drawer

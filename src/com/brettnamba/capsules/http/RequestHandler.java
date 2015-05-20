@@ -131,35 +131,34 @@ public class RequestHandler {
     }
 
     /**
-     * Sends a request to the server to "open" a Capsule.
-     * 
-     * @param authToken
-     * @param syncId
-     * @param lat
-     * @param lng
-     * @return
+     * Sends a request to the API to open an undiscovered Capsule
+     *
+     * @param authToken The user's authentication token
+     * @param syncId    The sync ID of the Capsule being opened
+     * @param lat       The user's latitude to verify their position
+     * @param lng       The user's longitude to verify their position
+     * @return HTTP response object containing the Capsule on success
      * @throws ParseException
      * @throws IOException
      */
-    public String requestOpenCapsule(String authToken, long syncId, double lat, double lng) throws ParseException, IOException {
-         // POST
+    public HttpResponse requestOpenCapsule(String authToken, String syncId, String lat, String lng) throws ParseException, IOException {
+        // POST
         HttpPost request = new HttpPost(RequestContract.BASE_URL + RequestContract.Uri.OPEN_CAPSULE_URI);
-        
+
         // Headers
         request.addHeader(HTTP.TARGET_HOST, RequestContract.HOST);
-        request.addHeader(RequestContract.AUTH_HEADER, Base64.encodeToString((authToken).getBytes(), Base64.URL_SAFE|Base64.NO_WRAP));
+        request.addHeader(RequestContract.AUTH_HEADER, Base64.encodeToString((authToken).getBytes(), Base64.URL_SAFE | Base64.NO_WRAP));
         request.addHeader(HTTP.CONTENT_TYPE, URLEncodedUtils.CONTENT_TYPE);
-        
+
         // POST body
         ArrayList<NameValuePair> params = new ArrayList<NameValuePair>();
-        params.add(new BasicNameValuePair("data[" + RequestContract.Field.CAPSULE_SYNC_ID + "]", Long.toString(syncId)));
-        params.add(new BasicNameValuePair("data[" + RequestContract.Field.CAPSULE_LATITUDE + "]", Double.toString(lat)));
-        params.add(new BasicNameValuePair("data[" + RequestContract.Field.CAPSULE_LONGITUDE + "]", Double.toString(lng)));
+        params.add(new BasicNameValuePair("data[" + RequestContract.Field.CAPSULE_SYNC_ID + "]", syncId));
+        params.add(new BasicNameValuePair("data[" + RequestContract.Field.CAPSULE_LATITUDE + "]", lat));
+        params.add(new BasicNameValuePair("data[" + RequestContract.Field.CAPSULE_LONGITUDE + "]", lng));
         request.setEntity(new UrlEncodedFormEntity(params));
-        
+
         // Send and get the response
-        HttpResponse response = mClient.execute(request);
-        return EntityUtils.toString(response.getEntity());
+        return mClient.execute(request);
     }
 
     /**

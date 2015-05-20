@@ -6,14 +6,11 @@ import android.accounts.AuthenticatorException;
 import android.accounts.OperationCanceledException;
 import android.app.Activity;
 import android.app.AlertDialog;
-import android.app.ProgressDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
 import android.graphics.Color;
 import android.location.Location;
-import android.net.Uri;
-import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.v4.app.FragmentActivity;
@@ -32,17 +29,18 @@ import com.brettnamba.capsules.activities.CapsuleListActivity;
 import com.brettnamba.capsules.authenticator.AccountDialogFragment;
 import com.brettnamba.capsules.authenticator.LoginActivity;
 import com.brettnamba.capsules.dataaccess.Capsule;
+import com.brettnamba.capsules.dataaccess.CapsuleDiscoveryPojo;
 import com.brettnamba.capsules.dataaccess.CapsulePojo;
 import com.brettnamba.capsules.fragments.NavigationDrawerFragment;
 import com.brettnamba.capsules.fragments.RetainedMapFragment;
 import com.brettnamba.capsules.http.HttpFactory;
 import com.brettnamba.capsules.http.RequestHandler;
+import com.brettnamba.capsules.http.response.CapsuleOpenResponse;
 import com.brettnamba.capsules.http.response.CapsulePingResponse;
 import com.brettnamba.capsules.os.AsyncListenerTask;
 import com.brettnamba.capsules.provider.CapsuleContract;
 import com.brettnamba.capsules.provider.CapsuleOperations;
 import com.brettnamba.capsules.util.Accounts;
-import com.brettnamba.capsules.util.JSONParser;
 import com.brettnamba.capsules.widget.NavigationDrawerItem;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -65,9 +63,7 @@ import com.google.maps.android.SphericalUtil;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
-import org.apache.http.ParseException;
 import org.apache.http.client.HttpClient;
-import org.json.JSONException;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -89,7 +85,8 @@ public class MainActivity extends FragmentActivity implements
         AccountDialogFragment.AccountDialogListener,
         NavigationDrawerFragment.NavigationDrawerListener,
         AsyncListenerTask.AuthTokenRetrievalTaskListener,
-        AsyncListenerTask.CapsulePingTaskListener {
+        AsyncListenerTask.CapsulePingTaskListener,
+        AsyncListenerTask.CapsuleOpenTaskListener {
 
     /**
      * Fragment used to retain the state of the Map and the user
@@ -175,6 +172,11 @@ public class MainActivity extends FragmentActivity implements
      * Holds the Marker that is used to create new Capsules.
      */
     private Marker mNewCapsuleMarker;
+
+    /**
+     * Holds the Marker that is being opened.
+     */
+    private Marker mOpenedCapsuleMarker;
 
     /**
      * The radius around the user's location in which capsules can be opened (meters).
@@ -551,6 +553,7 @@ public class MainActivity extends FragmentActivity implements
         if (this.mRetainedFragment != null) {
             this.mRetainedFragment.hideProgress();
         }
+        this.populateStoredMarkers();
     }
 
     /**
@@ -596,6 +599,8 @@ public class MainActivity extends FragmentActivity implements
     @Override
     public void onPreCapsulePing() {
         Log.i(TAG, "onPreCapsulePing()");
+        // Set the LocationServices fastest interval to a slower value during the network request
+        this.setLocationRequestFastestInterval(LOCATION_REQUEST_INTERVAL_SLOW);
     }
 
     /**
@@ -629,6 +634,96 @@ public class MainActivity extends FragmentActivity implements
         Log.i(TAG, "onCapsulePingCancelled()");
         // Set the LocationRequest fastest interval back to a faster value
         this.setLocationRequestFastestInterval(LOCATION_REQUEST_INTERVAL_FAST);
+    }
+
+    /**
+     * Handles CapsuleOpenTask doInBackground() and sends HTTP request to the API to try and
+     * open a Capsule given a user's authentication token and their location
+     *
+     * @param params User's authentication, location and the Capsule being opened
+     * @return HTTP response object representing the result of the request
+     */
+    @Override
+    public CapsuleOpenResponse duringCapsuleOpen(String... params) {
+        Log.i(TAG, "duringCapsuleOpen()");
+        try {
+            final String authToken = params[0];
+            final String syncId = params[1];
+            final String lat = params[2];
+            final String lng = params[3];
+            HttpResponse response = this.mRequestHandler.requestOpenCapsule(authToken, syncId, lat, lng);
+            return new CapsuleOpenResponse(response);
+        } catch (IOException e) {
+            // Cancel the task
+            if (this.mRetainedFragment != null) {
+                this.mRetainedFragment.cancelCapsuleOpen();
+            }
+            return null;
+        }
+    }
+
+    /**
+     * Handles CapsuleOpenTask's onPreExecute()
+     */
+    @Override
+    public void onPreCapsuleOpen() {
+        Log.i(TAG, "onPreCapsuleOpen()");
+        // Set the LocationServices fastest interval to a slower value during the network request
+        this.setLocationRequestFastestInterval(LOCATION_REQUEST_INTERVAL_SLOW);
+    }
+
+    /**
+     * Handles CapsuleOpenTask's onPostExecute()
+     *
+     * @param response HTTP response object from opening the Capsule
+     */
+    @Override
+    public void onPostCapsuleOpen(CapsuleOpenResponse response) {
+        Log.i(TAG, "onPostCapsuleOpen()");
+        if (response != null) {
+            if (response.isClientError() || response.isServerError()) {
+                Toast.makeText(this, this.getString(R.string.error_cannot_open_capsule), Toast.LENGTH_SHORT).show();
+            } else {
+                // Get the opened Capsule
+                CapsuleDiscoveryPojo capsule = (CapsuleDiscoveryPojo) response.getCapsule();
+                // Set the Account name
+                capsule.setAccountName(this.mAccount.name);
+                // Save the new Capsule
+                // TODO Move to background thread?
+                CapsuleOperations.Discoveries.save(this.getContentResolver(), capsule,
+                        CapsuleContract.SyncStateAction.CLEAN);
+                // Remove the old Capsule and Marker
+                this.mUndiscoveredMarkers.remove(this.mOpenedCapsuleMarker);
+                this.mOpenedCapsuleMarker.remove();
+                // Add a new Discovery Marker
+                Marker marker = mMap.addMarker(new MarkerOptions()
+                                .position(new LatLng(capsule.getLatitude(), capsule.getLongitude()))
+                                .title(capsule.getName())
+                                .draggable(false)
+                                .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE))
+                );
+                // Add the Discovery Marker to the collection
+                this.mDiscoveredMarkers.put(marker, capsule);
+                // Open the Capsule
+                this.openCapsuleMarker(capsule, /* owned */ false);
+            }
+        }
+        // Set the LocationRequest fastest interval back to a faster value
+        this.setLocationRequestFastestInterval(LOCATION_REQUEST_INTERVAL_FAST);
+        // Unset the reference to the opened Capsule
+        this.mOpenedCapsuleMarker = null;
+    }
+
+    /**
+     * Handles CapsuleOpenTask's onCancelled()
+     */
+    @Override
+    public void onCapsuleOpenCancelled() {
+        Log.i(TAG, "onCapsuleOpenCancelled()");
+        // Set the LocationRequest fastest interval back to a faster value
+        this.setLocationRequestFastestInterval(LOCATION_REQUEST_INTERVAL_FAST);
+        // Unset the reference to the opened Capsule
+        this.mOpenedCapsuleMarker = null;
     }
 
     /**
@@ -727,8 +822,6 @@ public class MainActivity extends FragmentActivity implements
             if (this.mAuthToken != null) {
                 // Make sure there is a connection to the Google API
                 if (this.mGoogleApiClient.isConnected()) {
-                    // Set the LocationServices fastest interval to a slower value during the network request
-                    this.setLocationRequestFastestInterval(LOCATION_REQUEST_INTERVAL_SLOW);
                     // Start the Capsule ping
                     this.mRetainedFragment.startCapsulePing(this, this.mAccount, this.mAuthToken, location);
                 } else {
@@ -786,8 +879,8 @@ public class MainActivity extends FragmentActivity implements
         // Populate the Discovery Markers
         Cursor c = getApplicationContext().getContentResolver().query(
                 CapsuleContract.Discoveries.CONTENT_URI.buildUpon()
-                .appendQueryParameter(CapsuleContract.QUERY_PARAM_JOIN, CapsuleContract.Capsules.TABLE_NAME)
-                .build(),
+                        .appendQueryParameter(CapsuleContract.Query.Parameters.INNER_JOIN, CapsuleContract.Capsules.TABLE_NAME)
+                        .build(),
                 null,
                 CapsuleContract.Discoveries.ACCOUNT_NAME + " = ?",
                 new String[]{mAccount.name},
@@ -810,8 +903,8 @@ public class MainActivity extends FragmentActivity implements
         // Populate the Ownership Markers
         c = getApplicationContext().getContentResolver().query(
                 CapsuleContract.Ownerships.CONTENT_URI.buildUpon()
-                .appendQueryParameter(CapsuleContract.QUERY_PARAM_JOIN, CapsuleContract.Capsules.TABLE_NAME)
-                .build(),
+                        .appendQueryParameter(CapsuleContract.Query.Parameters.INNER_JOIN, CapsuleContract.Capsules.TABLE_NAME)
+                        .build(),
                 null,
                 CapsuleContract.Ownerships.ACCOUNT_NAME + " = ?",
                 new String[]{mAccount.name},
@@ -960,10 +1053,20 @@ public class MainActivity extends FragmentActivity implements
                             marker.getPosition()
                     );
                     if (distance < DISCOVERY_RADIUS) {
-                        new OpenCapsuleTask(MainActivity.this, mUndiscoveredMarkers.get(marker), marker).execute(mAuthToken);
+                        // Keep a reference to the Marker being opened
+                        MainActivity.this.mOpenedCapsuleMarker = marker;
+                        // Send a HTTP request to open the Capsule on the background thread
+                        MainActivity.this.mRetainedFragment.startCapsuleOpen(MainActivity.this,
+                                MainActivity.this.mAccount, MainActivity.this.mAuthToken, location,
+                                MainActivity.this.mUndiscoveredMarkers.get(marker));
                     } else {
-                        Toast.makeText(getApplicationContext(), getText(R.string.map_outside_capsule_radius), Toast.LENGTH_SHORT).show();
+                        Toast.makeText(getApplicationContext(), getText(R.string.error_marker_too_far),
+                                Toast.LENGTH_SHORT).show();
                     }
+                } else {
+                    Toast.makeText(MainActivity.this.getApplicationContext(),
+                            MainActivity.this.getText(R.string.error_cannot_retrieve_location),
+                            Toast.LENGTH_SHORT).show();
                 }
             }
         }
@@ -1008,111 +1111,6 @@ public class MainActivity extends FragmentActivity implements
             // Create and show the Dialog
             AlertDialog dialog = builder.create();
             dialog.show();
-        }
-
-    }
-
-    public class OpenCapsuleTask extends AsyncTask<String, Void, Uri> {
-
-        /**
-         * Shows a notification while the Task is being run in the background.
-         */
-        private ProgressDialog dialog;
-
-        /**
-         * The Capsule that is being opened.
-         */
-        private Capsule capsule;
-
-        /**
-         * The Marker corresponding to the Capsule.
-         */
-        private Marker marker;
-
-        public OpenCapsuleTask(Activity activity, Capsule capsule, Marker marker) {
-            this.dialog = new ProgressDialog(activity);
-            this.capsule = capsule;
-            this.marker = marker;
-        }
-
-        @Override
-        protected void onPreExecute() {
-            this.dialog.setMessage(getText(R.string.map_during_open_capsule));
-            this.dialog.show();
-        }
-
-        @Override
-        protected Uri doInBackground(String... params) {
-            Log.i(TAG, "OpenCapsuleTask.doInBackground()");
-            // Attempt to get the last location
-            Location location = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
-            String response = null;
-            if (location != null) {
-                try {
-                    response = mRequestHandler.requestOpenCapsule(params[0], this.capsule.getSyncId(), location.getLatitude(), location.getLongitude());
-                } catch (NumberFormatException | ParseException | IOException e) {
-                    e.printStackTrace();
-                    this.cancel(true);
-                }
-                
-            }
-            // Parse the Discovery
-            String etag = null;
-            try {
-                etag = JSONParser.parseOpenCapsule(response);
-            } catch (JSONException e) {
-                e.printStackTrace();
-                this.cancel(true);
-            }
-            // INSERT the new Discovery
-            Uri insertUri = null;
-            if (etag != null) {
-                insertUri = CapsuleOperations.insertDiscovery(getContentResolver(), this.capsule, mAccount.name, true /* setDirty */);
-            } else {
-                this.cancel(true);
-            }
-
-            return insertUri;
-        }
-
-        @Override
-        protected void onCancelled(Uri result) {
-            if (this.dialog.isShowing()) {
-                this.dialog.hide();
-                this.dialog.dismiss();
-            }
-        }
-
-        @Override
-        protected void onPostExecute(final Uri insertUri) {
-            if (this.dialog.isShowing()) {
-                this.dialog.hide();
-                this.dialog.dismiss();
-            }
-            // Get the Capsule ID from the INSERT result URI
-            long capsuleId = 0;
-            if (insertUri.getQueryParameter(CapsuleContract.Discoveries.CAPSULE_ID) != null) {
-                capsuleId = Long.valueOf(insertUri.getQueryParameter(CapsuleContract.Discoveries.CAPSULE_ID));
-            }
-            // Update the Capsule object and the Markers
-            if (capsuleId > 0) {
-                // Set the Capsule ID on the Capsule object
-                this.capsule.setId(capsuleId);
-                // Open the Capsule Marker
-                MainActivity.this.openCapsuleMarker(this.capsule, false /* not owned */);
-                // Remove the old, undiscovered Marker
-                mUndiscoveredMarkers.remove(this.marker);
-                this.marker.remove();
-                // Add the new Discovery Marker
-                Marker marker = mMap.addMarker(new MarkerOptions()
-                    .position(new LatLng(this.capsule.getLatitude(), this.capsule.getLongitude()))
-                    .title(this.capsule.getName())
-                    .draggable(false)
-                    .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE))
-                );
-                // Maintain a mapping of the Capsule sync id to the Marker
-                mDiscoveredMarkers.put(marker, this.capsule);
-            }
         }
 
     }
