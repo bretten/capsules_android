@@ -1,6 +1,8 @@
 package com.brettnamba.capsules.dataaccess;
 
 import android.database.Cursor;
+import android.os.Parcel;
+import android.os.Parcelable;
 
 import com.brettnamba.capsules.http.RequestContract;
 import com.brettnamba.capsules.provider.CapsuleContract;
@@ -103,6 +105,20 @@ public class CapsuleOwnershipPojo extends CapsulePojo {
         if (jsonCapsule.has(RequestContract.Field.CAPSULE_ETAG)) {
             this.setEtag(jsonCapsule.getString(RequestContract.Field.CAPSULE_ETAG));
         }
+    }
+
+    /**
+     * Constructor that instantiates using a Parcel
+     *
+     * @param in Parcel to read data from
+     */
+    protected CapsuleOwnershipPojo(Parcel in) {
+        super(in);
+        this.mOwnershipId = in.readLong();
+        this.mEtag = in.readString();
+        this.mAccountName = in.readString();
+        this.mDirty = in.readInt();
+        this.mDeleted = in.readInt();
     }
 
     /**
@@ -241,5 +257,50 @@ public class CapsuleOwnershipPojo extends CapsulePojo {
         this.mDeleted = deleted;
         return this;
     }
+
+    /**
+     * Writes the instance properties to the Parcel
+     *
+     * @param dest  Parcel to write data to
+     * @param flags Flags for writing data
+     */
+    @Override
+    public void writeToParcel(Parcel dest, int flags) {
+        super.writeToParcel(dest, flags);
+        dest.writeLong(this.mOwnershipId);
+        dest.writeString(this.mEtag);
+        dest.writeString(this.mAccountName);
+        dest.writeInt(this.mDirty);
+        dest.writeInt(this.mDeleted);
+    }
+
+    /**
+     * Creator used to instantiate a CapsuleOwnershipPojo from a Parcel
+     */
+    public static final Parcelable.Creator<CapsuleOwnershipPojo> CREATOR = new Parcelable.Creator<CapsuleOwnershipPojo>() {
+
+        /**
+         * Instantiates a CapsuleOwnershipPojo from a Parcel
+         *
+         * @param source Parcel to use in instantiation
+         * @return The new CapsuleOwnershipPojo
+         */
+        @Override
+        public CapsuleOwnershipPojo createFromParcel(Parcel source) {
+            return new CapsuleOwnershipPojo(source);
+        }
+
+        /**
+         * Creates a CapsuleOwnershipPojo array of the specified size
+         *
+         * @param size The size of the array to create
+         * @return The new array
+         */
+        @Override
+        public CapsuleOwnershipPojo[] newArray(int size) {
+            return new CapsuleOwnershipPojo[size];
+        }
+
+    };
 
 }

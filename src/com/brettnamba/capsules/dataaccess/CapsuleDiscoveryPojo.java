@@ -1,6 +1,8 @@
 package com.brettnamba.capsules.dataaccess;
 
 import android.database.Cursor;
+import android.os.Parcel;
+import android.os.Parcelable;
 
 import com.brettnamba.capsules.http.RequestContract;
 import com.brettnamba.capsules.provider.CapsuleContract;
@@ -121,6 +123,21 @@ public class CapsuleDiscoveryPojo extends CapsulePojo {
     }
 
     /**
+     * Constructor that instantiates using a Parcel
+     *
+     * @param in Parcel to read data from
+     */
+    protected CapsuleDiscoveryPojo(Parcel in) {
+        super(in);
+        this.mDiscoveryId = in.readLong();
+        this.mEtag = in.readString();
+        this.mAccountName = in.readString();
+        this.mDirty = in.readInt();
+        this.mFavorite = in.readInt();
+        this.mRating = in.readInt();
+    }
+
+    /**
      * Gets the Discovery primary key
      *
      * @return
@@ -227,5 +244,51 @@ public class CapsuleDiscoveryPojo extends CapsulePojo {
     public void setRating(int rating) {
         this.mRating = rating;
     }
+
+    /**
+     * Writes the instance properties to the Parcel
+     *
+     * @param dest  Parcel to write data to
+     * @param flags Flags for writing data
+     */
+    @Override
+    public void writeToParcel(Parcel dest, int flags) {
+        super.writeToParcel(dest, flags);
+        dest.writeLong(this.mDiscoveryId);
+        dest.writeString(this.mEtag);
+        dest.writeString(this.mAccountName);
+        dest.writeInt(this.mDirty);
+        dest.writeInt(this.mFavorite);
+        dest.writeInt(this.mRating);
+    }
+
+    /**
+     * Creator used to instantiate a CapsuleDiscoveryPojo from a Parcel
+     */
+    public static final Parcelable.Creator<CapsuleDiscoveryPojo> CREATOR = new Parcelable.Creator<CapsuleDiscoveryPojo>() {
+
+        /**
+         * Instantiates a CapsuleDiscoveryPojo from a Parcel
+         *
+         * @param source Parcel to use in instantiation
+         * @return The new CapsuleDiscoveryPojo
+         */
+        @Override
+        public CapsuleDiscoveryPojo createFromParcel(Parcel source) {
+            return new CapsuleDiscoveryPojo(source);
+        }
+
+        /**
+         * Creates a CapsuleDiscoveryPojo array of the specified size
+         *
+         * @param size The size of the array to create
+         * @return The new array
+         */
+        @Override
+        public CapsuleDiscoveryPojo[] newArray(int size) {
+            return new CapsuleDiscoveryPojo[size];
+        }
+
+    };
 
 }
