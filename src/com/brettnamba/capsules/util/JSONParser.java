@@ -18,7 +18,13 @@ import java.util.List;
  *
  * @author Brett Namba
  */
-public class JSONParser {
+public final class JSONParser {
+
+    /**
+     * Private constructor to prevent instantiation
+     */
+    private JSONParser() {
+    }
 
     /**
      * Parses API response messages from a JSONObject

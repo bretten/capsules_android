@@ -11,15 +11,28 @@ import com.brettnamba.capsules.Constants;
 /**
  * Utility class for handling Accounts
  */
-public class Accounts {
+public final class Accounts {
 
+    /**
+     * Key for the Settings SharedPreferences
+     */
     private static final String SHARED_PREFS_SETTINGS_KEY = "settings";
+
+    /**
+     * Key for storing the last used Account
+     */
     private static final String LAST_USED_ACCOUNT_KEY = "last_used_account_name";
+
+    /**
+     * Private constructor to prevent instantiation
+     */
+    private Accounts() {
+    }
 
     /**
      * Gets the index of an Account name given a collection
      *
-     * @param accounts Collection of Accounts
+     * @param accounts    Collection of Accounts
      * @param accountName The Account name
      * @return int The index of the account or -1 if it does not exist
      */
@@ -40,7 +53,7 @@ public class Accounts {
      * Sets the Account as being the one that was last used
      *
      * @param activity The Activity for accessing SharedPreferences
-     * @param account The Account to switch to
+     * @param account  The Account to switch to
      */
     public static void setLastUsedAccount(Activity activity, Account account) {
         SharedPreferences sharedPrefs = activity.getSharedPreferences(SHARED_PREFS_SETTINGS_KEY, Context.MODE_PRIVATE);
