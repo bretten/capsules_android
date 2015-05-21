@@ -23,6 +23,7 @@ import com.brettnamba.capsules.http.response.AuthenticationResponse;
 import com.brettnamba.capsules.os.AsyncListenerTask;
 import com.brettnamba.capsules.os.AuthenticationTask;
 import com.brettnamba.capsules.os.RetainedTaskFragment;
+import com.brettnamba.capsules.util.Widgets;
 
 import org.apache.http.HttpResponse;
 
@@ -107,11 +108,7 @@ public class RegisterActivity extends FragmentActivity implements AsyncListenerT
         }
 
         // Setup the Toolbar
-        Toolbar toolbar = (Toolbar) this.findViewById(R.id.toolbar);
-        toolbar.setTitle(this.getString(R.string.app_name));
-        toolbar.setSubtitle(this.getString(R.string.title_register));
-        toolbar.setNavigationIcon(R.drawable.ic_chevron_left_white);
-        toolbar.setLogo(R.drawable.ic_launcher);
+        Toolbar toolbar = Widgets.createToolbar(this);
         toolbar.setNavigationOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -189,9 +186,9 @@ public class RegisterActivity extends FragmentActivity implements AsyncListenerT
     /**
      * Validates the inputs
      *
-     * @param username The value from the username input
-     * @param email The value from the email input
-     * @param password The value from the password input
+     * @param username        The value from the username input
+     * @param email           The value from the email input
+     * @param password        The value from the password input
      * @param passwordConfirm The value from the password confirmation input
      * @return boolean True if all the values are valid, false if they are not
      */

@@ -23,6 +23,7 @@ import com.brettnamba.capsules.http.response.AuthenticationResponse;
 import com.brettnamba.capsules.os.AsyncListenerTask;
 import com.brettnamba.capsules.os.AuthenticationTask;
 import com.brettnamba.capsules.os.RetainedTaskFragment;
+import com.brettnamba.capsules.util.Widgets;
 
 import org.apache.http.HttpResponse;
 
@@ -113,11 +114,7 @@ public class LoginActivity extends FragmentActivity implements AsyncListenerTask
         }
 
         // Setup the Toolbar
-        Toolbar toolbar = (Toolbar) this.findViewById(R.id.toolbar);
-        toolbar.setTitle(this.getString(R.string.app_name));
-        toolbar.setSubtitle(this.getString(R.string.title_login));
-        toolbar.setNavigationIcon(R.drawable.ic_chevron_left_white);
-        toolbar.setLogo(R.drawable.ic_launcher);
+        Toolbar toolbar = Widgets.createToolbar(this);
         toolbar.setNavigationOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
