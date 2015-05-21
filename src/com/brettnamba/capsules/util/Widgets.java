@@ -20,12 +20,13 @@ public final class Widgets {
      * Instantiates the standard Toolbar View widget for the app
      *
      * @param activity The Activity to place the Toolbar in
+     * @param subtitle The subtitle text
      * @return The Toolbar
      */
-    public static Toolbar createToolbar(Activity activity) {
+    public static Toolbar createToolbar(Activity activity, String subtitle) {
         Toolbar toolbar = (Toolbar) activity.findViewById(R.id.toolbar);
         toolbar.setTitle(activity.getString(R.string.app_name));
-        toolbar.setSubtitle(activity.getString(R.string.title_login));
+        toolbar.setSubtitle(subtitle);
         toolbar.setNavigationIcon(R.drawable.ic_chevron_left_white);
         toolbar.setLogo(R.drawable.ic_launcher);
         return toolbar;
