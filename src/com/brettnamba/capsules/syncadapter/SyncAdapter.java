@@ -28,7 +28,7 @@ import android.util.Log;
 
 import com.brettnamba.capsules.Constants;
 import com.brettnamba.capsules.dataaccess.Capsule;
-import com.brettnamba.capsules.dataaccess.CapsuleOwnershipPojo;
+import com.brettnamba.capsules.dataaccess.CapsuleOwnership;
 import com.brettnamba.capsules.http.HttpFactory;
 import com.brettnamba.capsules.http.RequestContract;
 import com.brettnamba.capsules.http.RequestHandler;
@@ -194,7 +194,7 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
         boolean success = true;
 
         for (Capsule capsule : capsules) {
-            final boolean isDeleted = ((CapsuleOwnershipPojo) capsule).getDeleted() >= 1;
+            final boolean isDeleted = ((CapsuleOwnership) capsule).getDeleted() >= 1;
 
             if (isDeleted) {
                 if (capsule.getSyncId() > 0) {
@@ -307,7 +307,7 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
                 // Get the server version
                 Capsule serverCapsule = serverOwnerships.get(serverOwnerships.indexOf(onBoth.get(i)));
                 // Determine if the ETag differs
-                if (((CapsuleOwnershipPojo) clientCapsule).getEtag().equals(((CapsuleOwnershipPojo) serverCapsule).getEtag())) {
+                if (((CapsuleOwnership) clientCapsule).getEtag().equals(((CapsuleOwnership) serverCapsule).getEtag())) {
                     onBothSame.add(clientCapsule);
                 } else {
                     onBothDifferent.add(clientCapsule);
@@ -335,8 +335,8 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
 
             // Capsules only on the client-side either need to be pushed to the server or deleted from the client
             for (Capsule capsule : onLeft) {
-                final boolean isDirty = ((CapsuleOwnershipPojo) capsule).getDirty() > 0;
-                final boolean isDeleted = ((CapsuleOwnershipPojo) capsule).getDeleted() > 0;
+                final boolean isDirty = ((CapsuleOwnership) capsule).getDirty() > 0;
+                final boolean isDeleted = ((CapsuleOwnership) capsule).getDeleted() > 0;
                 if (isDirty && !isDeleted) {
                     // Push to the server
                     success = success && pushOwnership(resolver, account, authToken, capsule);
@@ -356,8 +356,8 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
 
             // Capsules that are on both the client and server with the same ETag means the server-side hasn't changed, but the client-side may have
             for (Capsule capsule : onBothSame) {
-                final boolean isDirty = ((CapsuleOwnershipPojo) capsule).getDirty() > 0;
-                final boolean isDeleted = ((CapsuleOwnershipPojo) capsule).getDeleted() > 0;
+                final boolean isDirty = ((CapsuleOwnership) capsule).getDirty() > 0;
+                final boolean isDeleted = ((CapsuleOwnership) capsule).getDeleted() > 0;
                 // Dirty Capsules should be pushed to the server
                 if (isDirty) {
                     if (isDeleted) {
@@ -380,8 +380,8 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
 
             // Capsules that are on both the client and server with differing ETags means the server-side has changed, and the client-side may have
             for (Capsule capsule : onBothDifferent) {
-                final boolean isDirty = ((CapsuleOwnershipPojo) capsule).getDirty() > 0;
-                final boolean isDeleted = ((CapsuleOwnershipPojo) capsule).getDeleted() > 0;
+                final boolean isDirty = ((CapsuleOwnership) capsule).getDirty() > 0;
+                final boolean isDeleted = ((CapsuleOwnership) capsule).getDeleted() > 0;
                 // Check if the Capsule has been changed on the client-side as well
                 if (isDirty) {
                     // TODO Add the option for users to specify server or client taking priority
@@ -445,7 +445,7 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
         // Update the client Ownership
         values = new ContentValues();
         values.put(CapsuleContract.Capsules.DIRTY, 0);
-        values.put(CapsuleContract.Capsules.ETAG, ((CapsuleOwnershipPojo) serverCapsule).getEtag());
+        values.put(CapsuleContract.Capsules.ETAG, ((CapsuleOwnership) serverCapsule).getEtag());
         count = resolver.update(
                 CapsuleContract.Ownerships.CONTENT_URI,
                 values,

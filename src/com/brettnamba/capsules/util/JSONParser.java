@@ -1,9 +1,8 @@
 package com.brettnamba.capsules.util;
 
 import com.brettnamba.capsules.dataaccess.Capsule;
-import com.brettnamba.capsules.dataaccess.CapsuleDiscoveryPojo;
-import com.brettnamba.capsules.dataaccess.CapsuleOwnershipPojo;
-import com.brettnamba.capsules.dataaccess.CapsulePojo;
+import com.brettnamba.capsules.dataaccess.CapsuleDiscovery;
+import com.brettnamba.capsules.dataaccess.CapsuleOwnership;
 import com.brettnamba.capsules.http.RequestContract;
 
 import org.json.JSONArray;
@@ -92,9 +91,9 @@ public final class JSONParser {
      * @return A collection of undiscovered Capsules
      * @throws JSONException
      */
-    public static List<CapsulePojo> parseUndiscoveredCapsules(JSONObject json) throws JSONException {
+    public static List<Capsule> parseUndiscoveredCapsules(JSONObject json) throws JSONException {
         // Will hold the Capsule objects
-        List<CapsulePojo> capsules = new ArrayList<CapsulePojo>();
+        List<Capsule> capsules = new ArrayList<Capsule>();
 
         // Make sure the JSON object has the resource key
         if (json.has(RequestContract.Field.DATA)) {
@@ -108,7 +107,7 @@ public final class JSONParser {
                 for (int i = 0; i < jsonCapsules.length(); i++) {
                     JSONObject jsonCapsule = jsonCapsules.getJSONObject(i);
                     // Parse the Capsule and add it to the collection
-                    capsules.add(new CapsulePojo(jsonCapsule));
+                    capsules.add(new Capsule(jsonCapsule));
                 }
             }
         }
@@ -123,9 +122,9 @@ public final class JSONParser {
      * @return The newly opened Capsule or null if nothing was opened
      * @throws JSONException
      */
-    public static CapsuleDiscoveryPojo parseOpenCapsule(JSONObject json) throws JSONException {
+    public static CapsuleDiscovery parseOpenCapsule(JSONObject json) throws JSONException {
         // The Capsule that was opened
-        CapsuleDiscoveryPojo capsule = null;
+        CapsuleDiscovery capsule = null;
 
         // Check for the resource data key
         if (json.has(RequestContract.Field.DATA)) {
@@ -136,7 +135,7 @@ public final class JSONParser {
                 // Get the JSON Capsule object
                 JSONObject jsonCapsule = data.getJSONObject(RequestContract.Field.DISCOVERY);
                 // Get the Capsule data from the JSON
-                capsule = new CapsuleDiscoveryPojo(jsonCapsule);
+                capsule = new CapsuleDiscovery(jsonCapsule);
             }
         }
 
@@ -155,12 +154,7 @@ public final class JSONParser {
         JSONObject json = new JSONObject(body).getJSONObject(RequestContract.Field.DATA);
 
         // Build the Capsule
-        Capsule capsule = new CapsuleOwnershipPojo();
-        ((CapsuleOwnershipPojo) capsule.setSyncId(json.getLong(RequestContract.Field.CAPSULE_SYNC_ID))
-                .setName(json.getString(RequestContract.Field.CAPSULE_NAME))
-                .setLatitude(json.getDouble(RequestContract.Field.CAPSULE_LATITUDE))
-                .setLongitude(json.getDouble(RequestContract.Field.CAPSULE_LONGITUDE)))
-                .setEtag(json.getString(RequestContract.Field.CAPSULE_ETAG));
+        Capsule capsule = new CapsuleOwnership(json);
 
         return capsule;
     }
@@ -184,10 +178,7 @@ public final class JSONParser {
             JSONObject jsonCapsule = json.getJSONObject(i).getJSONObject(RequestContract.Field.DATA);
 
             // Create Capsules
-            capsules.add(((CapsuleOwnershipPojo) new CapsuleOwnershipPojo()
-                            .setSyncId(jsonCapsule.getLong(RequestContract.Field.CAPSULE_SYNC_ID)))
-                            .setEtag(jsonCapsule.getString(RequestContract.Field.CAPSULE_ETAG))
-            );
+            capsules.add(new CapsuleOwnership(jsonCapsule));
         }
 
         return capsules;
@@ -212,13 +203,7 @@ public final class JSONParser {
             JSONObject jsonCapsule = json.getJSONObject(i).getJSONObject(RequestContract.Field.DATA);
 
             // Create Capsules
-            capsules.add(((CapsuleOwnershipPojo) new CapsuleOwnershipPojo()
-                            .setSyncId(jsonCapsule.getLong(RequestContract.Field.CAPSULE_SYNC_ID))
-                            .setName(jsonCapsule.getString(RequestContract.Field.CAPSULE_NAME))
-                            .setLatitude(jsonCapsule.getDouble(RequestContract.Field.CAPSULE_LATITUDE))
-                            .setLongitude(jsonCapsule.getDouble(RequestContract.Field.CAPSULE_LONGITUDE)))
-                            .setEtag(jsonCapsule.getString(RequestContract.Field.CAPSULE_ETAG))
-            );
+            capsules.add(new CapsuleOwnership(jsonCapsule));
         }
 
         return capsules;

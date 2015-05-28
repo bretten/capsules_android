@@ -15,7 +15,6 @@ import android.widget.ListView;
 
 import com.brettnamba.capsules.activities.CapsuleActivity;
 import com.brettnamba.capsules.dataaccess.Capsule;
-import com.brettnamba.capsules.dataaccess.CapsulePojo;
 import com.brettnamba.capsules.provider.CapsuleContract;
 
 /**
@@ -102,7 +101,7 @@ public class CapsuleListFragment extends ListFragment implements LoaderManager.L
     public void onListItemClick(ListView l, View v, int position, long id) {
         super.onListItemClick(l, v, position, id);
         Cursor c = (Cursor) getListView().getItemAtPosition(position);
-        Capsule capsule = new CapsulePojo(c);
+        Capsule capsule = new Capsule(c);
         if (capsule.getId() > 0 && mAccountName != null) {
             Intent intent = new Intent(getActivity(), CapsuleActivity.class);
             intent.putExtra("owned", mOwned);

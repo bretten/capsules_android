@@ -28,9 +28,9 @@ import com.brettnamba.capsules.activities.CapsuleEditorActivity;
 import com.brettnamba.capsules.activities.CapsuleListActivity;
 import com.brettnamba.capsules.authenticator.AccountDialogFragment;
 import com.brettnamba.capsules.authenticator.LoginActivity;
-import com.brettnamba.capsules.dataaccess.CapsuleDiscoveryPojo;
-import com.brettnamba.capsules.dataaccess.CapsuleOwnershipPojo;
-import com.brettnamba.capsules.dataaccess.CapsulePojo;
+import com.brettnamba.capsules.dataaccess.CapsuleDiscovery;
+import com.brettnamba.capsules.dataaccess.CapsuleOwnership;
+import com.brettnamba.capsules.dataaccess.Capsule;
 import com.brettnamba.capsules.fragments.NavigationDrawerFragment;
 import com.brettnamba.capsules.fragments.RetainedMapFragment;
 import com.brettnamba.capsules.http.HttpFactory;
@@ -156,17 +156,17 @@ public class MainActivity extends FragmentActivity implements
     /**
      * Mapping of undiscovered Capsule sync id's to Marker.
      */
-    private Map<Marker, CapsulePojo> mUndiscoveredMarkers;
+    private Map<Marker, Capsule> mUndiscoveredMarkers;
 
     /**
      * Mapping of all discovered Capsule to Marker.
      */
-    private Map<Marker, CapsulePojo> mDiscoveredMarkers;
+    private Map<Marker, Capsule> mDiscoveredMarkers;
 
     /**
      * Mapping of all owned Capsules to Markers.
      */
-    private Map<Marker, CapsulePojo> mOwnedMarkers;
+    private Map<Marker, Capsule> mOwnedMarkers;
 
     /**
      * Holds the Marker that is used to create new Capsules.
@@ -395,10 +395,10 @@ public class MainActivity extends FragmentActivity implements
 
         case (REQUEST_CODE_CAPSULE) :
             if (resultCode == Activity.RESULT_OK) {
-                CapsulePojo capsule = data.getParcelableExtra("capsule");
+                Capsule capsule = data.getParcelableExtra("capsule");
                 // Replace the old Capsule Marker
                 if (mOwnedMarkers.containsValue(capsule)) {
-                    for (Map.Entry<Marker, CapsulePojo> entry : mOwnedMarkers.entrySet()) {
+                    for (Map.Entry<Marker, Capsule> entry : mOwnedMarkers.entrySet()) {
                         if (capsule.equals(entry.getValue())) {
                             entry.getKey().setTitle(capsule.getName());
                             // Hide and show the info window to refresh it
@@ -413,7 +413,7 @@ public class MainActivity extends FragmentActivity implements
 
         case (REQUEST_CODE_CAPSULE_EDITOR) :
             if (resultCode == Activity.RESULT_OK) {
-                CapsulePojo capsule = data.getParcelableExtra("capsule");
+                Capsule capsule = data.getParcelableExtra("capsule");
                 // Remove the new Capsule Marker
                 if (mNewCapsuleMarker != null) {
                     mNewCapsuleMarker.remove();
@@ -685,7 +685,7 @@ public class MainActivity extends FragmentActivity implements
                 Toast.makeText(this, this.getString(R.string.error_cannot_open_capsule), Toast.LENGTH_SHORT).show();
             } else {
                 // Get the opened Capsule
-                CapsuleDiscoveryPojo capsule = (CapsuleDiscoveryPojo) response.getCapsule();
+                CapsuleDiscovery capsule = (CapsuleDiscovery) response.getCapsule();
                 // Set the Account name
                 capsule.setAccountName(this.mAccount.name);
                 // Save the new Capsule
@@ -852,7 +852,7 @@ public class MainActivity extends FragmentActivity implements
      *
      * @param capsule The Capsule being opened
      */
-    private void openCapsuleMarker(CapsulePojo capsule) {
+    private void openCapsuleMarker(Capsule capsule) {
         if (this.mAccount != null) {
             Toast.makeText(this.getApplicationContext(), this.getString(R.string.result_opened_capsule),
                     Toast.LENGTH_SHORT).show();
@@ -873,8 +873,8 @@ public class MainActivity extends FragmentActivity implements
         // Remove any previous Markers
         this.removeStoredMarkers();
         // (Re)initialize the collections
-        mDiscoveredMarkers = new HashMap<Marker, CapsulePojo>();
-        mOwnedMarkers = new HashMap<Marker, CapsulePojo>();
+        mDiscoveredMarkers = new HashMap<Marker, Capsule>();
+        mOwnedMarkers = new HashMap<Marker, Capsule>();
 
         // Populate the Discovery Markers
         Cursor c = getApplicationContext().getContentResolver().query(
@@ -887,7 +887,7 @@ public class MainActivity extends FragmentActivity implements
                 null
         );
         while (c.moveToNext()) {
-            CapsulePojo capsule = new CapsuleDiscoveryPojo(c);
+            Capsule capsule = new CapsuleDiscovery(c);
             // Add the new Discovery Marker
             Marker marker = mMap.addMarker(new MarkerOptions()
                 .position(new LatLng(capsule.getLatitude(), capsule.getLongitude()))
@@ -911,7 +911,7 @@ public class MainActivity extends FragmentActivity implements
                 null
         );
         while (c.moveToNext()) {
-            CapsulePojo capsule = new CapsuleOwnershipPojo(c);
+            Capsule capsule = new CapsuleOwnership(c);
             // Add the new Owned Marker
             Marker marker = mMap.addMarker(new MarkerOptions()
                 .position(new LatLng(capsule.getLatitude(), capsule.getLongitude()))
@@ -937,16 +937,16 @@ public class MainActivity extends FragmentActivity implements
      *
      * @param List<Capsule> capsules
      */
-    private void populateUndiscoveredMarkers(List<CapsulePojo> capsules) {
+    private void populateUndiscoveredMarkers(List<Capsule> capsules) {
         // Remove all the old Markers
         this.removeUndiscoveredMarkers();
         // (Re)initialize the collection
-        mUndiscoveredMarkers = new HashMap<Marker, CapsulePojo>();
+        mUndiscoveredMarkers = new HashMap<Marker, Capsule>();
 
         // Add updated Markers from the server response
         for (int i = 0; i < capsules.size(); i++) {
             // The current capsule
-            CapsulePojo capsule = capsules.get(i);
+            Capsule capsule = capsules.get(i);
             // Create the marker
             Marker marker = mMap.addMarker(new MarkerOptions()
                 .position(new LatLng(capsule.getLatitude(), capsule.getLongitude()))

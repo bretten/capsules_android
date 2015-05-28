@@ -12,7 +12,7 @@ import android.widget.CompoundButton;
 import android.widget.ToggleButton;
 
 import com.brettnamba.capsules.R;
-import com.brettnamba.capsules.dataaccess.CapsuleDiscoveryPojo;
+import com.brettnamba.capsules.dataaccess.CapsuleDiscovery;
 import com.brettnamba.capsules.os.AsyncListenerTask;
 import com.brettnamba.capsules.os.UpdateDiscoveryTask;
 import com.brettnamba.capsules.provider.CapsuleContract;
@@ -29,7 +29,7 @@ public class DiscoveryFragment extends Fragment implements
     /**
      * The Capsule
      */
-    private CapsuleDiscoveryPojo mCapsule;
+    private CapsuleDiscovery mCapsule;
 
     /**
      * Listener that handles the callbacks
@@ -184,7 +184,7 @@ public class DiscoveryFragment extends Fragment implements
      * @return The result of the update
      */
     @Override
-    public boolean duringUpdateDiscovery(CapsuleDiscoveryPojo... params) {
+    public boolean duringUpdateDiscovery(CapsuleDiscovery... params) {
         return CapsuleOperations.Discoveries.save(this.getActivity().getContentResolver(),
                 params[0], CapsuleContract.SyncStateAction.DIRTY);
     }

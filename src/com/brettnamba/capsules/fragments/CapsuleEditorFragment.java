@@ -16,7 +16,6 @@ import android.widget.ProgressBar;
 
 import com.brettnamba.capsules.R;
 import com.brettnamba.capsules.dataaccess.Capsule;
-import com.brettnamba.capsules.dataaccess.CapsulePojo;
 import com.brettnamba.capsules.provider.CapsuleContract;
 import com.brettnamba.capsules.provider.CapsuleOperations;
 
@@ -46,7 +45,7 @@ public class CapsuleEditorFragment extends Fragment {
         mAccountName = getArguments().getString("account_name");
         mCapsule = getArguments().getParcelable("capsule");
         if (mCapsule == null) {
-            mCapsule = new CapsulePojo();
+            mCapsule = new Capsule();
             mCapsule.setLatitude(getArguments().getDouble("latitude"));
             mCapsule.setLongitude(getArguments().getDouble("longitude"));
         }

@@ -15,7 +15,7 @@ import org.json.JSONObject;
  *
  * @author Brett Namba
  */
-public class CapsuleDiscoveryPojo extends CapsulePojo {
+public class CapsuleDiscovery extends Capsule {
 
     /**
      * The Discovery primary key
@@ -50,16 +50,16 @@ public class CapsuleDiscoveryPojo extends CapsulePojo {
     /**
      * Constructor
      */
-    public CapsuleDiscoveryPojo() {
+    public CapsuleDiscovery() {
     }
 
     /**
-     * Constructs a CapsuleDiscoveryPojo given another instance of Capsule.  It will only get
+     * Constructs a CapsuleDiscovery given another instance of Capsule.  It will only get
      * common properties from the Capsule instance that was passed in
      *
      * @param capsule An instance of a Capsule
      */
-    public CapsuleDiscoveryPojo(Capsule capsule) {
+    public CapsuleDiscovery(Capsule capsule) {
         this.setId(capsule.getId());
         this.setSyncId(capsule.getSyncId());
         if (capsule.getName() != null) {
@@ -70,11 +70,11 @@ public class CapsuleDiscoveryPojo extends CapsulePojo {
     }
 
     /**
-     * Constructs a CapsuleDiscoveryPojo by pulling values from a Cursor
+     * Constructs a CapsuleDiscovery by pulling values from a Cursor
      *
      * @param c
      */
-    public CapsuleDiscoveryPojo(Cursor c) {
+    public CapsuleDiscovery(Cursor c) {
         super(c);
 
         int i = c.getColumnIndex(CapsuleContract.Discoveries.DISCOVERY_ID_ALIAS);
@@ -104,13 +104,14 @@ public class CapsuleDiscoveryPojo extends CapsulePojo {
     }
 
     /**
-     * Constructs a CapsuleDiscoveryPojo given a JSONObject
+     * Constructs a CapsuleDiscovery given a JSONObject
      *
      * @param jsonCapsule A JSONObject representing a Discovery
      * @throws JSONException
      */
-    public CapsuleDiscoveryPojo(JSONObject jsonCapsule) throws JSONException {
+    public CapsuleDiscovery(JSONObject jsonCapsule) throws JSONException {
         super(jsonCapsule);
+
         if (jsonCapsule.has(RequestContract.Field.DISCOVERY_ETAG)) {
             this.setEtag(jsonCapsule.getString(RequestContract.Field.DISCOVERY_ETAG));
         }
@@ -127,8 +128,9 @@ public class CapsuleDiscoveryPojo extends CapsulePojo {
      *
      * @param in Parcel to read data from
      */
-    protected CapsuleDiscoveryPojo(Parcel in) {
+    protected CapsuleDiscovery(Parcel in) {
         super(in);
+
         this.mDiscoveryId = in.readLong();
         this.mEtag = in.readString();
         this.mAccountName = in.readString();
@@ -263,30 +265,30 @@ public class CapsuleDiscoveryPojo extends CapsulePojo {
     }
 
     /**
-     * Creator used to instantiate a CapsuleDiscoveryPojo from a Parcel
+     * Creator used to instantiate a CapsuleDiscovery from a Parcel
      */
-    public static final Parcelable.Creator<CapsuleDiscoveryPojo> CREATOR = new Parcelable.Creator<CapsuleDiscoveryPojo>() {
+    public static final Parcelable.Creator<CapsuleDiscovery> CREATOR = new Parcelable.Creator<CapsuleDiscovery>() {
 
         /**
-         * Instantiates a CapsuleDiscoveryPojo from a Parcel
+         * Instantiates a CapsuleDiscovery from a Parcel
          *
          * @param source Parcel to use in instantiation
-         * @return The new CapsuleDiscoveryPojo
+         * @return The new CapsuleDiscovery
          */
         @Override
-        public CapsuleDiscoveryPojo createFromParcel(Parcel source) {
-            return new CapsuleDiscoveryPojo(source);
+        public CapsuleDiscovery createFromParcel(Parcel source) {
+            return new CapsuleDiscovery(source);
         }
 
         /**
-         * Creates a CapsuleDiscoveryPojo array of the specified size
+         * Creates a CapsuleDiscovery array of the specified size
          *
          * @param size The size of the array to create
          * @return The new array
          */
         @Override
-        public CapsuleDiscoveryPojo[] newArray(int size) {
-            return new CapsuleDiscoveryPojo[size];
+        public CapsuleDiscovery[] newArray(int size) {
+            return new CapsuleDiscovery[size];
         }
 
     };

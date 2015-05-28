@@ -1,11 +1,11 @@
 package com.brettnamba.capsules.os;
 
-import com.brettnamba.capsules.dataaccess.CapsuleDiscoveryPojo;
+import com.brettnamba.capsules.dataaccess.CapsuleDiscovery;
 
 /**
  * AsyncTask that handles updating a Discovery on the background thread
  */
-public class UpdateDiscoveryTask extends AsyncListenerTask<CapsuleDiscoveryPojo, Void, Boolean> {
+public class UpdateDiscoveryTask extends AsyncListenerTask<CapsuleDiscovery, Void, Boolean> {
 
     /**
      * Listener that will handle callbacks
@@ -46,7 +46,7 @@ public class UpdateDiscoveryTask extends AsyncListenerTask<CapsuleDiscoveryPojo,
      * @return The result of the update
      */
     @Override
-    protected Boolean doInBackground(CapsuleDiscoveryPojo... params) {
+    protected Boolean doInBackground(CapsuleDiscovery... params) {
         if (this.mListener != null) {
             return this.mListener.duringUpdateDiscovery(params);
         }

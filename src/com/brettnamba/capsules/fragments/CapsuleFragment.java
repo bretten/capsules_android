@@ -9,7 +9,7 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 
 import com.brettnamba.capsules.R;
-import com.brettnamba.capsules.dataaccess.CapsulePojo;
+import com.brettnamba.capsules.dataaccess.Capsule;
 
 /**
  * Fragment for displaying a Capsule
@@ -21,7 +21,7 @@ public class CapsuleFragment extends Fragment {
     /**
      * The Capsule for this Activity
      */
-    private CapsulePojo mCapsule;
+    private Capsule mCapsule;
 
     /**
      * Listener that handles callbacks

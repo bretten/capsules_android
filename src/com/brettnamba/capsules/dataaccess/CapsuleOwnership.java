@@ -15,7 +15,7 @@ import org.json.JSONObject;
  *
  * @author Brett Namba
  */
-public class CapsuleOwnershipPojo extends CapsulePojo {
+public class CapsuleOwnership extends Capsule {
 
     /**
      * The Ownership id
@@ -45,16 +45,16 @@ public class CapsuleOwnershipPojo extends CapsulePojo {
     /**
      * Constructor
      */
-    public CapsuleOwnershipPojo() {
+    public CapsuleOwnership() {
     }
 
     /**
-     * Constructs a CapsuleOwnershipPojo given an instance of Capsule.  Will only take the
+     * Constructs a CapsuleOwnership given an instance of Capsule.  Will only take the
      * common properties from the Capsule instance
      *
      * @param capsule An instance of Capsule
      */
-    public CapsuleOwnershipPojo(Capsule capsule) {
+    public CapsuleOwnership(Capsule capsule) {
         this.setId(capsule.getId());
         this.setSyncId(capsule.getSyncId());
         if (capsule.getName() != null) {
@@ -69,7 +69,7 @@ public class CapsuleOwnershipPojo extends CapsulePojo {
      *
      * @param c
      */
-    public CapsuleOwnershipPojo(Cursor c) {
+    public CapsuleOwnership(Cursor c) {
         super(c);
 
         int i = c.getColumnIndex(CapsuleContract.Ownerships.OWNERSHIP_ID_ALIAS);
@@ -95,13 +95,14 @@ public class CapsuleOwnershipPojo extends CapsulePojo {
     }
 
     /**
-     * Constructs a CapsuleOwnershipPojo given a JSONObject
+     * Constructs a CapsuleOwnership given a JSONObject
      *
      * @param jsonCapsule A JSONObject representing an Ownership
      * @throws JSONException
      */
-    public CapsuleOwnershipPojo(JSONObject jsonCapsule) throws JSONException {
+    public CapsuleOwnership(JSONObject jsonCapsule) throws JSONException {
         super(jsonCapsule);
+
         if (jsonCapsule.has(RequestContract.Field.CAPSULE_ETAG)) {
             this.setEtag(jsonCapsule.getString(RequestContract.Field.CAPSULE_ETAG));
         }
@@ -112,8 +113,9 @@ public class CapsuleOwnershipPojo extends CapsulePojo {
      *
      * @param in Parcel to read data from
      */
-    protected CapsuleOwnershipPojo(Parcel in) {
+    protected CapsuleOwnership(Parcel in) {
         super(in);
+
         this.mOwnershipId = in.readLong();
         this.mEtag = in.readString();
         this.mAccountName = in.readString();
@@ -151,7 +153,7 @@ public class CapsuleOwnershipPojo extends CapsulePojo {
         if (getClass() != obj.getClass()) {
             return false;
         }
-        CapsuleOwnershipPojo other = (CapsuleOwnershipPojo) obj;
+        CapsuleOwnership other = (CapsuleOwnership) obj;
         if (this.mSyncId != other.mSyncId) {
             return false;
         }
@@ -275,30 +277,30 @@ public class CapsuleOwnershipPojo extends CapsulePojo {
     }
 
     /**
-     * Creator used to instantiate a CapsuleOwnershipPojo from a Parcel
+     * Creator used to instantiate a CapsuleOwnership from a Parcel
      */
-    public static final Parcelable.Creator<CapsuleOwnershipPojo> CREATOR = new Parcelable.Creator<CapsuleOwnershipPojo>() {
+    public static final Parcelable.Creator<CapsuleOwnership> CREATOR = new Parcelable.Creator<CapsuleOwnership>() {
 
         /**
-         * Instantiates a CapsuleOwnershipPojo from a Parcel
+         * Instantiates a CapsuleOwnership from a Parcel
          *
          * @param source Parcel to use in instantiation
-         * @return The new CapsuleOwnershipPojo
+         * @return The new CapsuleOwnership
          */
         @Override
-        public CapsuleOwnershipPojo createFromParcel(Parcel source) {
-            return new CapsuleOwnershipPojo(source);
+        public CapsuleOwnership createFromParcel(Parcel source) {
+            return new CapsuleOwnership(source);
         }
 
         /**
-         * Creates a CapsuleOwnershipPojo array of the specified size
+         * Creates a CapsuleOwnership array of the specified size
          *
          * @param size The size of the array to create
          * @return The new array
          */
         @Override
-        public CapsuleOwnershipPojo[] newArray(int size) {
-            return new CapsuleOwnershipPojo[size];
+        public CapsuleOwnership[] newArray(int size) {
+            return new CapsuleOwnership[size];
         }
 
     };

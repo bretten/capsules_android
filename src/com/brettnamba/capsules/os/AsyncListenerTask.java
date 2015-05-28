@@ -3,7 +3,7 @@ package com.brettnamba.capsules.os;
 import android.accounts.Account;
 import android.os.AsyncTask;
 
-import com.brettnamba.capsules.dataaccess.CapsuleDiscoveryPojo;
+import com.brettnamba.capsules.dataaccess.CapsuleDiscovery;
 import com.brettnamba.capsules.http.response.AuthenticationResponse;
 import com.brettnamba.capsules.http.response.CapsuleOpenResponse;
 import com.brettnamba.capsules.http.response.CapsulePingResponse;
@@ -169,7 +169,7 @@ public abstract class AsyncListenerTask<Params, Progress, Result> extends AsyncT
          * @param params The update data for the Discovery
          * @return The result of the update
          */
-        boolean duringUpdateDiscovery(CapsuleDiscoveryPojo... params);
+        boolean duringUpdateDiscovery(CapsuleDiscovery... params);
 
         /**
          * Should handle onPreExecute() work

@@ -11,8 +11,8 @@ import android.net.Uri;
 import android.os.RemoteException;
 
 import com.brettnamba.capsules.dataaccess.Capsule;
-import com.brettnamba.capsules.dataaccess.CapsuleDiscoveryPojo;
-import com.brettnamba.capsules.dataaccess.CapsuleOwnershipPojo;
+import com.brettnamba.capsules.dataaccess.CapsuleDiscovery;
+import com.brettnamba.capsules.dataaccess.CapsuleOwnership;
 
 import java.security.InvalidParameterException;
 import java.util.ArrayList;
@@ -132,7 +132,7 @@ public class CapsuleOperations {
                 .build());
     }
 
-    public void buildDiscoveryInsert(CapsuleDiscoveryPojo discovery, boolean withYield, CapsuleContract.SyncStateAction syncAction) {
+    public void buildDiscoveryInsert(CapsuleDiscovery discovery, boolean withYield, CapsuleContract.SyncStateAction syncAction) {
         // Build the URI
         Uri uri = CapsuleOperations.appendDirtyQueryParam(syncAction, CapsuleContract.Discoveries.CONTENT_URI);
         // Build the INSERT operation
@@ -143,7 +143,7 @@ public class CapsuleOperations {
         this.mOperations.add(builder.build());
     }
 
-    public void buildDiscoveryInsert(CapsuleDiscoveryPojo discovery, boolean withYield,
+    public void buildDiscoveryInsert(CapsuleDiscovery discovery, boolean withYield,
                                      int capsuleIdBackRefIndex, CapsuleContract.SyncStateAction syncAction) {
         // Build the URI
         Uri uri = CapsuleOperations.appendDirtyQueryParam(syncAction, CapsuleContract.Discoveries.CONTENT_URI);
@@ -159,7 +159,7 @@ public class CapsuleOperations {
         this.mOperations.add(builder.build());
     }
 
-    public void buildDiscoveryUpdate(CapsuleDiscoveryPojo discovery, boolean withYield,
+    public void buildDiscoveryUpdate(CapsuleDiscovery discovery, boolean withYield,
                                      CapsuleContract.SyncStateAction syncAction) {
         // Build the URI
         Uri uri = CapsuleOperations.appendDirtyQueryParam(syncAction,
@@ -172,7 +172,7 @@ public class CapsuleOperations {
         this.mOperations.add(builder.build());
     }
 
-    public void buildDiscoveryUpdate(CapsuleDiscoveryPojo discovery, boolean withYield,
+    public void buildDiscoveryUpdate(CapsuleDiscovery discovery, boolean withYield,
                                      int capsuleIdBackRefIndex, CapsuleContract.SyncStateAction syncAction) {
         // Build the URI
         Uri uri = CapsuleOperations.appendDirtyQueryParam(syncAction,
@@ -209,7 +209,7 @@ public class CapsuleOperations {
         long discoveryId = Discoveries.getIdBySyncId(this.mResolver, this, capsule.getSyncId());
         // Set the IDs
         capsule.setId(capsuleId);
-        ((CapsuleDiscoveryPojo) capsule).setDiscoveryId(discoveryId);
+        ((CapsuleDiscovery) capsule).setDiscoveryId(discoveryId);
         // Build INSERT/UPDATE operations depending on if the Capsule and Discovery already exist
         if (capsuleId > 0) {
             // Capsule UPDATE
@@ -217,10 +217,10 @@ public class CapsuleOperations {
             // Check if the Discovery exists
             if (discoveryId > 0) {
                 // Discovery UPDATE
-                this.buildDiscoveryUpdate((CapsuleDiscoveryPojo) capsule, /* withYield */ false, syncAction);
+                this.buildDiscoveryUpdate((CapsuleDiscovery) capsule, /* withYield */ false, syncAction);
             } else {
                 // Discovery INSERT
-                this.buildDiscoveryInsert((CapsuleDiscoveryPojo) capsule, /* withYield */ false, syncAction);
+                this.buildDiscoveryInsert((CapsuleDiscovery) capsule, /* withYield */ false, syncAction);
             }
         } else {
             // Capsule INSERT
@@ -228,17 +228,17 @@ public class CapsuleOperations {
             // Check if the Discovery exists
             if (discoveryId > 0) {
                 // Discovery UPDATE
-                this.buildDiscoveryUpdate((CapsuleDiscoveryPojo) capsule, /* withYield */ false,
+                this.buildDiscoveryUpdate((CapsuleDiscovery) capsule, /* withYield */ false,
                         this.getLastOperationIndex(), syncAction);
             } else {
                 // Discovery INSERT
-                this.buildDiscoveryInsert((CapsuleDiscoveryPojo) capsule, /* withYield */ false,
+                this.buildDiscoveryInsert((CapsuleDiscovery) capsule, /* withYield */ false,
                         this.getLastOperationIndex(), syncAction);
             }
         }
     }
 
-    public void buildOwnershipInsert(CapsuleOwnershipPojo ownership, boolean withYield,
+    public void buildOwnershipInsert(CapsuleOwnership ownership, boolean withYield,
                                      CapsuleContract.SyncStateAction syncAction) {
         // Build the URI
         Uri uri = CapsuleOperations.appendDirtyQueryParam(syncAction, CapsuleContract.Ownerships.CONTENT_URI);
@@ -250,7 +250,7 @@ public class CapsuleOperations {
         this.mOperations.add(builder.build());
     }
 
-    public void buildOwnershipInsert(CapsuleOwnershipPojo ownership, boolean withYield,
+    public void buildOwnershipInsert(CapsuleOwnership ownership, boolean withYield,
                                      int capsuleIdBackRefIndex, CapsuleContract.SyncStateAction syncAction) {
         // Build the URI
         Uri uri = CapsuleOperations.appendDirtyQueryParam(syncAction, CapsuleContract.Ownerships.CONTENT_URI);
@@ -266,7 +266,7 @@ public class CapsuleOperations {
         this.mOperations.add(builder.build());
     }
 
-    public void buildOwnershipUpdate(CapsuleOwnershipPojo ownership, boolean withYield,
+    public void buildOwnershipUpdate(CapsuleOwnership ownership, boolean withYield,
                                      CapsuleContract.SyncStateAction syncAction) {
         // Build the URI
         Uri uri = CapsuleOperations.appendDirtyQueryParam(syncAction,
@@ -279,7 +279,7 @@ public class CapsuleOperations {
         this.mOperations.add(builder.build());
     }
 
-    public void buildOwnershipUpdate(CapsuleOwnershipPojo ownership, boolean withYield,
+    public void buildOwnershipUpdate(CapsuleOwnership ownership, boolean withYield,
                                      int capsuleIdBackRefIndex, CapsuleContract.SyncStateAction syncAction) {
         // Build the URI
         Uri uri = CapsuleOperations.appendDirtyQueryParam(syncAction,
@@ -316,7 +316,7 @@ public class CapsuleOperations {
         long ownershipId = Ownerships.getIdBySyncId(this.mResolver, this, capsule.getSyncId());
         // Set the IDs
         capsule.setId(capsuleId);
-        ((CapsuleOwnershipPojo) capsule).setOwnershipId(ownershipId);
+        ((CapsuleOwnership) capsule).setOwnershipId(ownershipId);
         // Build the INSERT/UPDATE operations depending on if the Capsule and Ownership exist
         if (capsuleId > 0) {
             // Capsule UPDATE
@@ -324,10 +324,10 @@ public class CapsuleOperations {
             // Check if the Ownership exists
             if (ownershipId > 0) {
                 // Ownership UPDATE
-                this.buildOwnershipUpdate((CapsuleOwnershipPojo) capsule, /* withYield */ false, syncAction);
+                this.buildOwnershipUpdate((CapsuleOwnership) capsule, /* withYield */ false, syncAction);
             } else {
                 // Ownership INSERT
-                this.buildOwnershipInsert((CapsuleOwnershipPojo) capsule, /* withYield */ false, syncAction);
+                this.buildOwnershipInsert((CapsuleOwnership) capsule, /* withYield */ false, syncAction);
             }
         } else {
             // Capsule INSERT
@@ -335,11 +335,11 @@ public class CapsuleOperations {
             // Check if the Ownership exists
             if (ownershipId > 0) {
                 // Ownership UPDATE
-                this.buildOwnershipUpdate((CapsuleOwnershipPojo) capsule, /* withYield */ false,
+                this.buildOwnershipUpdate((CapsuleOwnership) capsule, /* withYield */ false,
                         this.getLastOperationIndex(), syncAction);
             } else {
                 // Ownership INSERT
-                this.buildOwnershipInsert((CapsuleOwnershipPojo) capsule, /* withYield */ false,
+                this.buildOwnershipInsert((CapsuleOwnership) capsule, /* withYield */ false,
                         this.getLastOperationIndex(), syncAction);
             }
         }
@@ -478,7 +478,7 @@ public class CapsuleOperations {
             return id;
         }
 
-        public static ContentValues buildContentValues(CapsuleDiscoveryPojo capsule) {
+        public static ContentValues buildContentValues(CapsuleDiscovery capsule) {
             ContentValues values = new ContentValues();
             values.put(CapsuleContract.Discoveries.ACCOUNT_NAME, capsule.getAccountName());
             values.put(CapsuleContract.Discoveries.CAPSULE_ID, capsule.getId());
@@ -544,7 +544,7 @@ public class CapsuleOperations {
             return id;
         }
 
-        public static ContentValues buildContentValues(CapsuleOwnershipPojo capsule) {
+        public static ContentValues buildContentValues(CapsuleOwnership capsule) {
             ContentValues values = new ContentValues();
             values.put(CapsuleContract.Ownerships.ACCOUNT_NAME, capsule.getAccountName());
             values.put(CapsuleContract.Ownerships.CAPSULE_ID, capsule.getId());

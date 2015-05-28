@@ -16,8 +16,8 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.brettnamba.capsules.R;
-import com.brettnamba.capsules.dataaccess.CapsuleOwnershipPojo;
-import com.brettnamba.capsules.dataaccess.CapsulePojo;
+import com.brettnamba.capsules.dataaccess.CapsuleOwnership;
+import com.brettnamba.capsules.dataaccess.Capsule;
 import com.brettnamba.capsules.fragments.CapsuleContentFragment;
 import com.brettnamba.capsules.fragments.CapsuleFragment;
 import com.brettnamba.capsules.fragments.DiscoveryFragment;
@@ -40,7 +40,7 @@ public class CapsuleActivity extends FragmentActivity implements
     /**
      * The Capsule for this Activity
      */
-    private CapsulePojo mCapsule;
+    private Capsule mCapsule;
 
     /**
      * The Account that is opening this Activity
@@ -67,7 +67,7 @@ public class CapsuleActivity extends FragmentActivity implements
         if (extras != null) {
             this.mCapsule = extras.getParcelable("capsule");
             this.mAccount = extras.getParcelable("account");
-            this.mOwned = this.mCapsule instanceof CapsuleOwnershipPojo;
+            this.mOwned = this.mCapsule instanceof CapsuleOwnership;
         }
 
         // Close the Activity if required members are missing

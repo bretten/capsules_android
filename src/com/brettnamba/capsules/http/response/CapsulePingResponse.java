@@ -1,6 +1,6 @@
 package com.brettnamba.capsules.http.response;
 
-import com.brettnamba.capsules.dataaccess.CapsulePojo;
+import com.brettnamba.capsules.dataaccess.Capsule;
 import com.brettnamba.capsules.util.JSONParser;
 
 import org.apache.http.HttpResponse;
@@ -20,7 +20,7 @@ public class CapsulePingResponse extends ApiResponse {
     /**
      * Collection of undiscovered Capsules in the response
      */
-    private List<CapsulePojo> mCapsules;
+    private List<Capsule> mCapsules;
 
     /**
      * Constructor that wraps an HttpResponse object
@@ -39,7 +39,7 @@ public class CapsulePingResponse extends ApiResponse {
      *
      * @return Collection of undiscovered Capsules
      */
-    public List<CapsulePojo> getCapsules() {
+    public List<Capsule> getCapsules() {
         return this.mCapsules;
     }
 
@@ -59,7 +59,7 @@ public class CapsulePingResponse extends ApiResponse {
                 this.mCapsules = JSONParser.parseUndiscoveredCapsules(jsonObject);
                 this.mMessages = JSONParser.parseMessages(jsonObject);
             } catch (JSONException e) {
-                this.mCapsules = new ArrayList<CapsulePojo>();
+                this.mCapsules = new ArrayList<Capsule>();
                 this.mMessages = new ArrayList<String>();
             }
         }
