@@ -3,6 +3,7 @@ package com.brettnamba.capsules.os;
 import android.accounts.Account;
 import android.os.AsyncTask;
 
+import com.brettnamba.capsules.dataaccess.CapsuleDiscoveryPojo;
 import com.brettnamba.capsules.http.response.AuthenticationResponse;
 import com.brettnamba.capsules.http.response.CapsuleOpenResponse;
 import com.brettnamba.capsules.http.response.CapsulePingResponse;
@@ -10,7 +11,7 @@ import com.brettnamba.capsules.http.response.CapsulePingResponse;
 /**
  * Abstraction of AsyncTask that is meant to use listeners when the
  * standard AsyncTask's methods are invoked
- *
+ * <p/>
  * In order to allow an Activity implement multiple listeners, a listener interface
  * is created for each Task so the callbacks can be differentiated.
  *
@@ -156,6 +157,36 @@ public abstract class AsyncListenerTask<Params, Progress, Result> extends AsyncT
          * Should handle onCancelled() work
          */
         void onCapsuleOpenCancelled();
+    }
+
+    /**
+     * Listener for AsyncTask that handles updating a Discovery
+     */
+    public interface UpdateDiscoveryTaskListener extends TaskListener {
+        /**
+         * Should handle doInBackground() work
+         *
+         * @param params The update data for the Discovery
+         * @return The result of the update
+         */
+        boolean duringUpdateDiscovery(CapsuleDiscoveryPojo... params);
+
+        /**
+         * Should handle onPreExecute() work
+         */
+        void onPreUpdateDiscovery();
+
+        /**
+         * Should handle onPostExecute() work
+         *
+         * @param result The result of the update
+         */
+        void onPostUpdateDiscovery(Boolean result);
+
+        /**
+         * Should handle onCancelled() work
+         */
+        void onUpdateDiscoveryCancelled();
     }
 
 }
