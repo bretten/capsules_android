@@ -61,7 +61,13 @@
         Progress indicators
     -->
     <!-- General -->
-    <string name="progress_please_wait">Please wait...</string>
+    <string name="progress_please_wait">Please wait&#8230;</string>
+
+    <!--
+        Result messages
+    -->
+    <!-- Capsule -->
+    <string name="result_opened_capsule">Opened!</string>
 
     <!--
         Error messages
@@ -76,6 +82,7 @@
     <string name="validation_password_match">The passwords do not match.</string>
     <!-- Authentication -->
     <string name="error_missing_auth_token">A valid authentication token was not received.</string>
+    <string name="error_no_account">You are not currently logged into an account.</string>
     <!-- Capsules -->
     <string name="error_cannot_retrieve_undiscovered">There was a problem scanning the area for new Capsules</string>
     <string name="error_cannot_open_capsule">The capsule could not be opened.</string>

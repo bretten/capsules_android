@@ -92,9 +92,9 @@ public final class JSONParser {
      * @return A collection of undiscovered Capsules
      * @throws JSONException
      */
-    public static List<Capsule> parseUndiscoveredCapsules(JSONObject json) throws JSONException {
+    public static List<CapsulePojo> parseUndiscoveredCapsules(JSONObject json) throws JSONException {
         // Will hold the Capsule objects
-        List<Capsule> capsules = new ArrayList<Capsule>();
+        List<CapsulePojo> capsules = new ArrayList<CapsulePojo>();
 
         // Make sure the JSON object has the resource key
         if (json.has(RequestContract.Field.DATA)) {
@@ -108,12 +108,7 @@ public final class JSONParser {
                 for (int i = 0; i < jsonCapsules.length(); i++) {
                     JSONObject jsonCapsule = jsonCapsules.getJSONObject(i);
                     // Parse the Capsule and add it to the collection
-                    capsules.add(new CapsulePojo()
-                                    .setSyncId(jsonCapsule.getLong(RequestContract.Field.CAPSULE_SYNC_ID))
-                                    .setName(jsonCapsule.getString(RequestContract.Field.CAPSULE_NAME))
-                                    .setLatitude(jsonCapsule.getDouble(RequestContract.Field.CAPSULE_LATITUDE))
-                                    .setLongitude(jsonCapsule.getDouble(RequestContract.Field.CAPSULE_LONGITUDE))
-                    );
+                    capsules.add(new CapsulePojo(jsonCapsule));
                 }
             }
         }
