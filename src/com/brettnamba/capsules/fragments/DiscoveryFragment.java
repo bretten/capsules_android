@@ -1,221 +1,234 @@
 package com.brettnamba.capsules.fragments;
 
+import android.accounts.Account;
 import android.app.Activity;
-import android.content.ContentValues;
-import android.os.AsyncTask;
+import android.graphics.PorterDuff;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
 import android.widget.CompoundButton;
-import android.widget.ProgressBar;
-import android.widget.Spinner;
-import android.widget.Toast;
 import android.widget.ToggleButton;
 
 import com.brettnamba.capsules.R;
-import com.brettnamba.capsules.dataaccess.Capsule;
 import com.brettnamba.capsules.dataaccess.CapsuleDiscoveryPojo;
+import com.brettnamba.capsules.os.AsyncListenerTask;
+import com.brettnamba.capsules.os.UpdateDiscoveryTask;
 import com.brettnamba.capsules.provider.CapsuleContract;
 import com.brettnamba.capsules.provider.CapsuleOperations;
+import com.brettnamba.capsules.widget.RatingControl;
 
 /**
- * Displays Discovery data for a Capsule and the current Account.
- * 
- * @author Brett
- *
+ * Fragment for a Discovery that allows for it to be viewed and updated
  */
-public class DiscoveryFragment extends Fragment {
+public class DiscoveryFragment extends Fragment implements
+        RatingControl.RatingListener,
+        AsyncListenerTask.UpdateDiscoveryTaskListener {
 
     /**
      * The Capsule
      */
-    private Capsule mCapsule;
+    private CapsuleDiscoveryPojo mCapsule;
 
     /**
-     * The Account name
+     * Listener that handles the callbacks
      */
-    private String mAccountName;
+    private DiscoveryFragmentListener mListener;
 
     /**
-     * The Discovery id
+     * The Account that is viewing this Fragment
      */
-    private long mDiscoveryId;
+    private Account mAccount;
 
+    /**
+     * The control for rating a Discovery
+     */
+    private RatingControl mRatingControl;
+
+    /**
+     * The favorite toggle for a Discovery
+     */
+    private ToggleButton mFavoriteToggle;
+
+    /**
+     * onAttach
+     *
+     * @param activity The Activity that the Fragment is being attached to
+     */
+    @Override
+    public void onAttach(Activity activity) {
+        super.onAttach(activity);
+        // Make sure the Activity implements this Fragment's listener interface
+        try {
+            this.mListener = (DiscoveryFragmentListener) activity;
+        } catch (ClassCastException e) {
+            throw new ClassCastException(activity.toString() + " does not implement DiscoveryFragmentListener");
+        }
+    }
+
+    /**
+     * onCreate
+     *
+     * @param savedInstanceState
+     */
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         // Get the arguments passed in from the Activity
-        this.mCapsule = (Capsule) getArguments().getParcelable("capsule");
-        this.mAccountName = getArguments().getString("account_name");
+        Bundle args = this.getArguments();
+        if (args != null) {
+            this.mCapsule = args.getParcelable("capsule");
+            this.mAccount = args.getParcelable("account");
+        }
     }
 
+    /**
+     * onCreateView
+     *
+     * @param inflater
+     * @param container
+     * @param savedInstanceState
+     * @return
+     */
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+        // Inflate the layout View
         View view = inflater.inflate(R.layout.fragment_discovery, container, false);
-        // Begin the AsyncTask for loading the Capsule data
-        new LoadDiscoveryTask(getActivity(), view).execute(String.valueOf(this.mCapsule.getId()), this.mAccountName);
+
+        // Populate the Views
+        if (this.mCapsule != null && this.mAccount != null) {
+            // Rating control
+            this.mRatingControl = (RatingControl) view.findViewById(R.id.fragment_discovery_rating);
+            this.mRatingControl.setListener(this);
+            if (this.mCapsule.getRating() >= 1) {
+                this.mRatingControl.setUpButtonChecked(true);
+            } else if (this.mCapsule.getRating() <= -1) {
+                this.mRatingControl.setDownButtonChecked(true);
+            }
+            // Favorite toggle
+            this.mFavoriteToggle = (ToggleButton) view.findViewById(R.id.fragment_discovery_favorite);
+            if (this.mCapsule.getFavorite() > 0) {
+                this.mFavoriteToggle.setChecked(true);
+                this.mFavoriteToggle.getBackground().setColorFilter(R.color.primary_color, PorterDuff.Mode.SRC_ATOP);
+            }
+            this.mFavoriteToggle.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+                @Override
+                public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                    if (isChecked) {
+                        DiscoveryFragment.this.mCapsule.setFavorite(1);
+                        buttonView.getBackground().setColorFilter(R.color.primary_color, PorterDuff.Mode.SRC_ATOP);
+                    } else {
+                        DiscoveryFragment.this.mCapsule.setFavorite(0);
+                        buttonView.getBackground().clearColorFilter();
+                    }
+                    new UpdateDiscoveryTask(DiscoveryFragment.this).execute(DiscoveryFragment.this.mCapsule);
+                }
+            });
+        }
+
         return view;
     }
 
     /**
-     * Handles changes to the favorite toggle.
+     * onActivityCreated
+     *
+     * @param savedInstanceState
      */
-    private class FavoriteListener implements CompoundButton.OnCheckedChangeListener {
-
-        @Override
-        public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-            ContentValues values = new ContentValues();
-            values.put(CapsuleContract.Discoveries.FAVORITE, (isChecked) ? 1 : 0);
-            new UpdateDiscoveryTask(getActivity(), getView(), values).execute(mDiscoveryId);
+    @Override
+    public void onActivityCreated(Bundle savedInstanceState) {
+        super.onActivityCreated(savedInstanceState);
+        // If the Fragment is missing any required data, delegate handling to the listener
+        if (this.mCapsule == null || this.mAccount == null) {
+            this.mListener.onMissingData(this);
         }
-
     }
 
     /**
-     * Handles changes to the rating input.
+     * Updates the Discovery on the background thread when the down button is pressed
      */
-    private class RatingListener implements AdapterView.OnItemSelectedListener {
-
-        @Override
-        public void onItemSelected(AdapterView<?> parent, View view, int pos, long id) {
-            ContentValues values = new ContentValues();
-            values.put(CapsuleContract.Discoveries.RATING, Integer.valueOf((String) parent.getItemAtPosition(pos)));
-            new UpdateDiscoveryTask(getActivity(), getView(), values).execute(mDiscoveryId);
+    @Override
+    public void onRateDown() {
+        if (this.mCapsule != null) {
+            this.mCapsule.setRating(-1);
+            new UpdateDiscoveryTask(this).execute(this.mCapsule);
         }
-
-        @Override
-        public void onNothingSelected(AdapterView<?> parent) {
-            parent.setSelection(0);
-        }
-
     }
 
     /**
-     * Queries the database for a Discovery row.
+     * Updates the Discovery on the background thread when the up button is pressed
      */
-    private class LoadDiscoveryTask extends AsyncTask<String, Void, Capsule> {
-
-        /**
-         * The Activity containing this Fragment.
-         */
-        private Activity activity;
-
-        /**
-         * The View for the Fragment.
-         */
-        private View view;
-
-        /**
-         * ProgressBar to be displayed while the data is being loaded.
-         */
-        private ProgressBar progress;
-
-        /**
-         * Constructor
-         * 
-         * @param activity
-         * @param view
-         */
-        public LoadDiscoveryTask(Activity activity, View view) {
-            this.activity = activity;
-            this.view = view;
-            this.progress = (ProgressBar) view.findViewById(R.id.fragment_discovery_progress_bar);
+    @Override
+    public void onRateUp() {
+        if (this.mCapsule != null) {
+            this.mCapsule.setRating(1);
+            new UpdateDiscoveryTask(this).execute(this.mCapsule);
         }
-
-        @Override
-        protected void onPreExecute() {
-            this.progress.setIndeterminate(true);
-            this.progress.setVisibility(View.VISIBLE);
-        }
-
-        @Override
-        protected Capsule doInBackground(String... params) {
-            return CapsuleOperations.getDiscovery(this.activity.getContentResolver(), Long.valueOf(params[0]), params[1]);
-        }
-
-        @Override
-        protected void onPostExecute(final Capsule discovery) {
-            if (this.progress.isShown()) {
-                this.progress.setVisibility(View.GONE);
-            }
-            // Keep a reference to the Discovery id
-            mDiscoveryId = ((CapsuleDiscoveryPojo) discovery).getDiscoveryId();
-            // Set up the favorite toggle
-            ToggleButton favoriteToggle = (ToggleButton) this.view.findViewById(R.id.fragment_discovery_favorite);
-            favoriteToggle.setOnCheckedChangeListener(new FavoriteListener());
-            favoriteToggle.setChecked((((CapsuleDiscoveryPojo) discovery).getFavorite() > 0) ? true : false);
-            favoriteToggle.setVisibility(View.VISIBLE);
-            // Set up the rating input
-            Spinner ratingSpinner = (Spinner) this.view.findViewById(R.id.fragment_discovery_rating);
-            String[] ratings = new String[]{"0", "-1", "1"};
-            ArrayAdapter<String> ratingsArrayAdapter = new ArrayAdapter<String>(getActivity(), android.R.layout.simple_spinner_item, ratings);
-            ratingsArrayAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-            ratingSpinner.setAdapter(ratingsArrayAdapter);
-            ratingSpinner.setOnItemSelectedListener(new RatingListener());
-            ratingSpinner.setSelection(ratingsArrayAdapter.getPosition(String.valueOf(((CapsuleDiscoveryPojo) discovery).getRating())));
-            ratingSpinner.setVisibility(View.VISIBLE);
-        }
-
     }
 
     /**
-     * Updates the Discovery row in the database.
+     * Updates the Discovery on the background thread when the rating is removed
      */
-    private class UpdateDiscoveryTask extends AsyncTask<Long, Void, Boolean> {
+    @Override
+    public void onRemoveRating() {
+        if (this.mCapsule != null) {
+            this.mCapsule.setRating(0);
+            new UpdateDiscoveryTask(this).execute(this.mCapsule);
+        }
+    }
+
+    /**
+     * Saves the updated Discovery on the background thread
+     *
+     * @param params The Discovery to update
+     * @return The result of the update
+     */
+    @Override
+    public boolean duringUpdateDiscovery(CapsuleDiscoveryPojo... params) {
+        return CapsuleOperations.Discoveries.save(this.getActivity().getContentResolver(),
+                params[0], CapsuleContract.SyncStateAction.DIRTY);
+    }
+
+    /**
+     * Disables the buttons before the Discovery is updated on the background thread
+     */
+    @Override
+    public void onPreUpdateDiscovery() {
+        this.mRatingControl.setButtonsEnabled(false);
+        this.mFavoriteToggle.setEnabled(false);
+    }
+
+    /**
+     * Re-enables the buttons after the background work has finished
+     *
+     * @param result The result of the update
+     */
+    @Override
+    public void onPostUpdateDiscovery(Boolean result) {
+        this.mRatingControl.setButtonsEnabled(true);
+        this.mFavoriteToggle.setEnabled(true);
+    }
+
+    /**
+     * Re-enables the buttons if the background work was cancelled
+     */
+    @Override
+    public void onUpdateDiscoveryCancelled() {
+        this.mRatingControl.setButtonsEnabled(true);
+        this.mFavoriteToggle.setEnabled(true);
+    }
+
+    /**
+     * Listener that provides event callbacks for this Fragment
+     */
+    public interface DiscoveryFragmentListener {
 
         /**
-         * The Activity containing this Fragment.
+         * Should handle the case where the Fragment is not passed the required data
+         *
+         * @param discoveryFragment The Fragment that is missing data
          */
-        private Activity activity;
-
-        /**
-         * ProgressBar to be displayed while the data is being loaded.
-         */
-        private ProgressBar progress;
-
-        /**
-         * The ContentValues being used in the UPDATE statement.
-         */
-        private ContentValues values;
-
-        /**
-         * Constructor
-         * 
-         * @param activity
-         * @param view
-         */
-        public UpdateDiscoveryTask(Activity activity, View view, ContentValues values) {
-            this.activity = activity;
-            this.progress = (ProgressBar) view.findViewById(R.id.fragment_discovery_progress_bar);
-            this.values = values;
-        }
-
-        @Override
-        protected void onPreExecute() {
-            this.progress.setIndeterminate(true);
-            this.progress.setVisibility(View.VISIBLE);
-        }
-
-        @Override
-        protected Boolean doInBackground(Long... params) {
-            return CapsuleOperations.updateDiscovery(this.activity.getContentResolver(), this.values, params[0], true /* setDirty */);
-        }
-
-        @Override
-        protected void onPostExecute(final Boolean success) {
-            if (this.progress.isShown()) {
-                this.progress.setVisibility(View.GONE);
-            }
-            if (success) {
-                Toast.makeText(this.activity, "Updated successfully.", Toast.LENGTH_SHORT).show();
-            } else {
-                Toast.makeText(this.activity, "There was a problem during the save.", Toast.LENGTH_SHORT).show();
-            }
-        }
+        void onMissingData(DiscoveryFragment discoveryFragment);
 
     }
 

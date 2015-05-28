@@ -6,6 +6,10 @@
     android:orientation="vertical"
     tools:context="com.brettnamba.capsules.activities.CapsuleActivity">
 
+    <android.support.v7.widget.Toolbar
+        android:id="@+id/toolbar"
+        style="@style/AppTheme.Toolbar" />
+
     <FrameLayout
         android:id="@+id/fragment_capsule"
         android:name="com.brettnamba.capsules.fragments.CapsuleFragment"

@@ -1,96 +1,111 @@
 package com.brettnamba.capsules.fragments;
 
 import android.app.Activity;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import com.brettnamba.capsules.R;
-import com.brettnamba.capsules.dataaccess.Capsule;
-import com.brettnamba.capsules.provider.CapsuleOperations;
+import com.brettnamba.capsules.dataaccess.CapsulePojo;
 
 /**
- * Fragment for displaying basic information about a Capsule.
- * 
- * @author Brett Namba
+ * Fragment for displaying a Capsule
  *
+ * @author Brett Namba
  */
 public class CapsuleFragment extends Fragment {
 
+    /**
+     * The Capsule for this Activity
+     */
+    private CapsulePojo mCapsule;
+
+    /**
+     * Listener that handles callbacks
+     */
+    private CapsuleFragmentListener mListener;
+
+    /**
+     * onAttach
+     *
+     * @param activity The Activity that the Fragment is being attached to
+     */
+    @Override
+    public void onAttach(Activity activity) {
+        super.onAttach(activity);
+        // Make sure the Activity implements this Fragment's listener interface
+        try {
+            this.mListener = (CapsuleFragmentListener) activity;
+        } catch (ClassCastException e) {
+            throw new ClassCastException(activity.toString() + " does not implement CapsuleFragmentListener");
+        }
+    }
+
+    /**
+     * onCreate
+     *
+     * @param savedInstanceState
+     */
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        // Get in the arguments passed from the Activity
+        Bundle args = this.getArguments();
+        if (args != null) {
+            this.mCapsule = args.getParcelable("capsule");
+        }
+    }
+
+    /**
+     * onCreateView
+     *
+     * @param inflater
+     * @param container
+     * @param savedInstanceState
+     * @return
+     */
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+        // Inflate the layout View
         View view = inflater.inflate(R.layout.fragment_capsule, container, false);
-        /*
-        // Get the arguments passed in from the Activity
-        Long id = getArguments().getLong("capsule_id");
-        // Begin the AsyncTask for loading the Capsule data
-        new LoadCapsuleTask(getActivity(), view).execute(id);
-        */
 
-        // Populate the information
-        Capsule capsule = (Capsule) getArguments().getParcelable("capsule");
-        TextView name = (TextView) view.findViewById(R.id.fragment_capsule_info_name);
-        name.setText(capsule.getName());
+        // Populate the Views
+        if (this.mCapsule != null) {
+            TextView name = (TextView) view.findViewById(R.id.fragment_capsule_info_name);
+            name.setText(this.mCapsule.getName());
+        }
 
         return view;
     }
 
     /**
-     * Queries the database for the Capsule record.
+     * onActivityCreated
+     *
+     * @param savedInstanceState
      */
-    private class LoadCapsuleTask extends AsyncTask<Long, Void, Capsule> {
+    @Override
+    public void onActivityCreated(Bundle savedInstanceState) {
+        super.onActivityCreated(savedInstanceState);
+        // If the Fragment is missing any required data, delegate handling to the listener
+        if (this.mCapsule == null) {
+            this.mListener.onMissingData(this);
+        }
+    }
+
+    /**
+     * Listener that provides event callbacks for this Fragment
+     */
+    public interface CapsuleFragmentListener {
 
         /**
-         * The Activity containing this Fragment.
+         * Should handle the case where the Fragment is not passed the required data
+         *
+         * @param capsuleFragment The Fragment that is missing the data
          */
-        private Activity activity;
-
-        /**
-         * The View for the Fragment.
-         */
-        private View view;
-
-        /**
-         * ProgressBar to be displayed while the data is being loaded.
-         */
-        private ProgressBar progress;
-
-        /**
-         * Constructor
-         * 
-         * @param activity
-         * @param view
-         */
-        public LoadCapsuleTask(Activity activity, View view) {
-            this.activity = activity;
-            this.view = view;
-            this.progress = (ProgressBar) view.findViewById(R.id.fragment_capsule_progress_bar);
-        }
-
-        @Override
-        protected void onPreExecute() {
-            this.progress.setIndeterminate(true);
-            this.progress.setVisibility(View.VISIBLE);
-        }
-
-        @Override
-        protected Capsule doInBackground(Long... params) {
-            return CapsuleOperations.getCapsule(this.activity.getContentResolver(), params[0]);
-        }
-
-        @Override
-        protected void onPostExecute(Capsule capsule) {
-            if (this.progress.isShown()) {
-                this.progress.setVisibility(View.GONE);
-            }
-            TextView name = (TextView) this.view.findViewById(R.id.fragment_capsule_info_name);
-            name.setText(capsule.getName());
-        }
+        void onMissingData(CapsuleFragment capsuleFragment);
 
     }
 

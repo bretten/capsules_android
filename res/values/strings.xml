@@ -86,6 +86,7 @@
     <!-- Capsules -->
     <string name="error_cannot_retrieve_undiscovered">There was a problem scanning the area for new Capsules</string>
     <string name="error_cannot_open_capsule">The capsule could not be opened.</string>
+    <string name="error_cannot_open_missing_data">Something was missing so the capsule could not be opened.</string>
     <!-- Google API -->
     <string name="error_google_api_cannot_connect">The Google API services cannot be reached.</string>
     <string name="error_cannot_retrieve_location">Your current location could no be retrieved.</string>
