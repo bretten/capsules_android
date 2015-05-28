@@ -42,6 +42,15 @@ public class Capsule implements Parcelable {
      */
     protected double mLongitude;
 
+    /**
+     * The database cursor used when populating a Capsule instance on the fly from the database
+     */
+    protected Cursor mCursor;
+
+    /**
+     * The cursor position corresponding to this instance's database row
+     */
+    protected int mPosition = -1;
 
     /**
      * Constructor
@@ -92,6 +101,23 @@ public class Capsule implements Parcelable {
     }
 
     /**
+     * Special-case constructor that requires a database cursor and the row position of the Capsule.
+     * Values will be pulled from the database on the fly as the getters are called and will be
+     * retained on the Capsule's instance variables.  This minimizes data pulled from the database
+     * and only loads it once it is needed.
+     *
+     * NOTE: If certain getters are not called, those values will not be loaded.  Cursors also need
+     * to be manually closed after usage
+     *
+     * @param c
+     * @param position
+     */
+    public Capsule(Cursor c, int position) {
+        this.mCursor = c;
+        this.mPosition = position;
+    }
+
+    /**
      * Constructs a Capsule given a JSONObject
      *
      * @param jsonCapsule A JSONObject representing a Capsule
@@ -118,6 +144,18 @@ public class Capsule implements Parcelable {
      * @return The ID of the Capsule
      */
     public long getId() {
+        // Check if the value can be pulled from the database on the fly
+        if (this.mCursor != null && this.mPosition >= 0 && this.mId == 0) {
+            this.mCursor.moveToPosition(this.mPosition);
+
+            int i = this.mCursor.getColumnIndex(CapsuleContract.Capsules._ID);
+            if (i == -1) {
+                return 0;
+            }
+
+            this.mId = this.mCursor.getLong(i);
+        }
+
         return this.mId;
     }
 
@@ -127,6 +165,18 @@ public class Capsule implements Parcelable {
      * @return The sync ID of the Capsule
      */
     public long getSyncId() {
+        // Check if the value can be pulled from the database on the fly
+        if (this.mCursor != null && this.mPosition >= 0 && this.mSyncId == 0) {
+            this.mCursor.moveToPosition(this.mPosition);
+
+            int i = this.mCursor.getColumnIndex(CapsuleContract.Capsules.SYNC_ID);
+            if (i == -1) {
+                return 0;
+            }
+
+            this.mSyncId = this.mCursor.getLong(i);
+        }
+
         return this.mSyncId;
     }
 
@@ -136,6 +186,18 @@ public class Capsule implements Parcelable {
      * @return The Capsule name
      */
     public String getName() {
+        // Check if the value can be pulled from the database on the fly
+        if (this.mCursor != null && this.mPosition >= 0 && this.mName == null) {
+            this.mCursor.moveToPosition(this.mPosition);
+
+            int i = this.mCursor.getColumnIndex(CapsuleContract.Capsules.NAME);
+            if (i == -1) {
+                return null;
+            }
+
+            this.mName = this.mCursor.getString(i);
+        }
+
         return this.mName;
     }
 
@@ -145,6 +207,18 @@ public class Capsule implements Parcelable {
      * @return The Capsule latitude
      */
     public double getLatitude() {
+        // Check if the value can be pulled from the database on the fly
+        if (this.mCursor != null && this.mPosition >= 0 && this.mLatitude == 0) {
+            this.mCursor.moveToPosition(this.mPosition);
+
+            int i = this.mCursor.getColumnIndex(CapsuleContract.Capsules.LATITUDE);
+            if (i == -1) {
+                return 0;
+            }
+
+            this.mLatitude = this.mCursor.getDouble(i);
+        }
+
         return this.mLatitude;
     }
 
@@ -154,6 +228,18 @@ public class Capsule implements Parcelable {
      * @return The Capsule longitude
      */
     public double getLongitude() {
+        // Check if the value can be pulled from the database on the fly
+        if (this.mCursor != null && this.mPosition >= 0 && this.mLongitude == 0) {
+            this.mCursor.moveToPosition(this.mPosition);
+
+            int i = this.mCursor.getColumnIndex(CapsuleContract.Capsules.LONGITUDE);
+            if (i == -1) {
+                return 0;
+            }
+
+            this.mLongitude = this.mCursor.getDouble(i);
+        }
+
         return this.mLongitude;
     }
 
