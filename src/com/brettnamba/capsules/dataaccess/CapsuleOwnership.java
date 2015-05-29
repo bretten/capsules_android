@@ -49,6 +49,21 @@ public class CapsuleOwnership extends Capsule {
     }
 
     /**
+     * Constructor that clones the specified Capsule
+     *
+     * @param capsule The Capsule to clone
+     */
+    public CapsuleOwnership(CapsuleOwnership capsule) {
+        super(capsule);
+
+        this.mOwnershipId = capsule.getOwnershipId();
+        this.mEtag = capsule.getEtag();
+        this.mAccountName = capsule.getAccountName();
+        this.mDirty = capsule.getDirty();
+        this.mDeleted = capsule.getDeleted();
+    }
+
+    /**
      * Constructs a CapsuleOwnership given an instance of Capsule.  Will only take the
      * common properties from the Capsule instance
      *

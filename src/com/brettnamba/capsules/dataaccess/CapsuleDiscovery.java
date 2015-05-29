@@ -54,6 +54,22 @@ public class CapsuleDiscovery extends Capsule {
     }
 
     /**
+     * Constructor that clones the specified Capsule
+     *
+     * @param capsule The Capsule to clone
+     */
+    public CapsuleDiscovery(CapsuleDiscovery capsule) {
+        super(capsule);
+
+        this.mDiscoveryId = capsule.getDiscoveryId();
+        this.mEtag = capsule.getEtag();
+        this.mAccountName = capsule.getAccountName();
+        this.mDirty = capsule.getDirty();
+        this.mFavorite = capsule.getFavorite();
+        this.mRating = capsule.getRating();
+    }
+
+    /**
      * Constructs a CapsuleDiscovery given another instance of Capsule.  It will only get
      * common properties from the Capsule instance that was passed in
      *

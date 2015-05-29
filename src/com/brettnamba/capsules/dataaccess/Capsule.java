@@ -59,6 +59,19 @@ public class Capsule implements Parcelable {
     }
 
     /**
+     * Constructor that clones the specified Capsule
+     *
+     * @param capsule The Capsule to clone
+     */
+    public Capsule(Capsule capsule) {
+        this.mId = capsule.getId();
+        this.mSyncId = capsule.getSyncId();
+        this.mName = capsule.getName();
+        this.mLatitude = capsule.getLatitude();
+        this.mLongitude = capsule.getLongitude();
+    }
+
+    /**
      * Constructor for rebuilding a copy of a Parcelable Capsule.
      *
      * @param in
