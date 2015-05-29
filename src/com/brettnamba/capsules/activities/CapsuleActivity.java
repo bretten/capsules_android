@@ -12,7 +12,6 @@ import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import com.brettnamba.capsules.R;
@@ -53,10 +52,20 @@ public class CapsuleActivity extends FragmentActivity implements
     private boolean mModified = false;
 
     /**
+     * The Activity's Toolbar widget
+     */
+    private Toolbar mToolbar;
+
+    /**
      * Request code for starting the CapsuleEditorActivity
      */
     private static final int REQUEST_CODE_CAPSULE_EDITOR = 1;
 
+    /**
+     * onCreate
+     *
+     * @param savedInstanceState
+     */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -100,16 +109,17 @@ public class CapsuleActivity extends FragmentActivity implements
         }
 
         // Setup the Toolbar
-        Toolbar toolbar = Widgets.createToolbar(this, this.mCapsule.getName());
-        toolbar.inflateMenu(R.menu.capsule);
-        toolbar.setNavigationOnClickListener(new View.OnClickListener() {
+        this.mToolbar = Widgets.createToolbar(this, this.mCapsule.getName());
+        this.mToolbar.inflateMenu(R.menu.capsule);
+        this.mToolbar.setNavigationOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 // Close this Activity
+                CapsuleActivity.this.setOkResult();
                 CapsuleActivity.this.finish();
             }
         });
-        toolbar.setOnMenuItemClickListener(new Toolbar.OnMenuItemClickListener() {
+        this.mToolbar.setOnMenuItemClickListener(new Toolbar.OnMenuItemClickListener() {
             @Override
             public boolean onMenuItemClick(MenuItem menuItem) {
                 switch (menuItem.getItemId()) {
@@ -119,7 +129,8 @@ public class CapsuleActivity extends FragmentActivity implements
                         Intent intent = new Intent(CapsuleActivity.this, CapsuleEditorActivity.class);
                         intent.putExtra("capsule", CapsuleActivity.this.mCapsule);
                         intent.putExtra("account", CapsuleActivity.this.mAccount);
-                        CapsuleActivity.this.startActivityForResult(intent, REQUEST_CODE_CAPSULE_EDITOR);
+                        CapsuleActivity.this.startActivityForResult(intent,
+                                CapsuleActivity.REQUEST_CODE_CAPSULE_EDITOR);
                         return true;
                     default:
                         return false;
@@ -128,44 +139,55 @@ public class CapsuleActivity extends FragmentActivity implements
         });
         // Show the edit menu button if this Capsule is owned by the current Account
         if (this.mOwned) {
-            Menu menu = toolbar.getMenu();
+            Menu menu = this.mToolbar.getMenu();
             MenuItem editMenuItem = menu.findItem(R.id.action_edit);
             editMenuItem.setVisible(true);
         }
     }
 
+    /**
+     * onBackPressed
+     */
     @Override
     public void onBackPressed() {
-        Intent intent = new Intent();
-        intent.putExtra("capsule", this.mCapsule);
-        intent.putExtra("modified", this.mModified);
-        this.setResult(Activity.RESULT_OK, intent);
+        this.setOkResult();
         super.onBackPressed();
     }
 
+    /**
+     * onActivityResult
+     *
+     * @param requestCode
+     * @param resultCode
+     * @param data
+     */
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
 
         switch (requestCode) {
-
-            case (REQUEST_CODE_CAPSULE_EDITOR):
+            case (CapsuleActivity.REQUEST_CODE_CAPSULE_EDITOR):
                 if (resultCode == Activity.RESULT_OK) {
                     // Flag it as modified
-                    mModified = true;
+                    this.mModified = true;
                     // Get the new Capsule
-                    mCapsule = data.getParcelableExtra("capsule");
+                    this.mCapsule = data.getParcelableExtra("capsule");
                     // Get the Fragment containing the Capsule information
-                    Fragment capsuleFragment = getSupportFragmentManager().findFragmentById(R.id.fragment_capsule);
-                    // Populate the information
-                    TextView name = (TextView) capsuleFragment.getView().findViewById(R.id.fragment_capsule_info_name);
-                    name.setText(mCapsule.getName());
+                    CapsuleFragment capsuleFragment = (CapsuleFragment) this.getSupportFragmentManager()
+                            .findFragmentById(R.id.fragment_capsule);
+                    // Populate the Fragment with the new Capsule
+                    if (this.mCapsule != null && capsuleFragment != null) {
+                        capsuleFragment.populateViews(this.mCapsule);
+                        // Update the Toolbar
+                        if (this.mToolbar != null) {
+                            this.mToolbar.setSubtitle(this.mCapsule.getName());
+                        }
+                    }
                 }
                 break;
 
             default:
                 break;
-
         }
 
     }
@@ -180,6 +202,7 @@ public class CapsuleActivity extends FragmentActivity implements
     @Override
     public void onMissingData(CapsuleFragment capsuleFragment) {
         this.getSupportFragmentManager().beginTransaction().remove(capsuleFragment).commit();
+        this.setResult(Activity.RESULT_CANCELED);
         this.finish();
         Toast.makeText(this, this.getString(R.string.error_cannot_open_missing_data),
                 Toast.LENGTH_SHORT).show();
@@ -195,9 +218,21 @@ public class CapsuleActivity extends FragmentActivity implements
     @Override
     public void onMissingData(DiscoveryFragment discoveryFragment) {
         this.getSupportFragmentManager().beginTransaction().remove(discoveryFragment).commit();
+        this.setResult(Activity.RESULT_CANCELED);
         this.finish();
         Toast.makeText(this, this.getString(R.string.error_cannot_open_missing_data),
                 Toast.LENGTH_SHORT).show();
+    }
+
+    /**
+     * Adds data to pass back when the Activity is closed under correct circumstances and
+     * sets the result code as OK
+     */
+    private void setOkResult() {
+        Intent intent = new Intent();
+        intent.putExtra("capsule", this.mCapsule);
+        intent.putExtra("modified", this.mModified);
+        this.setResult(Activity.RESULT_OK, intent);
     }
 
 }

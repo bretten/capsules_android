@@ -29,6 +29,11 @@ public class CapsuleFragment extends Fragment {
     private CapsuleFragmentListener mListener;
 
     /**
+     * The layout View
+     */
+    private View mLayoutView;
+
+    /**
      * onAttach
      *
      * @param activity The Activity that the Fragment is being attached to
@@ -70,15 +75,14 @@ public class CapsuleFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         // Inflate the layout View
-        View view = inflater.inflate(R.layout.fragment_capsule, container, false);
+        this.mLayoutView = inflater.inflate(R.layout.fragment_capsule, container, false);
 
         // Populate the Views
         if (this.mCapsule != null) {
-            TextView name = (TextView) view.findViewById(R.id.fragment_capsule_info_name);
-            name.setText(this.mCapsule.getName());
+            this.populateViews(this.mCapsule);
         }
 
-        return view;
+        return this.mLayoutView;
     }
 
     /**
@@ -92,6 +96,19 @@ public class CapsuleFragment extends Fragment {
         // If the Fragment is missing any required data, delegate handling to the listener
         if (this.mCapsule == null) {
             this.mListener.onMissingData(this);
+        }
+    }
+
+    /**
+     * Populates the Views with the Capsule data
+     *
+     * @param capsule The Capsule to use to populate the Views
+     */
+    public void populateViews(Capsule capsule) {
+        if (this.mLayoutView != null) {
+            // Capsule name
+            TextView name = (TextView) this.mLayoutView.findViewById(R.id.fragment_capsule_info_name);
+            name.setText(capsule.getName());
         }
     }
 
