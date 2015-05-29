@@ -16,8 +16,8 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.brettnamba.capsules.R;
-import com.brettnamba.capsules.dataaccess.CapsuleOwnership;
 import com.brettnamba.capsules.dataaccess.Capsule;
+import com.brettnamba.capsules.dataaccess.CapsuleOwnership;
 import com.brettnamba.capsules.fragments.CapsuleContentFragment;
 import com.brettnamba.capsules.fragments.CapsuleFragment;
 import com.brettnamba.capsules.fragments.DiscoveryFragment;
@@ -63,7 +63,7 @@ public class CapsuleActivity extends FragmentActivity implements
         this.setContentView(R.layout.activity_capsule);
 
         // Get the Intent extras
-        Bundle extras = getIntent().getExtras();
+        Bundle extras = this.getIntent().getExtras();
         if (extras != null) {
             this.mCapsule = extras.getParcelable("capsule");
             this.mAccount = extras.getParcelable("account");
@@ -112,47 +112,34 @@ public class CapsuleActivity extends FragmentActivity implements
         toolbar.setOnMenuItemClickListener(new Toolbar.OnMenuItemClickListener() {
             @Override
             public boolean onMenuItemClick(MenuItem menuItem) {
-                return false;
+                switch (menuItem.getItemId()) {
+                    case R.id.action_settings:
+                        return false;
+                    case R.id.action_edit:
+                        Intent intent = new Intent(CapsuleActivity.this, CapsuleEditorActivity.class);
+                        intent.putExtra("capsule", CapsuleActivity.this.mCapsule);
+                        intent.putExtra("account", CapsuleActivity.this.mAccount);
+                        CapsuleActivity.this.startActivityForResult(intent, REQUEST_CODE_CAPSULE_EDITOR);
+                        return true;
+                    default:
+                        return false;
+                }
             }
         });
-    }
-
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-
-        // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.capsule, menu);
-        // Show the Edit button if this is an Ownership
-        if (mOwned) {
-            MenuItem editItem = (MenuItem) menu.findItem(R.id.action_edit);
-            editItem.setVisible(true);
+        // Show the edit menu button if this Capsule is owned by the current Account
+        if (this.mOwned) {
+            Menu menu = toolbar.getMenu();
+            MenuItem editMenuItem = menu.findItem(R.id.action_edit);
+            editMenuItem.setVisible(true);
         }
-        return true;
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
-        if (id == R.id.action_settings) {
-            return true;
-        } else if (id == R.id.action_edit) {
-            Intent intent = new Intent(getApplicationContext(), CapsuleEditorActivity.class);
-            intent.putExtra("capsule", mCapsule);
-            intent.putExtra("account_name", mAccount);
-            startActivityForResult(intent, REQUEST_CODE_CAPSULE_EDITOR);
-        }
-        return super.onOptionsItemSelected(item);
     }
 
     @Override
     public void onBackPressed() {
         Intent intent = new Intent();
-        intent.putExtra("capsule", mCapsule);
-        intent.putExtra("modified", mModified);
-        setResult(Activity.RESULT_OK, intent);
+        intent.putExtra("capsule", this.mCapsule);
+        intent.putExtra("modified", this.mModified);
+        this.setResult(Activity.RESULT_OK, intent);
         super.onBackPressed();
     }
 
