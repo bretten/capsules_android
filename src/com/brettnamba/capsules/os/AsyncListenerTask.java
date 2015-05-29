@@ -4,6 +4,7 @@ import android.accounts.Account;
 import android.os.AsyncTask;
 
 import com.brettnamba.capsules.dataaccess.CapsuleDiscovery;
+import com.brettnamba.capsules.dataaccess.CapsuleOwnership;
 import com.brettnamba.capsules.http.response.AuthenticationResponse;
 import com.brettnamba.capsules.http.response.CapsuleOpenResponse;
 import com.brettnamba.capsules.http.response.CapsulePingResponse;
@@ -187,6 +188,36 @@ public abstract class AsyncListenerTask<Params, Progress, Result> extends AsyncT
          * Should handle onCancelled() work
          */
         void onUpdateDiscoveryCancelled();
+    }
+
+    /**
+     * Listener for AsyncTask that handles saving a Capsule ownership
+     */
+    public interface OwnershipSaveTaskListener extends TaskListener {
+        /**
+         * Should handle doInBackground() work
+         *
+         * @param params The Capsule being saved
+         * @return The result of the save
+         */
+        boolean duringOwnershipSave(CapsuleOwnership... params);
+
+        /**
+         * Should handle onPreExecute() work
+         */
+        void onPreOwnershipSave();
+
+        /**
+         * Should handle onPostExecute() work
+         *
+         * @param success The result of the save
+         */
+        void onPostOwnershipSave(Boolean success);
+
+        /**
+         * Should handle onCancelled() work
+         */
+        void onOwnershipSaveCancelled();
     }
 
 }
