@@ -307,16 +307,28 @@ public class CapsuleOperations {
     }
 
     public void buildOwnershipSave(Capsule capsule, CapsuleContract.SyncStateAction syncAction) {
-        // Make sure there is a sync ID
-        if (capsule.getSyncId() <= 0) {
-            throw new InvalidParameterException("The Capsule does not have a sync ID");
+        // Determine the IDs
+        long capsuleId;
+        long ownershipId;
+        if (capsule.getSyncId() > 0) {
+            // Determine if Capsule and Ownership rows exist for the sync ID
+            capsuleId = Capsules.getIdBySyncId(this.mResolver, this, capsule.getSyncId());
+            ownershipId = Ownerships.getIdBySyncId(this.mResolver, this, capsule.getSyncId());
+            // Set the IDs
+            capsule.setId(capsuleId);
+            ((CapsuleOwnership) capsule).setOwnershipId(ownershipId);
+        } else {
+            if (capsule.getId() > 0) {
+                capsuleId = capsule.getId();
+            } else {
+                capsuleId = 0;
+            }
+            if (((CapsuleOwnership) capsule).getOwnershipId() > 0) {
+                ownershipId = ((CapsuleOwnership) capsule).getOwnershipId();
+            } else {
+                ownershipId = 0;
+            }
         }
-        // Determine if Capsule and Ownership rows exist for the sync ID
-        long capsuleId = Capsules.getIdBySyncId(this.mResolver, this, capsule.getSyncId());
-        long ownershipId = Ownerships.getIdBySyncId(this.mResolver, this, capsule.getSyncId());
-        // Set the IDs
-        capsule.setId(capsuleId);
-        ((CapsuleOwnership) capsule).setOwnershipId(ownershipId);
         // Build the INSERT/UPDATE operations depending on if the Capsule and Ownership exist
         if (capsuleId > 0) {
             // Capsule UPDATE
@@ -382,8 +394,9 @@ public class CapsuleOperations {
             Cursor c = resolver.query(
                     CapsuleContract.Capsules.CONTENT_URI,
                     new String[]{CapsuleContract.Capsules._ID},
-                    CapsuleContract.Capsules.TABLE_NAME + "." + CapsuleContract.Capsules.SYNC_ID + " = ?",
-                    new String[]{String.valueOf(syncId)},
+                    CapsuleContract.Capsules.TABLE_NAME + "." + CapsuleContract.Capsules.SYNC_ID + " = ?"
+                            + " AND " + CapsuleContract.Capsules.TABLE_NAME + "." + CapsuleContract.Capsules.SYNC_ID + " != ?",
+                    new String[]{String.valueOf(syncId), "0"},
                     null
             );
             // Check if there is a row
@@ -435,7 +448,32 @@ public class CapsuleOperations {
             // Apply the batch operation
             ContentProviderResult[] results = operations.applyBatch();
 
-            return results != null;
+            // Make sure the rows were properly updated
+            boolean success = true;
+
+            // Check the first result (Capsule operation)
+            if (results[0].uri != null) {
+                // The Capsule operation was an INSERT, so parse the ID from the URI
+                capsule.setId(ContentUris.parseId(results[0].uri));
+            } else {
+                // The Capsule operation was an UPDATE, so make sure a row was updated
+                if (results[0].count < 1) {
+                    success = false;
+                }
+            }
+
+            // Check the second result (Discovery operation)
+            if (results[1].uri != null) {
+                // The Discovery operation was an INSERT, so parse the ID from the URI
+                ((CapsuleDiscovery) capsule).setDiscoveryId(ContentUris.parseId(results[1].uri));
+            } else {
+                // The Discovery operation was an UPDATE, so make sure a row was updated
+                if (results[1].count < 1) {
+                    success = false;
+                }
+            }
+
+            return success;
         }
 
         public static long getIdBySyncId(ContentResolver resolver, CapsuleOperations operations, long syncId) {
@@ -447,8 +485,9 @@ public class CapsuleOperations {
             Cursor c = resolver.query(
                     uri,
                     CapsuleContract.Discoveries.CAPSULE_JOIN_PROJECTION,
-                    CapsuleContract.Capsules.SYNC_ID + " = ?",
-                    new String[]{String.valueOf(syncId)},
+                    CapsuleContract.Capsules.TABLE_NAME + "." + CapsuleContract.Capsules.SYNC_ID + " = ?"
+                            + " AND " + CapsuleContract.Capsules.TABLE_NAME + "." + CapsuleContract.Capsules.SYNC_ID + " != ?",
+                    new String[]{String.valueOf(syncId), "0"},
                     null
             );
             // Check if there is a row
@@ -501,7 +540,32 @@ public class CapsuleOperations {
             // Apply the batch operation
             ContentProviderResult[] results = operations.applyBatch();
 
-            return results != null;
+            // Make sure the rows were properly updated
+            boolean success = true;
+
+            // Check the first result (Capsule operation)
+            if (results[0].uri != null) {
+                // The Capsule operation was an INSERT, so parse the ID from the URI
+                capsule.setId(ContentUris.parseId(results[0].uri));
+            } else {
+                // The Capsule operation was an UPDATE, so make sure a row was updated
+                if (results[0].count < 1) {
+                    success = false;
+                }
+            }
+
+            // Check the second result (Ownership operation)
+            if (results[1].uri != null) {
+                // The Ownership operation was an INSERT, so parse the ID from the URI
+                ((CapsuleOwnership) capsule).setOwnershipId(ContentUris.parseId(results[1].uri));
+            } else {
+                // The Ownership operation was an UPDATE, so make sure a row was updated
+                if (results[1].count < 1) {
+                    success = false;
+                }
+            }
+
+            return success;
         }
 
         public static long getIdBySyncId(ContentResolver resolver, CapsuleOperations operations, long syncId) {
@@ -513,8 +577,9 @@ public class CapsuleOperations {
             Cursor c = resolver.query(
                     uri,
                     CapsuleContract.Ownerships.CAPSULE_JOIN_PROJECTION,
-                    CapsuleContract.Capsules.SYNC_ID + " = ?",
-                    new String[]{String.valueOf(syncId)},
+                    CapsuleContract.Capsules.TABLE_NAME + "." + CapsuleContract.Capsules.SYNC_ID + " = ?"
+                            + " AND " + CapsuleContract.Capsules.TABLE_NAME + "." + CapsuleContract.Capsules.SYNC_ID + " != ?",
+                    new String[]{String.valueOf(syncId), "0"},
                     null
             );
             // Check if there is a row
