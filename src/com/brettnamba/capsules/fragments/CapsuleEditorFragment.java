@@ -1,156 +1,261 @@
 package com.brettnamba.capsules.fragments;
 
+import android.accounts.Account;
 import android.app.Activity;
-import android.content.Intent;
-import android.net.Uri;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
+import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.ProgressBar;
 
 import com.brettnamba.capsules.R;
-import com.brettnamba.capsules.dataaccess.Capsule;
+import com.brettnamba.capsules.dataaccess.CapsuleOwnership;
+import com.brettnamba.capsules.os.AsyncListenerTask;
+import com.brettnamba.capsules.os.OwnershipSaveTask;
 import com.brettnamba.capsules.provider.CapsuleContract;
 import com.brettnamba.capsules.provider.CapsuleOperations;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
- * This Fragment provides a UI for editing a Capsule's data.
- * 
- * @author Brett Namba
+ * Fragment that provides the editor for a Capsule
  *
+ * @author Brett Namba
  */
-public class CapsuleEditorFragment extends Fragment {
+public class CapsuleEditorFragment extends Fragment implements
+        AsyncListenerTask.OwnershipSaveTaskListener {
 
     /**
-     * The current Account name.
+     * The Capsule being edited
      */
-    private String mAccountName;
+    private CapsuleOwnership mCapsule;
 
     /**
-     * The Capsule being edited.
+     * Temporary Capsule that will hold the edited values until the save is a success
      */
-    private Capsule mCapsule;
+    private CapsuleOwnership mCapsuleClone;
 
+    /**
+     * The current Account
+     */
+    private Account mAccount;
+
+    /**
+     * The save button
+     */
+    private Button mSaveButton;
+
+    /**
+     * The name input
+     */
+    private EditText mNameEditText;
+
+    /**
+     * Listener that handles callbacks
+     */
+    private CapsuleEditorFragmentListener mListener;
+
+    /**
+     * onAttach
+     *
+     * @param activity The Activity the Fragment is being attached to
+     */
+    @Override
+    public void onAttach(Activity activity) {
+        super.onAttach(activity);
+        // Make sure the Activity implements this Fragment's listener interface
+        try {
+            this.mListener = (CapsuleEditorFragmentListener) activity;
+        } catch (ClassCastException e) {
+            throw new ClassCastException(activity.toString() + " does not implement CapsuleEditorFragmentListener");
+        }
+    }
+
+    /**
+     * onCreate
+     *
+     * @param savedInstanceState
+     */
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        // Get the arguments passed in from the Activity
+        Bundle args = this.getArguments();
+        if (args != null) {
+            this.mCapsule = args.getParcelable("capsule");
+            this.mAccount = args.getParcelable("account");
+        }
+    }
+
+    /**
+     * onCreateView
+     *
+     * @param inflater
+     * @param container
+     * @param savedInstanceState
+     * @return
+     */
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+        // Inflate the layout View
         View view = inflater.inflate(R.layout.fragment_capsule_editor, container, false);
 
-        // Get passed Bundle
-        mAccountName = getArguments().getString("account_name");
-        mCapsule = getArguments().getParcelable("capsule");
-        if (mCapsule == null) {
-            mCapsule = new Capsule();
-            mCapsule.setLatitude(getArguments().getDouble("latitude"));
-            mCapsule.setLongitude(getArguments().getDouble("longitude"));
-        }
-
-        // Populate the views if an existing Capsule is being edited
-        if (mCapsule.getId() > 0) {
-            EditText name = (EditText) view.findViewById(R.id.fragment_capsule_editor_name);
-            name.setText(mCapsule.getName());
+        // Populate the Views
+        if (this.mCapsule != null && this.mAccount != null) {
+            // Clone the Capsule
+            this.mCapsuleClone = new CapsuleOwnership(this.mCapsule);
+            // Capsule name
+            this.mNameEditText = (EditText) view.findViewById(R.id.fragment_capsule_editor_name);
+            if (this.mCapsule.getName() != null) {
+                this.mNameEditText.setText(this.mCapsule.getName());
+            }
         }
 
         // Set the save button listener
-        Button saveButton = (Button) view.findViewById(R.id.fragment_capsule_editor_save);
-        saveButton.setOnClickListener(new SaveButtonListener(view));
+        this.mSaveButton = (Button) view.findViewById(R.id.fragment_capsule_editor_save);
+        this.mSaveButton.setOnClickListener(this.mSaveButtonListener);
 
         return view;
     }
 
     /**
-     * Handler for clicking on the save button.
+     * onActivityCreated
+     *
+     * @param savedInstanceState
      */
-    private class SaveButtonListener implements OnClickListener {
-
-        /**
-         * Reference to the root view for the save button.
-         */
-        private View rootView;
-
-        /**
-         * Constructor
-         * 
-         * @param rootView
-         */
-        public SaveButtonListener(View rootView) {
-            this.rootView = rootView;
+    @Override
+    public void onActivityCreated(Bundle savedInstanceState) {
+        super.onActivityCreated(savedInstanceState);
+        // If the Fragment is missing any required data, delegate handling to the listener
+        if (this.mCapsule == null || this.mAccount == null) {
+            this.mListener.onMissingData(this);
         }
-
-        @Override
-        public void onClick(View v) {
-            // Get references to the inputs
-            EditText name = (EditText) rootView.findViewById(R.id.fragment_capsule_editor_name);
-            mCapsule.setName(name.getText().toString());
-            new SaveCapsuleTask(getActivity(), rootView).execute(mCapsule);
-        }
-
     }
 
     /**
-     * Handles saving a Capsule to the database.
+     * Saves the Capsule on the background thread
+     *
+     * @param params The Capsule being saved
+     * @return The result of the save
      */
-    private class SaveCapsuleTask extends AsyncTask<Capsule, Void, Capsule> {
+    @Override
+    public boolean duringOwnershipSave(CapsuleOwnership... params) {
+        return CapsuleOperations.Ownerships.save(this.getActivity().getContentResolver(),
+                params[0], CapsuleContract.SyncStateAction.DIRTY);
+    }
+
+    /**
+     * Disables certain parts of the UI on the UI thread before the Capsule is saved on the background
+     * thread
+     */
+    @Override
+    public void onPreOwnershipSave() {
+        this.mSaveButton.setEnabled(false);
+    }
+
+    /**
+     * If the save was a success, work is delegated to the listener, otherwise the UI
+     * is re-enabled
+     *
+     * @param success The result of the save
+     */
+    @Override
+    public void onPostOwnershipSave(Boolean success) {
+        if (success != null && success && this.mListener != null) {
+            this.mCapsule = this.mCapsuleClone;
+            // Delegates the handling of the success to the listener
+            this.mListener.onSaveSuccess(this, this.mCapsule);
+        } else {
+            this.mSaveButton.setEnabled(true);
+        }
+    }
+
+    /**
+     * Re-enables the UI on the UI thread if the Capsule save background task was cancelled
+     */
+    @Override
+    public void onOwnershipSaveCancelled() {
+        this.mSaveButton.setEnabled(true);
+    }
+
+    /**
+     * Checks if the Capsule is valid
+     *
+     * @param capsule
+     * @return
+     */
+    private boolean isValid(CapsuleOwnership capsule) {
+        // Will hold any errors from validation
+        List<String> errors = new ArrayList<String>();
+
+        if (capsule == null) {
+            errors.add(this.getString(R.string.validation_capsule_missing));
+        } else {
+            // Capsule name
+            if (capsule.getName() == null || TextUtils.isEmpty(capsule.getName())) {
+                errors.add(this.getString(R.string.validation_capsule_name));
+            }
+        }
+
+        boolean isValid = errors.isEmpty();
+        if (!isValid) {
+            // Delegate the validation errors to the listener
+            this.mListener.onInvalidCapsuleData(this, capsule, errors);
+        }
+        return isValid;
+    }
+
+    /**
+     * Listener for the save button
+     */
+    private final OnClickListener mSaveButtonListener = new OnClickListener() {
+        @Override
+        public void onClick(View v) {
+            // Capsule name
+            CapsuleEditorFragment.this.mCapsuleClone.setName(
+                    CapsuleEditorFragment.this.mNameEditText.getText().toString()
+            );
+            if (CapsuleEditorFragment.this.isValid(CapsuleEditorFragment.this.mCapsuleClone)) {
+                // Save the Capsule on the background thread
+                new OwnershipSaveTask(CapsuleEditorFragment.this).execute(CapsuleEditorFragment.this.mCapsuleClone);
+            }
+        }
+    };
+
+    /**
+     * Listener that provides event callbacks for this Fragment
+     */
+    public interface CapsuleEditorFragmentListener {
 
         /**
-         * The Activity containing this Fragment.
+         * Should handle the case where the Fragment is not passed the required data
+         *
+         * @param capsuleEditorFragment The Fragment that is missing the data
          */
-        private Activity activity;
+        void onMissingData(CapsuleEditorFragment capsuleEditorFragment);
 
         /**
-         * The View for the Fragment.
+         * Should handle the case when the Fragment tried to save invalid Capsule data
+         *
+         * @param capsuleEditorFragment The Fragment that attempted the save
+         * @param capsule               The Capsule with invalid data
+         * @param messages              The error messages
          */
-        private View view;
+        void onInvalidCapsuleData(CapsuleEditorFragment capsuleEditorFragment, CapsuleOwnership capsule,
+                                  List<String> messages);
 
         /**
-         * ProgressBar to be displayed while the data is being loaded.
+         * Should handle the case where the Fragment has successfully saved the Capsule data
+         *
+         * @param capsuleEditorFragment The Fragment that saved the data
+         * @param capsule               The Capsule that was used to save
          */
-        private ProgressBar progress;
-
-        public SaveCapsuleTask(Activity activity, View view) {
-            this.activity = activity;
-            this.view = view;
-            this.progress = (ProgressBar) view.findViewById(R.id.fragment_capsule_editor_progress_bar);
-        }
-
-        @Override
-        protected void onPreExecute() {
-            this.progress.setIndeterminate(true);
-            this.progress.setVisibility(View.VISIBLE);
-        }
-
-        @Override
-        protected Capsule doInBackground(Capsule... params) {
-            Capsule capsule = params[0];
-            if (capsule.getId() <= 0) {
-                Uri uri = CapsuleOperations.insertOwnership(this.activity.getContentResolver(), capsule, mAccountName, true /* setDirty */);
-                long capsuleId = Long.valueOf(uri.getQueryParameter(CapsuleContract.Ownerships.CAPSULE_ID));
-                if (capsuleId > 0) {
-                    capsule.setId(capsuleId);
-                }
-            } else {
-                CapsuleOperations.updateCapsule(this.activity.getContentResolver(), capsule, true /* setDirty */);
-            }
-            return capsule;
-        }
-
-        @Override
-        protected void onPostExecute(final Capsule newCapsule) {
-            if (this.progress.isShown()) {
-                this.progress.setVisibility(View.GONE);
-            }
-            if (newCapsule != null) {
-                Intent intent = new Intent();
-                intent.putExtra("capsule", newCapsule);
-                this.activity.setResult(Activity.RESULT_OK, intent);
-                this.activity.finish();
-            }
-        }
+        void onSaveSuccess(CapsuleEditorFragment capsuleEditorFragment, CapsuleOwnership capsule);
 
     }
 

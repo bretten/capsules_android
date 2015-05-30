@@ -30,7 +30,6 @@
     <string name="map_during_open_capsule">Discovering...</string>
     <string name="map_new_capsule_dialog_title">Add a Capsule?</string>
     <string name="map_new_capsule_dialog_message">After dropping a new Capsule, you may alter its position by holding and dragging it.  When you find the correct placement, you can click on the Capsule to finish creating it.</string>
-    <string name="map_new_capsule_marker_infowindow_title">New Capsule</string>
     <string name="map_new_capsule_marker_infowindow_snippet">Click to finalize</string>
     <!-- CapsuleActivity -->
     <string name="title_activity_capsule">CapsuleActivity</string>
@@ -40,7 +39,6 @@
     <string name="tab_discoveries">My Discoveries</string>
     <!-- CapsuleEditorActivity -->
     <string name="title_activity_capsule_editor">Capsule Editor</string>
-    <string name="activity_capsule_editor_save_button">Save</string>
 
     <!--
         Input controls
@@ -50,10 +48,13 @@
     <string name="label_email">E-mail Address</string>
     <string name="label_password">Password</string>
     <string name="label_confirm_password">Confirm Password</string>
+    <!-- Capsule -->
+    <string name="label_capsule_name">Name</string>
     <!-- Buttons -->
     <string name="label_login">Login</string>
     <string name="label_register">Register</string>
     <string name="label_add_account">Add Account</string>
+    <string name="label_save">Save</string>
     <!-- Digits -->
     <string name="alphanumeric_digits">abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789</string>
 
@@ -80,6 +81,9 @@
     <string name="validation_password">Please enter a password.</string>
     <string name="validation_password_confirmation">Please confirm the password.</string>
     <string name="validation_password_match">The passwords do not match.</string>
+    <!-- Capsule validation -->
+    <string name="validation_capsule_missing">The capsule data could not be found.</string>
+    <string name="validation_capsule_name">Please enter a valid capsule name.</string>
     <!-- Authentication -->
     <string name="error_missing_auth_token">A valid authentication token was not received.</string>
     <string name="error_no_account">You are not currently logged into an account.</string>
@@ -111,6 +115,12 @@
         <item>Drop Capsule Here</item>
         <item>Settings</item>
     </string-array>
+
+    <!--
+        Map
+    -->
+    <!-- Info Windows -->
+    <string name="map_new_capsule">New Capsule</string>
 
     <!--
         Content Descriptions

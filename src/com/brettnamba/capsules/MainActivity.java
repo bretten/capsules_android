@@ -28,9 +28,9 @@ import com.brettnamba.capsules.activities.CapsuleEditorActivity;
 import com.brettnamba.capsules.activities.CapsuleListActivity;
 import com.brettnamba.capsules.authenticator.AccountDialogFragment;
 import com.brettnamba.capsules.authenticator.LoginActivity;
+import com.brettnamba.capsules.dataaccess.Capsule;
 import com.brettnamba.capsules.dataaccess.CapsuleDiscovery;
 import com.brettnamba.capsules.dataaccess.CapsuleOwnership;
-import com.brettnamba.capsules.dataaccess.Capsule;
 import com.brettnamba.capsules.fragments.NavigationDrawerFragment;
 import com.brettnamba.capsules.fragments.RetainedMapFragment;
 import com.brettnamba.capsules.http.HttpFactory;
@@ -881,7 +881,7 @@ public class MainActivity extends FragmentActivity implements
                 CapsuleContract.Discoveries.CONTENT_URI.buildUpon()
                         .appendQueryParameter(CapsuleContract.Query.Parameters.INNER_JOIN, CapsuleContract.Capsules.TABLE_NAME)
                         .build(),
-                null,
+                CapsuleContract.Discoveries.CAPSULE_JOIN_PROJECTION,
                 CapsuleContract.Discoveries.ACCOUNT_NAME + " = ?",
                 new String[]{mAccount.name},
                 null
@@ -905,7 +905,7 @@ public class MainActivity extends FragmentActivity implements
                 CapsuleContract.Ownerships.CONTENT_URI.buildUpon()
                         .appendQueryParameter(CapsuleContract.Query.Parameters.INNER_JOIN, CapsuleContract.Capsules.TABLE_NAME)
                         .build(),
-                null,
+                CapsuleContract.Ownerships.CAPSULE_JOIN_PROJECTION,
                 CapsuleContract.Ownerships.ACCOUNT_NAME + " = ?",
                 new String[]{mAccount.name},
                 null
@@ -1023,12 +1023,20 @@ public class MainActivity extends FragmentActivity implements
         @Override
         public void onInfoWindowClick(Marker marker) {
             // Check if this is the new Capsule Marker
-            if (marker.equals(mNewCapsuleMarker)) {
-                Intent intent = new Intent(getApplicationContext(), CapsuleEditorActivity.class);
-                intent.putExtra("latitude", marker.getPosition().latitude);
-                intent.putExtra("longitude", marker.getPosition().longitude);
-                intent.putExtra("account_name", mAccount.name);
-                startActivityForResult(intent, REQUEST_CODE_CAPSULE_EDITOR);
+            if (marker.equals(MainActivity.this.mNewCapsuleMarker) && MainActivity.this.mAccount != null) {
+                // Get the latitude and longitude
+                LatLng latLng = MainActivity.this.mNewCapsuleMarker.getPosition();
+                // Instantiate a new Capsule to edit
+                CapsuleOwnership capsule = new CapsuleOwnership();
+                capsule.setLatitude(latLng.latitude);
+                capsule.setLongitude(latLng.longitude);
+                capsule.setAccountName(MainActivity.this.mAccount.name);
+                // Launch the editor Activity
+                Intent intent = new Intent(MainActivity.this.getApplicationContext(),
+                        CapsuleEditorActivity.class);
+                intent.putExtra("capsule", capsule);
+                intent.putExtra("account", MainActivity.this.mAccount);
+                MainActivity.this.startActivityForResult(intent, REQUEST_CODE_CAPSULE_EDITOR);
                 return;
             }
 
@@ -1096,7 +1104,7 @@ public class MainActivity extends FragmentActivity implements
                     }
                     mNewCapsuleMarker = mMap.addMarker(new MarkerOptions()
                         .position(point)
-                        .title(getString(R.string.map_new_capsule_marker_infowindow_title))
+                        .title(getString(R.string.map_new_capsule))
                         .snippet(getString(R.string.map_new_capsule_marker_infowindow_snippet))
                         .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN))
                         .draggable(true)

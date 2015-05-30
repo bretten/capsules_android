@@ -2,13 +2,20 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical" >
+    android:orientation="vertical">
+
+    <android.support.v7.widget.Toolbar
+        android:id="@+id/toolbar"
+        style="@style/AppTheme.Toolbar" />
+
+    <TextView
+        android:id="@+id/messages"
+        style="@style/AppTheme.Input.Error" />
 
     <FrameLayout
         android:id="@+id/fragment_capsule_editor"
-        android:name="com.brettnamba.capsules.fragments.CapsuleEditorFragment"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_height="0dp"
         android:layout_weight="1" />
 
 </LinearLayout>
