@@ -802,12 +802,14 @@ public class MainActivity extends FragmentActivity implements
      * @param ms The new fastest interval in milliseconds
      */
     private void setLocationRequestFastestInterval(int ms) {
-        // Make sure the LocationRequest member is instantiated
-        this.buildLocationRequest();
-        // Set the fastest interval
-        this.mLocationRequest.setFastestInterval(ms);
-        // Request location updates with the new parameters
-        LocationServices.FusedLocationApi.requestLocationUpdates(this.mGoogleApiClient, this.mLocationRequest, this);
+        if (this.mGoogleApiClient.isConnected()) {
+            // Make sure the LocationRequest member is instantiated
+            this.buildLocationRequest();
+            // Set the fastest interval
+            this.mLocationRequest.setFastestInterval(ms);
+            // Request location updates with the new parameters
+            LocationServices.FusedLocationApi.requestLocationUpdates(this.mGoogleApiClient, this.mLocationRequest, this);
+        }
     }
 
     /**
