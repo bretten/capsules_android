@@ -12,13 +12,13 @@ public interface ListViewItem {
      *
      * @return True indicates it is a header, false indicates it is not
      */
-    public boolean isHeader();
+    boolean isHeader();
 
     /**
      * Specifies if the ListViewItem belongs to a group of other ListViewItems
      *
      * @return True indicates it belongs to a group, false indicates it does not
      */
-    public boolean isInGroup();
+    boolean isInGroup();
 
 }

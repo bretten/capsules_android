@@ -129,7 +129,7 @@ public class AccountDialogFragment extends DialogFragment {
          * @param dialog A reference to the DialogFragment
          * @param account The Account that was selected
          */
-        public void onAccountItemClick(AccountDialogFragment dialog, Account account);
+        void onAccountItemClick(AccountDialogFragment dialog, Account account);
     }
 
 }

@@ -28,7 +28,11 @@ public class CapsulePingTask extends AsyncListenerTask<String, Void, CapsulePing
      */
     @Override
     public void setListener(TaskListener listener) {
-        this.mListener = (CapsulePingTaskListener) listener;
+        try {
+            this.mListener = (CapsulePingTaskListener) listener;
+        } catch (ClassCastException e) {
+            throw new ClassCastException(listener.toString() + " does not implement CapsulePingTaskListener");
+        }
     }
 
     /**

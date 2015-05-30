@@ -28,7 +28,11 @@ public class CapsuleOpenTask extends AsyncListenerTask<String, Void, CapsuleOpen
      */
     @Override
     public void setListener(TaskListener listener) {
-        this.mListener = (CapsuleOpenTaskListener) listener;
+        try {
+            this.mListener = (CapsuleOpenTaskListener) listener;
+        } catch (ClassCastException e) {
+            throw new ClassCastException(listener.toString() + " does not implement CapsuleOpenTaskListener");
+        }
     }
 
     /**

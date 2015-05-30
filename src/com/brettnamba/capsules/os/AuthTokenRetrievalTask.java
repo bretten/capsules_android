@@ -24,7 +24,7 @@ public class AuthTokenRetrievalTask extends AsyncListenerTask<Account, Void, Str
      * @param listener The listener that handles the callbacks
      */
     public AuthTokenRetrievalTask(TaskListener listener) {
-        this.mListener = (AuthTokenRetrievalTaskListener) listener;
+        this.setListener(listener);
     }
 
     /**
@@ -34,7 +34,11 @@ public class AuthTokenRetrievalTask extends AsyncListenerTask<Account, Void, Str
      */
     @Override
     public void setListener(TaskListener listener) {
-        this.mListener = (AuthTokenRetrievalTaskListener) listener;
+        try {
+            this.mListener = (AuthTokenRetrievalTaskListener) listener;
+        } catch (ClassCastException e) {
+            throw new ClassCastException(listener.toString() + " does not implement AuthTokenRetrievalTaskListener");
+        }
     }
 
     /**

@@ -192,7 +192,7 @@ public class NavigationDrawerFragment extends Fragment {
          * @param position The position of the item that was clicked
          * @param item The item that was clicked
          */
-        public void onNavigationDrawerItemClick(NavigationDrawerFragment drawerFragment, int position, NavigationDrawerItem item);
+        void onNavigationDrawerItemClick(NavigationDrawerFragment drawerFragment, int position, NavigationDrawerItem item);
     }
 
 }

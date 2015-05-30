@@ -28,7 +28,11 @@ public class UpdateDiscoveryTask extends AsyncListenerTask<CapsuleDiscovery, Voi
      */
     @Override
     public void setListener(TaskListener listener) {
-        this.mListener = (UpdateDiscoveryTaskListener) listener;
+        try {
+            this.mListener = (UpdateDiscoveryTaskListener) listener;
+        } catch (ClassCastException e) {
+            throw new ClassCastException(listener.toString() + " does not implement UpdateDiscoveryTaskListener");
+        }
     }
 
     /**

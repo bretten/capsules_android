@@ -18,7 +18,7 @@ public class AuthenticationTask extends AsyncListenerTask<String, Void, Authenti
      * @param listener Listener that handles the callbacks
      */
     public AuthenticationTask(TaskListener listener) {
-        this.mListener = (AuthenticationTaskListener) listener;
+        this.setListener(listener);
     }
 
     /**
@@ -28,7 +28,11 @@ public class AuthenticationTask extends AsyncListenerTask<String, Void, Authenti
      */
     @Override
     public void setListener(TaskListener listener) {
-        this.mListener = (AuthenticationTaskListener) listener;
+        try {
+            this.mListener = (AuthenticationTaskListener) listener;
+        } catch (ClassCastException e) {
+            throw new ClassCastException(listener.toString() + " does not implement AuthenticationTaskListener");
+        }
     }
 
     /**

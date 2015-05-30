@@ -28,7 +28,11 @@ public class OwnershipSaveTask extends AsyncListenerTask<CapsuleOwnership, Void,
      */
     @Override
     public void setListener(TaskListener listener) {
-        this.mListener = (OwnershipSaveTaskListener) listener;
+        try {
+            this.mListener = (OwnershipSaveTaskListener) listener;
+        } catch (ClassCastException e) {
+            throw new ClassCastException(listener.toString() + " does not implement OwnershipSaveTaskListener");
+        }
     }
 
     /**
