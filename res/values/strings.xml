@@ -13,15 +13,19 @@
     <string name="action_collection">My Collection</string>
 
     <!--
-        UI screen titles
+        Titles
     -->
-    <!-- Main titles -->
+    <!-- General -->
+    <string name="title_about">About</string>
+    <!-- Accounts -->
     <string name="title_login">Login</string>
     <string name="title_register">Register</string>
     <string name="title_forgot_password">Forgot Password</string>
-    <string name="title_about">About</string>
-    <!-- Accounts -->
     <string name="title_accounts">Accounts</string>
+    <!-- Capsules -->
+    <string name="title_my_collection">My Collection</string>
+    <string name="title_my_capsules">My Capsules</string>
+    <string name="title_my_discoveries">My Discoveries</string>
 
     <!--
         Activities
@@ -35,8 +39,6 @@
     <string name="title_activity_capsule">CapsuleActivity</string>
     <!-- CapsuleListActivity -->
     <string name="title_activity_capsule_list">My Collection</string>
-    <string name="tab_ownerships">My Capsules</string>
-    <string name="tab_discoveries">My Discoveries</string>
     <!-- CapsuleEditorActivity -->
     <string name="title_activity_capsule_editor">Capsule Editor</string>
 
@@ -111,7 +113,7 @@
     </string-array>
     <!-- Link Items -->
     <string-array name="navigation_drawer_links">
-        <item>My Collection</item>
+        <item>@string/title_my_collection</item>
         <item>Drop Capsule Here</item>
         <item>Settings</item>
     </string-array>

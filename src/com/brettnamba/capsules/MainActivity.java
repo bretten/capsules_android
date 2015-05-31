@@ -432,12 +432,7 @@ public class MainActivity extends FragmentActivity implements
             break;
 
         case (REQUEST_CODE_CAPSULE_LIST) :
-            // Refresh the Capsule Markers if there was a modification
-            boolean modified = data.getBooleanExtra("modified", false);
-            // Re-populate the Markers if one was modified
-            if (modified) {
-                this.populateStoredMarkers();
-            }
+            // TODO Reload any Capsules that were modified
             break;
 
         default:
@@ -746,7 +741,17 @@ public class MainActivity extends FragmentActivity implements
         } else {
             // Prevent items not in a group from remaining checked
             drawerFragment.getListView().setItemChecked(position, false);
-            // TODO Perform the action
+            // TODO Consider adding an identifier to NavigationDrawerItem so don't have to rely on position
+            switch (position) {
+                case 5:
+                    Intent intent = new Intent(this.getApplicationContext(), CapsuleListActivity.class);
+                    intent.putExtra("account", this.mAccount);
+                    this.startActivityForResult(intent, REQUEST_CODE_CAPSULE_LIST);
+                    break;
+                default:
+                    break;
+            }
+
         }
 
         // Close the drawer

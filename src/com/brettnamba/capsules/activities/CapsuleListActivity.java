@@ -1,179 +1,112 @@
 package com.brettnamba.capsules.activities;
 
-import android.app.Activity;
-import android.content.Intent;
+import android.accounts.Account;
 import android.os.Bundle;
-import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentTransaction;
-import android.support.v7.app.ActionBar;
-import android.support.v7.app.ActionBar.Tab;
-import android.support.v7.app.ActionBarActivity;
+import android.support.design.widget.TabLayout;
+import android.support.v4.app.FragmentActivity;
+import android.support.v4.view.ViewPager;
+import android.support.v7.widget.Toolbar;
+import android.view.View;
 
 import com.brettnamba.capsules.R;
 import com.brettnamba.capsules.fragments.CapsuleListFragment;
 import com.brettnamba.capsules.provider.CapsuleContract;
+import com.brettnamba.capsules.util.Widgets;
+import com.brettnamba.capsules.view.FragmentCollectionPagerAdapter;
 
 /**
  * Activity that displays a user's Capsules and Discovery Capsules.
- * 
- * @author Brett Namba
  *
+ * @author Brett Namba
  */
-public class CapsuleListActivity extends ActionBarActivity {
+public class CapsuleListActivity extends FragmentActivity {
 
     /**
-     * The Fragment tag for the Ownerships CapsuleListFragment
+     * onCreate
+     *
+     * @param savedInstanceState
      */
-    private static final String FRAGMENT_TAG_OWNERSHIP_LIST = "ownerships";
-
-    /**
-     * The Fragment tag for the Discoveries CapsuleListFragment
-     */
-    private static final String FRAGMENT_TAG_DISCOVERY_LIST = "discoveries";
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_capsule_list);
+        this.setContentView(R.layout.activity_capsule_list);
 
-        // Get Intent extras
-        Bundle extras = getIntent().getExtras();
-        String accountName = null;
+        // The current Account
+        Account account = null;
+
+        // Get the Intent extras
+        Bundle extras = this.getIntent().getExtras();
         if (extras != null) {
-            accountName = extras.getString("account_name");
+            account = extras.getParcelable("account");
+        }
+
+        // Close the Activity if the required data was not present in the extras
+        if (account == null) {
+            this.finish();
         }
 
         // Bundle data to be passed to the Capsule List Fragment
         Bundle ownershipBundle = new Bundle();
         ownershipBundle.putBoolean("owned", true);
-        ownershipBundle.putString("account_name", accountName);
+        ownershipBundle.putParcelable("account", account);
         ownershipBundle.putParcelable("uri", CapsuleContract.Ownerships.CONTENT_URI.buildUpon()
-                .appendQueryParameter(CapsuleContract.QUERY_PARAM_JOIN, CapsuleContract.Capsules.TABLE_NAME)
-                .build()
+                        .appendQueryParameter(CapsuleContract.Query.Parameters.INNER_JOIN, CapsuleContract.Capsules.TABLE_NAME)
+                        .build()
         );
-        ownershipBundle.putStringArray("projection", new String[]{CapsuleContract.Capsules.NAME, CapsuleContract.Ownerships.ACCOUNT_NAME});
+        ownershipBundle.putStringArray("projection", CapsuleContract.Ownerships.CAPSULE_JOIN_PROJECTION);
         ownershipBundle.putString("selection", CapsuleContract.Ownerships.ACCOUNT_NAME + " = ?");
-        ownershipBundle.putStringArray("selection_args", new String[]{accountName});
+        ownershipBundle.putStringArray("selection_args", new String[]{account.name});
 
         // Bundle the data to be passed to the Discovery List Fragment
         Bundle discoveryBundle = new Bundle();
         discoveryBundle.putBoolean("owned", false);
-        discoveryBundle.putString("account_name", accountName);
+        discoveryBundle.putParcelable("account", account);
         discoveryBundle.putParcelable("uri", CapsuleContract.Discoveries.CONTENT_URI.buildUpon()
-                .appendQueryParameter(CapsuleContract.QUERY_PARAM_JOIN, CapsuleContract.Capsules.TABLE_NAME)
-                .build()
+                        .appendQueryParameter(CapsuleContract.Query.Parameters.INNER_JOIN, CapsuleContract.Capsules.TABLE_NAME)
+                        .build()
         );
-        discoveryBundle.putStringArray("projection", new String[]{CapsuleContract.Capsules.NAME, CapsuleContract.Discoveries.ACCOUNT_NAME});
+        discoveryBundle.putStringArray("projection", CapsuleContract.Discoveries.CAPSULE_JOIN_PROJECTION);
         discoveryBundle.putString("selection", CapsuleContract.Discoveries.ACCOUNT_NAME + " = ?");
-        discoveryBundle.putStringArray("selection_args", new String[]{accountName});
+        discoveryBundle.putStringArray("selection_args", new String[]{account.name});
 
-        // Set up the ActionBar Tabs
-        final ActionBar actionBar = getSupportActionBar();
-        actionBar.setNavigationMode(ActionBar.NAVIGATION_MODE_TABS);
-        actionBar.addTab(actionBar.newTab()
-                .setText(getString(R.string.tab_ownerships))
-                .setTabListener(new TabListener<CapsuleListFragment>(this, FRAGMENT_TAG_OWNERSHIP_LIST, CapsuleListFragment.class, ownershipBundle))
-        );
-        actionBar.addTab(actionBar.newTab()
-                .setText(getString(R.string.tab_discoveries))
-                .setTabListener(new TabListener<CapsuleListFragment>(this, FRAGMENT_TAG_DISCOVERY_LIST, CapsuleListFragment.class, discoveryBundle))
-        );
-    }
+        // Instantiate the Fragments
+        // Fragment that will hold the list of Ownerships
+        CapsuleListFragment ownershipFragment = new CapsuleListFragment();
+        ownershipFragment.setArguments(ownershipBundle);
+        // Fragment that will hold the list of Discoveries
+        CapsuleListFragment discoveryFragment = new CapsuleListFragment();
+        discoveryFragment.setArguments(discoveryBundle);
 
-    @Override
-    public void onBackPressed() {
-        // Get the OwnershipList Fragment
-        CapsuleListFragment ownershipList = (CapsuleListFragment) getSupportFragmentManager().findFragmentByTag(FRAGMENT_TAG_OWNERSHIP_LIST);
-        Intent intent = new Intent();
-        intent.putExtra("modified", ownershipList.wasModified());
-        setResult(Activity.RESULT_OK, intent);
-        super.onBackPressed();
-    }
+        // Instantiate the PagerAdapter
+        FragmentCollectionPagerAdapter pagerAdapter =
+                new FragmentCollectionPagerAdapter(this.getSupportFragmentManager());
+        // Set the Fragments on the pager
+        pagerAdapter.addFragment(ownershipFragment)
+                .addFragment(discoveryFragment);
 
-    /**
-     * TabListener for switching between CapsuleListFragments.
-     * 
-     * @param <T>
-     */
-    public static class TabListener<T extends Fragment> implements ActionBar.TabListener {
+        // Set up the tabs
+        TabLayout tabLayout = (TabLayout) this.findViewById(R.id.activity_capsule_list_tabs);
+        tabLayout.addTab(tabLayout.newTab().setText(R.string.title_my_capsules));
+        tabLayout.addTab(tabLayout.newTab().setText(R.string.title_my_discoveries));
 
-        /**
-         * The parent Activity
-         */
-        private final ActionBarActivity activity;
+        // Get the ViewPager
+        ViewPager viewPager = (ViewPager) this.findViewById(R.id.fragment_capsule_list_pager);
+        // Set the PagerAdapter on the ViewPager
+        viewPager.setAdapter(pagerAdapter);
+        // Set the page change listener
+        viewPager.addOnPageChangeListener(new TabLayout.TabLayoutOnPageChangeListener(tabLayout));
+        // Add the OnTabSelectedListener implemented by the ViewPager
+        tabLayout.setOnTabSelectedListener(new TabLayout.ViewPagerOnTabSelectedListener(viewPager));
 
-        /**
-         * The Tab tag
-         */
-        private final String tag;
-
-        /**
-         * The Fragment class
-         */
-        private final Class<T> clazz;
-
-        /**
-         * Data Bundle for the Fragment
-         */
-        private final Bundle bundle;
-
-        /**
-         * Reference to the Fragment
-         */
-        private Fragment fragment;
-
-        /**
-         * Constructor
-         * 
-         * @param activity
-         * @param tag
-         * @param clazz
-         */
-        public TabListener(Activity activity, String tag, Class<T> clazz) {
-            this(activity, tag, clazz, null);
-        }
-
-        /**
-         * Constructor with a data Bundle parameter
-         * 
-         * @param activity
-         * @param tag
-         * @param clazz
-         * @param bundle
-         */
-        public TabListener(Activity activity, String tag, Class<T> clazz, Bundle bundle) {
-            this.activity = (ActionBarActivity) activity;
-            this.tag = tag;
-            this.clazz = clazz;
-            this.bundle = bundle;
-
-            this.fragment = this.activity.getSupportFragmentManager().findFragmentByTag(this.tag);
-            if (this.fragment != null && !this.fragment.isDetached()) {
-                FragmentTransaction ft = this.activity.getSupportFragmentManager().beginTransaction();
-                ft.detach(this.fragment).commit();
+        // Setup the Toolbar
+        Toolbar toolbar = Widgets.createToolbar(this, this.getString(R.string.title_my_collection));
+        toolbar.setNavigationOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                // Close this Activity
+                CapsuleListActivity.this.finish();
             }
-        }
-
-        @Override
-        public void onTabReselected(Tab tab, FragmentTransaction ft) {}
-
-        @Override
-        public void onTabSelected(Tab tab, FragmentTransaction ft) {
-            if (this.fragment == null) {
-                this.fragment = Fragment.instantiate(this.activity, this.clazz.getName(), this.bundle);
-                ft.add(R.id.fragment_capsule_list, this.fragment, this.tag);
-            } else {
-                ft.attach(this.fragment);
-            }
-        }
-
-        @Override
-        public void onTabUnselected(Tab tab, FragmentTransaction ft) {
-            if (this.fragment != null) {
-                ft.detach(this.fragment);
-            }
-        }
-
+        });
     }
 
 }
