@@ -1,12 +1,14 @@
 package com.brettnamba.capsules.activities;
 
 import android.accounts.Account;
+import android.app.Activity;
 import android.os.Bundle;
 import android.support.design.widget.TabLayout;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.view.ViewPager;
 import android.support.v7.widget.Toolbar;
 import android.view.View;
+import android.widget.Toast;
 
 import com.brettnamba.capsules.R;
 import com.brettnamba.capsules.fragments.CapsuleListFragment;
@@ -19,7 +21,8 @@ import com.brettnamba.capsules.view.FragmentCollectionPagerAdapter;
  *
  * @author Brett Namba
  */
-public class CapsuleListActivity extends FragmentActivity {
+public class CapsuleListActivity extends FragmentActivity implements
+        CapsuleListFragment.CapsuleListFragmentListener {
 
     /**
      * onCreate
@@ -107,6 +110,20 @@ public class CapsuleListActivity extends FragmentActivity {
                 CapsuleListActivity.this.finish();
             }
         });
+    }
+
+    /**
+     * Callback for when a CapsuleListFragment is not passed the required data
+     *
+     * @param capsuleListFragment The Fragment that is missing the data
+     */
+    @Override
+    public void onMissingData(CapsuleListFragment capsuleListFragment) {
+        this.getSupportFragmentManager().beginTransaction().remove(capsuleListFragment).commit();
+        this.setResult(Activity.RESULT_CANCELED);
+        this.finish();
+        Toast.makeText(this, this.getString(R.string.error_cannot_load_capsules),
+                Toast.LENGTH_SHORT).show();
     }
 
 }
