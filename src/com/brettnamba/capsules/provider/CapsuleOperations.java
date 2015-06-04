@@ -1,5 +1,6 @@
 package com.brettnamba.capsules.provider;
 
+import android.accounts.Account;
 import android.content.ContentProviderOperation;
 import android.content.ContentProviderResult;
 import android.content.ContentResolver;
@@ -65,11 +66,27 @@ public class CapsuleOperations {
      * @return The results of the operation batch
      */
     public ContentProviderResult[] applyBatch() {
+        ContentProviderResult[] results;
         try {
-            return this.mResolver.applyBatch(CapsuleContract.AUTHORITY,
-                    this.mOperations);
+            // Apply the operations as a batch
+            results = this.mResolver.applyBatch(CapsuleContract.AUTHORITY, this.mOperations);
+            // If there were results returned, clear out the operations
+            if (results != null) {
+                this.mOperations.clear();
+            }
         } catch (RemoteException | OperationApplicationException e) {
-            return null;
+            results = null;
+        }
+        return results;
+    }
+
+    /**
+     * Checks the size of the internal size of the collection of ContentProviderOperations
+     * and applies them if it is over the recommend batch size
+     */
+    public void checkAndApply() {
+        if (this.mOperations.size() > CapsuleOperations.BATCH_SIZE) {
+            this.applyBatch();
         }
     }
 
@@ -94,13 +111,25 @@ public class CapsuleOperations {
     }
 
     public void buildCapsuleDelete(Capsule capsule, boolean withYield) {
-        // Build the URI
-        Uri uri = ContentUris.withAppendedId(CapsuleContract.Capsules.CONTENT_URI, capsule.getSyncId());
+        // Build the Capsule URI
+        Uri uri = ContentUris.withAppendedId(CapsuleContract.Capsules.CONTENT_URI, capsule.getId());
+
         // Build the DELETE operation
-        ContentProviderOperation.Builder builder = ContentProviderOperation.newDelete(uri);
-        builder.withYieldAllowed(withYield);
-        // Add it to the collection
-        this.mOperations.add(builder.build());
+        this.mOperations.add(ContentProviderOperation.newDelete(uri)
+                .withYieldAllowed(withYield)
+                .build());
+        // Get the capsule ID
+        String capsuleId = String.valueOf(capsule.getId());
+        // Build the Discovery DELETE operation
+        this.mOperations.add(ContentProviderOperation.newDelete(CapsuleContract.Discoveries.CONTENT_URI)
+                .withSelection(CapsuleContract.Discoveries.CAPSULE_ID + " = ?", new String[]{capsuleId})
+                .withYieldAllowed(false)
+                .build());
+        // Build the Ownership DELETE operation
+        this.mOperations.add(ContentProviderOperation.newDelete(CapsuleContract.Ownerships.CONTENT_URI)
+                .withSelection(CapsuleContract.Ownerships.CAPSULE_ID + " = ?", new String[]{capsuleId})
+                .withYieldAllowed(false)
+                .build());
     }
 
     public void buildCapsuleCleanup(long keepId, List<Long> duplicateIds) {
@@ -204,18 +233,15 @@ public class CapsuleOperations {
         if (capsule.getSyncId() <= 0) {
             throw new InvalidParameterException("The Capsule does not have a sync ID");
         }
-        // Determine if a Capsule and Discovery row exist for the sync ID
-        long capsuleId = Capsules.getIdBySyncId(this.mResolver, this, capsule.getSyncId());
-        long discoveryId = Discoveries.getIdBySyncId(this.mResolver, this, capsule.getSyncId());
-        // Set the IDs
-        capsule.setId(capsuleId);
-        ((CapsuleDiscovery) capsule).setDiscoveryId(discoveryId);
+        // Determine the best IDs for the Capsule
+        CapsuleOperations.Capsules.determineBestId(this.mResolver, this, capsule);
+        CapsuleOperations.Discoveries.determineBestId(this.mResolver, this, (CapsuleDiscovery) capsule);
         // Build INSERT/UPDATE operations depending on if the Capsule and Discovery already exist
-        if (capsuleId > 0) {
+        if (capsule.getId() > 0) {
             // Capsule UPDATE
             this.buildCapsuleUpdate(capsule, /* withYield */ true);
             // Check if the Discovery exists
-            if (discoveryId > 0) {
+            if (((CapsuleDiscovery) capsule).getDiscoveryId() > 0) {
                 // Discovery UPDATE
                 this.buildDiscoveryUpdate((CapsuleDiscovery) capsule, /* withYield */ false, syncAction);
             } else {
@@ -226,7 +252,7 @@ public class CapsuleOperations {
             // Capsule INSERT
             this.buildCapsuleInsert(capsule, /* withYield */ true);
             // Check if the Discovery exists
-            if (discoveryId > 0) {
+            if (((CapsuleDiscovery) capsule).getDiscoveryId() > 0) {
                 // Discovery UPDATE
                 this.buildDiscoveryUpdate((CapsuleDiscovery) capsule, /* withYield */ false,
                         this.getLastOperationIndex(), syncAction);
@@ -307,34 +333,15 @@ public class CapsuleOperations {
     }
 
     public void buildOwnershipSave(Capsule capsule, CapsuleContract.SyncStateAction syncAction) {
-        // Determine the IDs
-        long capsuleId;
-        long ownershipId;
-        if (capsule.getSyncId() > 0) {
-            // Determine if Capsule and Ownership rows exist for the sync ID
-            capsuleId = Capsules.getIdBySyncId(this.mResolver, this, capsule.getSyncId());
-            ownershipId = Ownerships.getIdBySyncId(this.mResolver, this, capsule.getSyncId());
-            // Set the IDs
-            capsule.setId(capsuleId);
-            ((CapsuleOwnership) capsule).setOwnershipId(ownershipId);
-        } else {
-            if (capsule.getId() > 0) {
-                capsuleId = capsule.getId();
-            } else {
-                capsuleId = 0;
-            }
-            if (((CapsuleOwnership) capsule).getOwnershipId() > 0) {
-                ownershipId = ((CapsuleOwnership) capsule).getOwnershipId();
-            } else {
-                ownershipId = 0;
-            }
-        }
+        // Determine the best IDs for the Capsule
+        CapsuleOperations.Capsules.determineBestId(this.mResolver, this, capsule);
+        CapsuleOperations.Ownerships.determineBestId(this.mResolver, this, (CapsuleOwnership) capsule);
         // Build the INSERT/UPDATE operations depending on if the Capsule and Ownership exist
-        if (capsuleId > 0) {
+        if (capsule.getId() > 0) {
             // Capsule UPDATE
             this.buildCapsuleUpdate(capsule, /* withYield */ true);
             // Check if the Ownership exists
-            if (ownershipId > 0) {
+            if (((CapsuleOwnership) capsule).getOwnershipId() > 0) {
                 // Ownership UPDATE
                 this.buildOwnershipUpdate((CapsuleOwnership) capsule, /* withYield */ false, syncAction);
             } else {
@@ -345,7 +352,7 @@ public class CapsuleOperations {
             // Capsule INSERT
             this.buildCapsuleInsert(capsule, /* withYield */ true);
             // Check if the Ownership exists
-            if (ownershipId > 0) {
+            if (((CapsuleOwnership) capsule).getOwnershipId() > 0) {
                 // Ownership UPDATE
                 this.buildOwnershipUpdate((CapsuleOwnership) capsule, /* withYield */ false,
                         this.getLastOperationIndex(), syncAction);
@@ -389,14 +396,14 @@ public class CapsuleOperations {
 
     public static class Capsules {
 
-        public static long getIdBySyncId(ContentResolver resolver, CapsuleOperations operations, long syncId) {
+        public static long determineBestId(ContentResolver resolver, CapsuleOperations operations, Capsule capsule) {
             // Query
             Cursor c = resolver.query(
                     CapsuleContract.Capsules.CONTENT_URI,
                     new String[]{CapsuleContract.Capsules._ID},
                     CapsuleContract.Capsules.TABLE_NAME + "." + CapsuleContract.Capsules.SYNC_ID + " = ?"
                             + " AND " + CapsuleContract.Capsules.TABLE_NAME + "." + CapsuleContract.Capsules.SYNC_ID + " != ?",
-                    new String[]{String.valueOf(syncId), "0"},
+                    new String[]{String.valueOf(capsule.getSyncId()), "0"},
                     null
             );
             // Check if there is a row
@@ -422,6 +429,11 @@ public class CapsuleOperations {
             }
             // Close the cursor
             c.close();
+
+            // If a better ID was found (non-zero), reassign it
+            if (id > 0) {
+                capsule.setId(id);
+            }
 
             return id;
         }
@@ -476,7 +488,8 @@ public class CapsuleOperations {
             return success;
         }
 
-        public static long getIdBySyncId(ContentResolver resolver, CapsuleOperations operations, long syncId) {
+        public static long determineBestId(ContentResolver resolver, CapsuleOperations operations,
+                                           CapsuleDiscovery capsule) {
             // Build the query URI
             Uri uri = CapsuleContract.Discoveries.CONTENT_URI.buildUpon()
                     .appendQueryParameter(CapsuleContract.Query.Parameters.INNER_JOIN, CapsuleContract.Capsules.TABLE_NAME)
@@ -487,7 +500,7 @@ public class CapsuleOperations {
                     CapsuleContract.Discoveries.CAPSULE_JOIN_PROJECTION,
                     CapsuleContract.Capsules.TABLE_NAME + "." + CapsuleContract.Capsules.SYNC_ID + " = ?"
                             + " AND " + CapsuleContract.Capsules.TABLE_NAME + "." + CapsuleContract.Capsules.SYNC_ID + " != ?",
-                    new String[]{String.valueOf(syncId), "0"},
+                    new String[]{String.valueOf(capsule.getSyncId()), "0"},
                     null
             );
             // Check if there is a row
@@ -513,6 +526,11 @@ public class CapsuleOperations {
             }
             // Close the cursor
             c.close();
+
+            // If a better ID was found (non-zero), re-assign it
+            if (id > 0) {
+                capsule.setDiscoveryId(id);
+            }
 
             return id;
         }
@@ -568,7 +586,43 @@ public class CapsuleOperations {
             return success;
         }
 
-        public static long getIdBySyncId(ContentResolver resolver, CapsuleOperations operations, long syncId) {
+        public static ArrayList<CapsuleOwnership> get(ContentResolver resolver, Account account,
+                                                      CapsuleContract.SyncStateAction syncAction) {
+            // Build the query URI
+            Uri uri = CapsuleContract.Ownerships.CONTENT_URI.buildUpon()
+                    .appendQueryParameter(CapsuleContract.Query.Parameters.INNER_JOIN, CapsuleContract.Capsules.TABLE_NAME)
+                    .build();
+            // Build the selection string
+            String selection = CapsuleContract.Ownerships.TABLE_NAME + "." + CapsuleContract.Ownerships.ACCOUNT_NAME
+                    + " = ?";
+            if (syncAction.equals(CapsuleContract.SyncStateAction.DIRTY)) {
+                selection += " AND " + CapsuleContract.Ownerships.DIRTY + " = 1";
+            } else if (syncAction.equals(CapsuleContract.SyncStateAction.CLEAN)) {
+                selection += " AND " + CapsuleContract.Ownerships.DIRTY + " = 0";
+            }
+            // Query
+            Cursor c = resolver.query(
+                    uri,
+                    CapsuleContract.Ownerships.CAPSULE_JOIN_PROJECTION,
+                    selection,
+                    new String[]{account.name},
+                    null
+            );
+            // Get the results from the cursor
+            ArrayList<CapsuleOwnership> capsules = new ArrayList<CapsuleOwnership>();
+            if (c.getCount() > 0) {
+                while (c.moveToNext()) {
+                    capsules.add(new CapsuleOwnership(c));
+                }
+            }
+            // Close the cursor
+            c.close();
+
+            return capsules;
+        }
+
+        public static long determineBestId(ContentResolver resolver, CapsuleOperations operations,
+                                           CapsuleOwnership capsule) {
             // Build the query URI
             Uri uri = CapsuleContract.Ownerships.CONTENT_URI.buildUpon()
                     .appendQueryParameter(CapsuleContract.Query.Parameters.INNER_JOIN, CapsuleContract.Capsules.TABLE_NAME)
@@ -579,7 +633,7 @@ public class CapsuleOperations {
                     CapsuleContract.Ownerships.CAPSULE_JOIN_PROJECTION,
                     CapsuleContract.Capsules.TABLE_NAME + "." + CapsuleContract.Capsules.SYNC_ID + " = ?"
                             + " AND " + CapsuleContract.Capsules.TABLE_NAME + "." + CapsuleContract.Capsules.SYNC_ID + " != ?",
-                    new String[]{String.valueOf(syncId), "0"},
+                    new String[]{String.valueOf(capsule.getSyncId()), "0"},
                     null
             );
             // Check if there is a row
@@ -605,6 +659,11 @@ public class CapsuleOperations {
             }
             // Close the cursor
             c.close();
+
+            // If a better ID was found (non-zero), re-assign it
+            if (id > 0) {
+                capsule.setOwnershipId(id);
+            }
 
             return id;
         }
