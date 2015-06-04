@@ -1,14 +1,5 @@
 package com.brettnamba.capsules.syncadapter;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-
-import org.apache.http.HttpStatus;
-import org.apache.http.ParseException;
-import org.apache.http.client.HttpClient;
-import org.json.JSONException;
-
 import android.accounts.Account;
 import android.accounts.AccountManager;
 import android.accounts.AuthenticatorException;
@@ -17,7 +8,6 @@ import android.annotation.TargetApi;
 import android.content.AbstractThreadedSyncAdapter;
 import android.content.ContentProviderClient;
 import android.content.ContentResolver;
-import android.content.ContentValues;
 import android.content.Context;
 import android.content.SyncResult;
 import android.location.LocationListener;
@@ -27,54 +17,67 @@ import android.os.Bundle;
 import android.util.Log;
 
 import com.brettnamba.capsules.Constants;
-import com.brettnamba.capsules.dataaccess.Capsule;
 import com.brettnamba.capsules.dataaccess.CapsuleOwnership;
 import com.brettnamba.capsules.http.HttpFactory;
 import com.brettnamba.capsules.http.RequestContract;
 import com.brettnamba.capsules.http.RequestHandler;
+import com.brettnamba.capsules.http.response.CtagResponse;
+import com.brettnamba.capsules.http.response.EntityDeleteResponse;
+import com.brettnamba.capsules.http.response.OwnershipCollectionResponse;
+import com.brettnamba.capsules.http.response.OwnershipResponse;
 import com.brettnamba.capsules.provider.CapsuleContract;
 import com.brettnamba.capsules.provider.CapsuleOperations;
-import com.brettnamba.capsules.util.JSONParser;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
- * SyncAdapter handles tapping into the Android framework.
- * 
- * The process of one "sync" to the server is encapsulated in onPerformSync().
- * 
- * @author Brett Namba
+ * SyncAdapter handles keeping Capsule data in sync with the web server
  *
+ * @author Brett Namba
  */
 public class SyncAdapter extends AbstractThreadedSyncAdapter {
 
     /**
-     * Reference to the AccountManager from the Context.
+     * AccountManager
      */
     private final AccountManager mAccountManager;
 
     /**
-     * Reference to the Context.
+     * ContentResolver
      */
-    private final Context mContext;
+    private final ContentResolver mContentResolver;
 
     /**
-     * Reference to the HTTP client.
+     * ContentOperations builder
      */
-    private final HttpClient mHttpClient;
+    private final CapsuleOperations mCapsuleOperations;
 
     /**
-     * Reference to the HTTP request handler.
+     * Handles sending HTTP requests
      */
-    private final RequestHandler mHttpHandler;
+    private final RequestHandler mRequestHandler;
 
     /**
-     * Reference to the LocationManager.
+     * LocationManager for accessing system location
      */
     private final LocationManager mLocationManager;
 
     /**
-     * Reference to the LocationListener.
+     * Receives location updates
      */
     private final LocationListener mLocationListener;
+
+    /**
+     * Key for storing the Ownerships ctag in the AccountManager's user data
+     */
+    private static final String USER_DATA_KEY_OWNERSHIP_CTAG = "ctag_ownerships";
+
+    /**
+     * The limit of Capsules to have in a single HTTP request
+     */
+    private static final int CAPSULE_REQUEST_LIMIT = 50;
 
     /**
      * The tag used for logging.
@@ -83,379 +86,447 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
 
     /**
      * Constructor for Android 3.0 and later platforms
-     * 
-     * @param Context context
-     * @param boolean autoInitialize
-     * @param boolean allowParallelSyncs
-     * @param LocationManager locationManager
-     * @param LocationListener locationListener
+     *
+     * @param context
+     * @param autoInitialize
+     * @param allowParallelSyncs
+     * @param locationManager
+     * @param locationListener
      */
     @TargetApi(Build.VERSION_CODES.HONEYCOMB)
     public SyncAdapter(Context context, boolean autoInitialize, boolean allowParallelSyncs,
-            LocationManager locationManager, LocationListener locationListener) {
+                       LocationManager locationManager, LocationListener locationListener) {
         super(context, autoInitialize, allowParallelSyncs);
-        mContext = context;
-        mAccountManager = AccountManager.get(context);
-
-        // Get the HTTP client
-        mHttpClient = HttpFactory.getInstance();
+        // ContentResolver
+        this.mContentResolver = context.getContentResolver();
+        // CapsuleOperations
+        this.mCapsuleOperations = new CapsuleOperations(this.mContentResolver);
+        // AccountManager
+        this.mAccountManager = AccountManager.get(context);
         // Get the HTTP request handler
-        mHttpHandler = new RequestHandler(mHttpClient);
+        this.mRequestHandler = new RequestHandler(HttpFactory.getInstance());
         // LocationManager and LocationListener
-        mLocationManager = locationManager;
-        mLocationListener = locationListener;
+        this.mLocationManager = locationManager;
+        this.mLocationListener = locationListener;
     }
 
     /**
      * Constructor
-     * 
-     * @param Context context
-     * @param boolean autoInitialize
-     * @param LocationManager locationManager
-     * @param LocationListener locationListener
+     *
+     * @param context
+     * @param autoInitialize
+     * @param locationManager
+     * @param locationListener
      */
     public SyncAdapter(Context context, boolean autoInitialize, LocationManager locationManager, LocationListener locationListener) {
         super(context, autoInitialize);
-        mContext = context;
-        mAccountManager = AccountManager.get(context);
-
-        // Get the HTTP client
-        mHttpClient = HttpFactory.getInstance();
+        // ContentResolver
+        this.mContentResolver = context.getContentResolver();
+        // CapsuleOperations
+        this.mCapsuleOperations = new CapsuleOperations(this.mContentResolver);
+        // AccountManager
+        this.mAccountManager = AccountManager.get(context);
         // Get the HTTP request handler
-        mHttpHandler = new RequestHandler(mHttpClient);
+        this.mRequestHandler = new RequestHandler(HttpFactory.getInstance());
         // LocationManager and LocationListener
-        mLocationManager = locationManager;
-        mLocationListener = locationListener;
+        this.mLocationManager = locationManager;
+        this.mLocationListener = locationListener;
     }
 
     /**
-     * Encapsulate a sync to the server.
-     * 
-     * @param Account account
-     * @param Bundle extras
-     * @param ContentProviderClient provider
-     * @param SyncResult syncResult
+     * Executes a sync to the server
+     *
+     * @param account
+     * @param extras
+     * @param authority
+     * @param provider
+     * @param syncResult
      */
     @Override
     public void onPerformSync(Account account, Bundle extras, String authority,
-            ContentProviderClient provider, SyncResult syncResult) {
-        Log.v(TAG, "onPerformSync()");
-
+                              ContentProviderClient provider, SyncResult syncResult) {
+        Log.i(TAG, "onPerformSync()");
+        // Get the auth token
         try {
-            final ContentResolver resolver = mContext.getContentResolver();
+            final String authToken = this.mAccountManager.blockingGetAuthToken(account,
+                    Constants.AUTH_TOKEN_TYPE, true);
 
-            // Determines whether the whole sync was successful
-            boolean success = true;
-
-            // Get the auth token
-            String authToken = mAccountManager.blockingGetAuthToken(account, Constants.AUTH_TOKEN_TYPE, true);
-
-            // Sync Ownership Capsules
-            String serverOwnershipCtag = mHttpHandler.requestCtag(authToken, RequestContract.Uri.CTAG_OWNERSHIPS_URI);
-    
-            String clientOwnershipCtag = mAccountManager.getUserData(account, "ownership_ctag");
-            if (serverOwnershipCtag.equals(clientOwnershipCtag)) {
-                // Sync dirty
-                List<Capsule> capsules = CapsuleOperations.getOwnerships(resolver, account.name, true /* onlyDirty */);
-                success = syncDirtyOwnerships(resolver, account, authToken, capsules);
-            } else {
-                // Get the server's Ownership Capsules
-                String response = mHttpHandler.requestOwnershipStatus(authToken);
-                List<Capsule> serverOwnerships = JSONParser.parseOwnershipStatus(response);
-                // Get the client's Ownership Capsules
-                List<Capsule> clientOwnerships = CapsuleOperations.getOwnerships(resolver, account.name, false /* onlyDirty */);
-                // Perform a two-way sync of the Ownerships
-                success = syncOwnerships(resolver, account, authToken, serverOwnerships, clientOwnerships);
-            }
-
-            // Ownership sync was successful, so update the Ctag
-            if (success) {
-                serverOwnershipCtag = mHttpHandler.requestCtag(authToken, RequestContract.Uri.CTAG_OWNERSHIPS_URI);
-                if (!serverOwnershipCtag.equals(clientOwnershipCtag)) {
-                    mAccountManager.setUserData(account, "ownership_ctag", serverOwnershipCtag);
-                }
-            }
-        } catch (OperationCanceledException | AuthenticatorException | IOException | JSONException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            // Sync the Account's Ownerships
+            this.syncOwnerships(account, authToken);
+        } catch (OperationCanceledException | AuthenticatorException | IOException e) {
+            Log.e(TAG, "onPerformSync(): Auth token could not be retrieved");
         }
     }
 
     /**
-     * Syncs dirty Ownership Capsules to the server for the specified Account
-     * 
-     * @param resolver
-     * @param account
-     * @param authToken
-     * @param capsules
-     * @return
+     * Syncs the Account's Ownerships.  Determines if it needs to only push local changes to the
+     * server (if the client and server ctag match) or if it needs to pull changes from the server
+     * as well (if the client and server ctag differ).
+     *
+     * @param account   The Account to perform the sync for
+     * @param authToken The Account's authentication token
+     * @return True if the sync was successful, otherwise false
      */
-    private boolean syncDirtyOwnerships(ContentResolver resolver, Account account, String authToken, List<Capsule> capsules) {
-        boolean success = true;
+    private boolean syncOwnerships(Account account, String authToken) {
+        // Flag for keeping track of the success state
+        boolean success;
 
-        for (Capsule capsule : capsules) {
-            final boolean isDeleted = ((CapsuleOwnership) capsule).getDeleted() >= 1;
-
-            if (isDeleted) {
-                if (capsule.getSyncId() > 0) {
-                    try {
-                        int deleteStatusCode = mHttpHandler.requestOwnershipDelete(authToken, capsule.getSyncId());
-                        
-                        if (deleteStatusCode == HttpStatus.SC_NO_CONTENT || deleteStatusCode == HttpStatus.SC_NOT_FOUND) {
-                            if (!CapsuleOperations.deleteCapsule(resolver, capsule.getId())) {
-                                success = false;
-                            }
-                        }
-                    } catch (IOException e) {
-                        // TODO Auto-generated catch block
-                        e.printStackTrace();
-                        // Flag a failure
-                        success = false;
-                    }
-                } else {
-                    if (!CapsuleOperations.deleteCapsule(resolver, capsule.getId())) {
-                        success = false;
-                    }
-                }
+        try {
+            // Get the server ctag
+            CtagResponse response = new CtagResponse(
+                    this.mRequestHandler.requestCtag(authToken, RequestContract.Uri.CTAG_OWNERSHIPS_URI)
+            );
+            String serverCtag = null;
+            if (response.isSuccess()) {
+                serverCtag = response.getCtag();
+            }
+            // Get the client ctag
+            String clientCtag = this.mAccountManager.getUserData(account, SyncAdapter.USER_DATA_KEY_OWNERSHIP_CTAG);
+            // Determine which kind of sync
+            if (serverCtag != null && clientCtag != null && serverCtag.equals(clientCtag)) {
+                // The client is up-to-date with the server, so just push local changes to the server
+                success = this.syncDirtyOwnerships(account, authToken);
             } else {
-                try {
-                    // Push the Ownership Capsule to the server
-                    success = success && pushOwnership(resolver, account, authToken, capsule);
-                } catch (ParseException | IOException | JSONException e) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
-                    // Flag a failure
-                    success = false;
+                // The client needs to get updates from the server, so perform a two-way sync
+                success = this.syncOwnershipsTwoWay(account, authToken);
+            }
+
+            // Apply the remaining ContentProviderOperations as a batch
+            this.mCapsuleOperations.applyBatch();
+
+            // If the sync was successful, get the new Ownerships ctag and save it to the client
+            if (success) {
+                // Get the server ctag
+                response = new CtagResponse(
+                        this.mRequestHandler.requestCtag(authToken, RequestContract.Uri.CTAG_OWNERSHIPS_URI)
+                );
+                if (response.isSuccess()) {
+                    serverCtag = response.getCtag();
+                    // Save the ctag
+                    this.mAccountManager.setUserData(account,
+                            SyncAdapter.USER_DATA_KEY_OWNERSHIP_CTAG, serverCtag);
                 }
             }
+        } catch (IOException e) {
+            Log.e(TAG, "syncOwnerships(): " + e.getMessage());
+            success = false;
         }
 
         return success;
     }
 
     /**
-     * Performs a two-way sync for Ownership Capsules
-     * 
-     * @param resolver
-     * @param account
-     * @param authToken
-     * @param serverOwnerships
-     * @param clientOwnerships
+     * Pushes any locally modified Capsule Ownerships to the server
+     *
+     * @param account   The Account to perform the sync for
+     * @param authToken The Account's authentication token
+     * @return True if the whole sync was successful, otherwise false
+     */
+    private boolean syncDirtyOwnerships(Account account, String authToken) {
+        // Flag for keeping track of the success state
+        boolean success = true;
+        // Get the locally modified Capsules
+        List<CapsuleOwnership> capsules = CapsuleOperations.Ownerships.get(this.mContentResolver,
+                account, CapsuleContract.SyncStateAction.DIRTY);
+        // Sync
+        if (capsules != null && capsules.size() > 0) {
+            for (CapsuleOwnership capsule : capsules) {
+                success = success && this.syncDirtyOwnership(capsule, authToken);
+            }
+        }
+        return success;
+    }
+
+    /**
+     * Performs a two-way sync by comparing the client's and server's Capsule ownerships and
+     * determines what needs to be pushed to the server and what needs to be pulled from the server
+     *
+     * @param account   The Account to perform the sync for
+     * @param authToken The Account's authentication token
+     * @return True if the whole sync was a success, otherwise false
+     */
+    private boolean syncOwnershipsTwoWay(Account account, String authToken) {
+        // Flag for keeping track of the success state
+        boolean success;
+
+        try {
+            // Get the all of the user's Capsules
+            List<CapsuleOwnership> clientCapsules = CapsuleOperations.Ownerships.get(this.mContentResolver,
+                    account, CapsuleContract.SyncStateAction.NONE);
+            // Get all of the user's Capsules on the server
+            OwnershipCollectionResponse response = new OwnershipCollectionResponse(
+                    this.mRequestHandler.requestOwnershipStatus(authToken)
+            );
+            List<CapsuleOwnership> serverCapsules;
+            if (!response.isSuccess()) {
+                // The server capsules could not be retrieved, so do nothing
+                success = false;
+            } else {
+                // Get the parsed server Capsules
+                serverCapsules = response.getCapsules();
+                // Compare the two collections of Capsules and determine how to sync each one
+                success = this.compareOwnerships(clientCapsules, serverCapsules, account, authToken);
+            }
+        } catch (IOException e) {
+            Log.e(TAG, "syncOwnershipsTwoWay(): " + e.getMessage());
+            success = false;
+        }
+
+        return success;
+    }
+
+    /**
+     * Compares the Capsule Ownership collections from the client and the server and determines
+     * how to sync each one individually
+     *
+     * @param clientCapsules The client-side Capsules
+     * @param serverCapsules The server-side Capsules
+     * @param account        The Account to perform the sync for
+     * @param authToken      The Account's authentication token
      * @return
      */
-    private boolean syncOwnerships(ContentResolver resolver, Account account, String authToken,
-            List<Capsule> serverOwnerships, List<Capsule> clientOwnerships) {
-        // The success flag
+    private boolean compareOwnerships(List<CapsuleOwnership> clientCapsules,
+                                      List<CapsuleOwnership> serverCapsules, Account account,
+                                      String authToken) {
+        // Flag for keeping track of the success state
         boolean success = true;
+
         try {
-//            System.out.println("=========SERVER OWNERSHIPS============");
-//            for (int i = 0; i < serverOwnerships.size(); i++) {
-//                System.out.println("=====================");
-//                System.out.println(((CapsuleOwnershipPojo) serverOwnerships.get(i)).getSyncId());
-//                if (((CapsuleOwnershipPojo) serverOwnerships.get(i)).getEtag() != null) {
-//                    System.out.println(((CapsuleOwnershipPojo) serverOwnerships.get(i)).getEtag());
-//                }
-//            }
-//            System.out.println("=========CLIENT OWNERSHIPS============");
-//            for (int i = 0; i < clientOwnerships.size(); i++) {
-//                System.out.println("=====================");
-//                System.out.println(((CapsuleOwnershipPojo) clientOwnerships.get(i)).getSyncId());
-//                if (((CapsuleOwnershipPojo) clientOwnerships.get(i)).getEtag() != null) {
-//                    System.out.println(((CapsuleOwnershipPojo) clientOwnerships.get(i)).getEtag());
-//                }
-//            }
-            // Determine those only on the client side
-            List<Capsule> onLeft = new ArrayList<Capsule>();
-            onLeft.addAll(clientOwnerships);
-            onLeft.removeAll(serverOwnerships);
-//            System.out.println("=========ONLY CLIENT SIDE============");
-//            for (int i = 0; i < onLeft.size(); i++) {
-//                System.out.println("=====================");
-//                System.out.println(((CapsuleOwnershipPojo) onLeft.get(i)).getSyncId());
-//                if (((CapsuleOwnershipPojo) onLeft.get(i)).getEtag() != null) {
-//                    System.out.println(((CapsuleOwnershipPojo) onLeft.get(i)).getEtag());
-//                }
-//            }
-            // Determine those only on the server side
-            List<Capsule> onRight = new ArrayList<Capsule>();
-            onRight.addAll(serverOwnerships);
-            onRight.removeAll(clientOwnerships);
-//            System.out.println("=========ONLY SERVER SIDE============");
-//            for (int i = 0; i < onRight.size(); i++) {
-//                System.out.println("=====================");
-//                System.out.println(((CapsuleOwnershipPojo) onRight.get(i)).getSyncId());
-//                if (((CapsuleOwnershipPojo) onRight.get(i)).getEtag() != null) {
-//                    System.out.println(((CapsuleOwnershipPojo) onRight.get(i)).getEtag());
-//                }
-//            }
-            // Determine those that are on both sides
-            List<Capsule> onBoth = new ArrayList<Capsule>(clientOwnerships);
-            onBoth.retainAll(serverOwnerships);
-            // Will hold those that are on both sides and are up to date
-            List<Capsule> onBothSame = new ArrayList<Capsule>();
-            // Will hold those that are on both sides and are the out of date
-            List<Capsule> onBothDifferent = new ArrayList<Capsule>();
-//            System.out.println("=========ON BOTH SIDES============");
+            // Determine the Capsules only on the client-side
+            List<CapsuleOwnership> onClient = new ArrayList<CapsuleOwnership>();
+            onClient.addAll(clientCapsules);
+            onClient.removeAll(serverCapsules);
+            // Determine the Capsules only on the server-side
+            List<CapsuleOwnership> onServer = new ArrayList<CapsuleOwnership>();
+            onServer.addAll(serverCapsules);
+            onServer.removeAll(clientCapsules);
+            // Determine Capsules that are on both the client and server
+            List<CapsuleOwnership> onBoth = new ArrayList<CapsuleOwnership>();
+            onBoth.addAll(clientCapsules);
+            onBoth.retainAll(serverCapsules);
+            // Determine Capsules that are up-to-date with the server and those that are not
+            List<CapsuleOwnership> onBothSameEtag = new ArrayList<CapsuleOwnership>();
+            List<CapsuleOwnership> onBothOutOfSync = new ArrayList<CapsuleOwnership>();
             for (int i = 0; i < onBoth.size(); i++) {
-//                System.out.println("=====================");
-//                System.out.println(((CapsuleOwnershipPojo) onBoth.get(i)).getSyncId());
-//                if (((CapsuleOwnershipPojo) onBoth.get(i)).getEtag() != null) {
-//                    System.out.println(((CapsuleOwnershipPojo) onBoth.get(i)).getEtag());
-//                }
-                // Get the client version
-                Capsule clientCapsule = clientOwnerships.get(clientOwnerships.indexOf(onBoth.get(i)));
-                // Get the server version
-                Capsule serverCapsule = serverOwnerships.get(serverOwnerships.indexOf(onBoth.get(i)));
-                // Determine if the ETag differs
-                if (((CapsuleOwnership) clientCapsule).getEtag().equals(((CapsuleOwnership) serverCapsule).getEtag())) {
-                    onBothSame.add(clientCapsule);
+                // Get the server and client versions
+                CapsuleOwnership commonCapsule = onBoth.get(i);
+                CapsuleOwnership client = clientCapsules.get(clientCapsules.indexOf(commonCapsule));
+                CapsuleOwnership server = serverCapsules.get(serverCapsules.indexOf(commonCapsule));
+                // Determine if the etags differ
+                if (client.getEtag().equals(server.getEtag())) {
+                    // Their etags match, so the client side has the most recent server data
+                    onBothSameEtag.add(commonCapsule);
                 } else {
-                    onBothDifferent.add(clientCapsule);
-                }
-            }
-//            System.out.println("=========ON BOTH SIDES -- SAME ============");
-//            for (int i = 0; i < onBothSame.size(); i++) {
-//                System.out.println("=====================");
-//                System.out.println(((CapsuleOwnershipPojo) onBothSame.get(i)).getSyncId());
-//                if (((CapsuleOwnershipPojo) onBothSame.get(i)).getEtag() != null) {
-//                    System.out.println(((CapsuleOwnershipPojo) onBothSame.get(i)).getEtag());
-//                }
-//            }
-//            System.out.println("=========ON BOTH SIDES -- DIFFERENT============");
-//            for (int i = 0; i < onBothDifferent.size(); i++) {
-//                System.out.println("=====================");
-//                System.out.println(((CapsuleOwnershipPojo) onBothDifferent.get(i)).getSyncId());
-//                if (((CapsuleOwnershipPojo) onBothDifferent.get(i)).getEtag() != null) {
-//                    System.out.println(((CapsuleOwnershipPojo) onBothDifferent.get(i)).getEtag());
-//                }
-//            }
-
-            // Will hold Capsules to be REPORTed on
-            List<Capsule> reportCapsules = new ArrayList<Capsule>();
-
-            // Capsules only on the client-side either need to be pushed to the server or deleted from the client
-            for (Capsule capsule : onLeft) {
-                final boolean isDirty = ((CapsuleOwnership) capsule).getDirty() > 0;
-                final boolean isDeleted = ((CapsuleOwnership) capsule).getDeleted() > 0;
-                if (isDirty && !isDeleted) {
-                    // Push to the server
-                    success = success && pushOwnership(resolver, account, authToken, capsule);
-                } else {
-                    // Delete from client
-                    if (!CapsuleOperations.deleteCapsule(resolver, capsule.getId())) {
-                        success = false;
-                    }
+                    // Their etags don't match, so the server has newer data
+                    onBothOutOfSync.add(commonCapsule);
                 }
             }
 
-            // Capsules only on the server-side need to be pulled to the client
-            for (Capsule capsule : onRight) {
-                // Pull it to the client
+            // Will hold the Capsules to REPORT on
+            List<CapsuleOwnership> reportCapsules = new ArrayList<CapsuleOwnership>();
+
+            // Capsules only on the client-side need to be pushed to the server or deleted from the client
+            for (CapsuleOwnership capsule : onClient) {
+                success = success && this.syncDirtyOwnership(capsule, authToken);
+            }
+
+            // Capsules only on the server-side need to be pulled from the server to the client
+            for (CapsuleOwnership capsule : onServer) {
+                // Add the Capsule to the collection of Capsules to REPORT on
                 reportCapsules.add(capsule);
             }
 
-            // Capsules that are on both the client and server with the same ETag means the server-side hasn't changed, but the client-side may have
-            for (Capsule capsule : onBothSame) {
-                final boolean isDirty = ((CapsuleOwnership) capsule).getDirty() > 0;
-                final boolean isDeleted = ((CapsuleOwnership) capsule).getDeleted() > 0;
-                // Dirty Capsules should be pushed to the server
-                if (isDirty) {
-                    if (isDeleted) {
-                        // Send a DELETE request
-                        int statusCode = mHttpHandler.requestOwnershipDelete(authToken, capsule.getSyncId());
-                        if (statusCode == HttpStatus.SC_NO_CONTENT || statusCode == HttpStatus.SC_NOT_FOUND) {
-                            // On success, delete the client-side version
-                            if (!CapsuleOperations.deleteCapsule(resolver, capsule.getId())) {
-                                success = false;
-                            }
-                        } else {
-                            success = false;
-                        }
-                    } else {
-                        // Push the dirty Capsule to the server
-                        success = success && pushOwnership(resolver, account, authToken, capsule);
-                    }
+            // Capsules that are on both the client and server with the same etag means
+            // the server-side hasn't changed, but the client-side may have
+            for (CapsuleOwnership capsule : onBothSameEtag) {
+                // Check to see if it is dirty
+                if (capsule.getDirty() > 0) {
+                    // It is dirty, so there are local changes that need to be pushed to the server
+                    success = success && this.syncDirtyOwnership(capsule, authToken);
                 }
             }
 
-            // Capsules that are on both the client and server with differing ETags means the server-side has changed, and the client-side may have
-            for (Capsule capsule : onBothDifferent) {
-                final boolean isDirty = ((CapsuleOwnership) capsule).getDirty() > 0;
-                final boolean isDeleted = ((CapsuleOwnership) capsule).getDeleted() > 0;
-                // Check if the Capsule has been changed on the client-side as well
-                if (isDirty) {
-                    // TODO Add the option for users to specify server or client taking priority
-                    // For now, pull changes to client
+            // Capsules that are on both the client and server with differing etags means
+            // the server-side has changed and the client-side may have changed
+            for (CapsuleOwnership capsule : onBothOutOfSync) {
+                // Determine if the local Capsule has changed
+                if (capsule.getDirty() > 0) {
+                    // TODO Possibly allow the user to set a preference for the server or client taking priority
+                    // Add the Capsule to the collection of Capsules to REPORT on
                     reportCapsules.add(capsule);
                 } else {
-                    // Pull the changes to the client
+                    // The client Capsule has not changed so, add the Capsule to the collection of Capsules to REPORT on
                     reportCapsules.add(capsule);
                 }
             }
 
             // REPORT on the Capsules
-            // TODO Split up the request
             if (reportCapsules.size() > 0) {
-                String response = mHttpHandler.requestOwnershipReport(authToken, reportCapsules);
-                List<Capsule> reportedCapsules = JSONParser.parseOwnershipReport(response);
-                for (Capsule capsule : reportedCapsules) {
-                    success = success && CapsuleOperations.insertUpdateOwnership(resolver, account.name, capsule, false /* setDirty */);
-                }
+                success = success && this.reportOwnerships(reportCapsules, account, authToken);
             }
-        } catch (IOException | ParseException | JSONException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+        } catch (Exception e) {
+            Log.e(TAG, "compareOwnerships() " + e.toString() + ": " + e.getMessage());
+            success = false;
         }
+
         return success;
     }
 
     /**
-     * Pushes a Capsule Ownership to the server and updates the client-side
-     * 
-     * @param resolver
-     * @param account
-     * @param authToken
-     * @param capsule
-     * @return
-     * @throws ParseException
-     * @throws IOException
-     * @throws JSONException
+     * Syncs a local CapsuleOwnership to the server
+     *
+     * @param capsule   The Capsule to sync
+     * @param authToken The authentication token
+     * @return True on a successful sync, otherwise false
      */
-    private boolean pushOwnership(ContentResolver resolver, Account account, String authToken, Capsule capsule)
-            throws ParseException, IOException, JSONException {
-        boolean success = true;
-        // Request an update to the server
-        String response = mHttpHandler.requestOwnershipUpdate(authToken, capsule);
+    private boolean syncDirtyOwnership(CapsuleOwnership capsule, String authToken) {
+        // Flag for keeping track of the success state
+        boolean success;
 
-        // Parse the response
-        Capsule serverCapsule = JSONParser.parseOwnershipCapsule(response);
-
-        // Update the client Capsule
-        ContentValues values = new ContentValues();
-        values.put(CapsuleContract.Capsules.SYNC_ID, serverCapsule.getSyncId());
-        int count = resolver.update(
-                CapsuleContract.Capsules.CONTENT_URI,
-                values,
-                CapsuleContract.Capsules._ID + " = ?",
-                new String[]{String.valueOf(capsule.getId())}
-        );
-        if (count < 1) {
-            success = false;
-        }
-        // Update the client Ownership
-        values = new ContentValues();
-        values.put(CapsuleContract.Capsules.DIRTY, 0);
-        values.put(CapsuleContract.Capsules.ETAG, ((CapsuleOwnership) serverCapsule).getEtag());
-        count = resolver.update(
-                CapsuleContract.Ownerships.CONTENT_URI,
-                values,
-                CapsuleContract.Ownerships.ACCOUNT_NAME + " = ? AND " + CapsuleContract.Ownerships.CAPSULE_ID + " = ?",
-                new String[]{account.name, String.valueOf(capsule.getId())}
-        );
-        if (count < 1) {
-            success = false;
+        // Check if the Capsule has been deleted
+        final boolean isDeleted = capsule.getDeleted() >= 1;
+        if (isDeleted) {
+            // The Capsule has been flagged for deletion, so delete it
+            success = this.deleteDirtyOwnership(capsule, authToken);
+        } else {
+            // The Capsule was not deleted locally, it was modified or created
+            success = this.pushDirtyOwnership(capsule, authToken);
         }
 
         return success;
     }
+
+    /**
+     * Deletes a local CapsuleOwnership.  If it exists on the server, it will also send a request
+     * to delete it on the server
+     *
+     * @param capsule   The Capsule to delete
+     * @param authToken The authentication token
+     * @return True on success, otherwise false
+     */
+    private boolean deleteDirtyOwnership(CapsuleOwnership capsule, String authToken) {
+        // Flag for keeping track of the success state
+        boolean success = true;
+
+        try {
+            // See if the Capsule has a server sync ID
+            if (capsule.getSyncId() > 0) {
+                // It has a sync ID, so attempt to delete it on the server first
+                EntityDeleteResponse response = new EntityDeleteResponse(
+                        this.mRequestHandler.requestOwnershipDelete(authToken, capsule.getSyncId())
+                );
+                // If the request was a success, build a Capsule DELETE operation
+                if (response.isSuccess()) {
+                    this.mCapsuleOperations.buildCapsuleDelete(capsule, /* withYield */ true);
+                } else {
+                    success = false;
+                }
+            } else {
+                // It is a local Capsule, so only need to build a Capsule DELETE operation
+                this.mCapsuleOperations.buildCapsuleDelete(capsule, /* withYield */ true);
+            }
+        } catch (IOException e) {
+            Log.e(TAG, "deleteDirtyOwnership(): " + e.getMessage());
+            success = false;
+        }
+
+        // Check and apply the ContentProviderOperations as a batch if necessary
+        this.mCapsuleOperations.checkAndApply();
+
+        return success;
+    }
+
+    /**
+     * Pushes local modifications for a CapsuleOwnership to the server
+     *
+     * @param capsule   The Capsule to sync
+     * @param authToken The authentication token
+     * @return True on success, otherwise false
+     */
+    private boolean pushDirtyOwnership(CapsuleOwnership capsule, String authToken) {
+        // Flag for keeping track of the success state
+        boolean success = true;
+
+        try {
+            // Send the request to update the Capsule to the server and get the response
+            OwnershipResponse response = new OwnershipResponse(
+                    this.mRequestHandler.requestOwnershipUpdate(authToken, capsule)
+            );
+            // Check if the request was a success
+            if (!response.isSuccess()) {
+                success = false;
+            } else {
+                // Get the Capsule from the response
+                CapsuleOwnership responseCapsule = response.getCapsule();
+                // Add the new etag to the Capsule
+                capsule.setEtag(responseCapsule.getEtag());
+                // Add the new sync ID
+                if (responseCapsule.getSyncId() > 0) {
+                    capsule.setSyncId(responseCapsule.getSyncId());
+                }
+                // Build operations to save both the Capsule and Ownership
+                this.mCapsuleOperations.buildOwnershipSave(capsule, CapsuleContract.SyncStateAction.CLEAN);
+            }
+        } catch (IOException e) {
+            Log.e(TAG, "pushDirtyOwnership(): " + e.getMessage());
+            success = false;
+        }
+
+        // Check and apply the ContentProviderOperations as a batch if necessary
+        this.mCapsuleOperations.checkAndApply();
+
+        return success;
+    }
+
+    /**
+     * Given a collection of CapsuleOwnerships, will send their IDs to the server to get the most
+     * up-to-date versions of them, parse them from the response, and then update the client-side
+     * with the new server-side data
+     *
+     * @param capsules  The collection of Capsules to get updates for
+     * @param account   The Account to assign any new Capsules to
+     * @param authToken The authentication token
+     * @return True if the whole operation was a success, false otherwise
+     */
+    private boolean reportOwnerships(List<CapsuleOwnership> capsules, Account account, String authToken) {
+        // Flag for keeping track of the success state
+        boolean success = true;
+
+        try {
+            // Split up the report Capsules into smaller collections for the HTTP request
+            for (int i = 0; i < capsules.size(); i += SyncAdapter.CAPSULE_REQUEST_LIMIT) {
+                // Get the chunk
+                List<CapsuleOwnership> chunk = capsules.subList(i,
+                        Math.min(i + SyncAdapter.CAPSULE_REQUEST_LIMIT, capsules.size()));
+                // Send the request
+                OwnershipCollectionResponse response = new OwnershipCollectionResponse(
+                        this.mRequestHandler.requestOwnershipReport(authToken, chunk)
+                );
+                // Check if the response was a success
+                if (!response.isSuccess()) {
+                    success = false;
+                } else {
+                    // Get the Capsules from the response
+                    List<CapsuleOwnership> responseCapsules = response.getCapsules();
+                    // Save the Capsules
+                    for (CapsuleOwnership capsule : responseCapsules) {
+                        // Set the Account
+                        capsule.setAccountName(account.name);
+                        // Build operations to save both the Capsule and Ownership
+                        this.mCapsuleOperations.buildOwnershipSave(capsule,
+                                CapsuleContract.SyncStateAction.CLEAN);
+                    }
+                }
+            }
+        } catch (IOException e) {
+            Log.e(TAG, "reportOwnerships(): " + e.getMessage());
+            success = false;
+        }
+
+        // Check and apply the ContentProviderOperations as a batch if necessary
+        this.mCapsuleOperations.checkAndApply();
+
+        return success;
+    }
+
 }
