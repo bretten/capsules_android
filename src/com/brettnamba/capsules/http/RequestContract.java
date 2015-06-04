@@ -90,6 +90,11 @@ public final class RequestContract {
         public static final String AUTH_TOKEN_RESPONSE = "token";
 
         /**
+         * The name of the field storing the CTag
+         */
+        public static final String CTAG = "ctag";
+
+        /**
          * The name of the field storing a username in a JSON response body.
          */
         public static final String USERNAME = "username";
