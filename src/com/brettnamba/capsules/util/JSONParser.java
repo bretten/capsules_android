@@ -71,6 +71,29 @@ public final class JSONParser {
     }
 
     /**
+     * Parses a ctag from a JSON server response
+     *
+     * @param json JSONObject representing a Web API JSON response
+     * @return A string Ctag
+     * @throws JSONException
+     */
+    public static String parseCtag(JSONObject json) throws JSONException {
+        if (!json.has(RequestContract.Field.DATA)) {
+            return null;
+        }
+
+        // Get the JSON data object
+        JSONObject dataObject = json.getJSONObject(RequestContract.Field.DATA);
+
+        // Return the token if it exists
+        if (dataObject.has(RequestContract.Field.CTAG)) {
+            return dataObject.getString(RequestContract.Field.CTAG);
+        } else {
+            return null;
+        }
+    }
+
+    /**
      * Parses an authentication response to retrieve an authentication token.
      *
      * @param body
@@ -143,67 +166,58 @@ public final class JSONParser {
     }
 
     /**
-     * Parses a server response for updating an Ownership Capsule.
+     * Parses a JSON server response containing a single CapsuleOwnership
      *
-     * @param body
-     * @return
+     * @param json The JSON response body
+     * @return The Capsule if it was in the response, otherwise null
      * @throws JSONException
      */
-    public static Capsule parseOwnershipCapsule(String body) throws JSONException {
-        // Parse the response
-        JSONObject json = new JSONObject(body).getJSONObject(RequestContract.Field.DATA);
+    public static CapsuleOwnership parseOwnershipCapsule(JSONObject json) throws JSONException {
+        // The Capsule
+        CapsuleOwnership capsule = null;
 
-        // Build the Capsule
-        Capsule capsule = new CapsuleOwnership(json);
+        // Check for the resource data key
+        if (json.has(RequestContract.Field.DATA)) {
+            // Get the resource data object
+            JSONObject data = json.getJSONObject(RequestContract.Field.DATA);
+            // Check for the Capsule object
+            if (data.has(RequestContract.Field.CAPSULE)) {
+                // Get the JSON Capsule object
+                JSONObject jsonCapsule = data.getJSONObject(RequestContract.Field.CAPSULE);
+                // Get the Capsule data from the JSON
+                capsule = new CapsuleOwnership(jsonCapsule);
+            }
+        }
 
         return capsule;
     }
 
     /**
-     * Parses a server response holding Capsule Ownership status information
+     * Parses a JSON server response containing a collection of Capsule ownerships
      *
-     * @param body
-     * @return
+     * @param json The JSON response body
+     * @return The collection of Capsules from the response
      * @throws JSONException
      */
-    public static List<Capsule> parseOwnershipStatus(String body) throws JSONException {
-        // Parse the response
-        JSONArray json = new JSONArray(body);
-
+    public static List<CapsuleOwnership> parseOwnershipCollection(JSONObject json) throws JSONException {
         // Will hold the Capsule objects
-        List<Capsule> capsules = new ArrayList<Capsule>();
+        List<CapsuleOwnership> capsules = new ArrayList<CapsuleOwnership>();
 
-        // Extract data from individual JSON objects
-        for (int i = 0; i < json.length(); i++) {
-            JSONObject jsonCapsule = json.getJSONObject(i).getJSONObject(RequestContract.Field.DATA);
-
-            // Create Capsules
-            capsules.add(new CapsuleOwnership(jsonCapsule));
-        }
-
-        return capsules;
-    }
-
-    /**
-     * Parses a server response holding a Capsule Ownership REPORT
-     *
-     * @param body
-     * @return
-     * @throws JSONException
-     */
-    public static List<Capsule> parseOwnershipReport(String body) throws JSONException {
-        // Parse the response
-        JSONArray json = new JSONArray(body);
-
-        // Will hold the Capsule objects
-        List<Capsule> capsules = new ArrayList<Capsule>();
-
-        // Extract data from individual JSON objects
-        for (int i = 0; i < json.length(); i++) {
-            JSONObject jsonCapsule = json.getJSONObject(i).getJSONObject(RequestContract.Field.DATA);
-
-            // Create Capsules
-            capsules.add(new CapsuleOwnership(jsonCapsule));
+        // Make sure the JSON object has the resource key
+        if (json.has(RequestContract.Field.DATA)) {
+            // Get the JSON data object
+            JSONObject data = json.getJSONObject(RequestContract.Field.DATA);
+            // Make sure the Capsules key exists
+            if (data.has(RequestContract.Field.CAPSULE_COLLECTION)) {
+                // Get the array of Capsules from the data object
+                JSONArray jsonCapsules = data.getJSONArray(RequestContract.Field.CAPSULE_COLLECTION);
+                // Iterate through the array and build Capsules from the JSON objects
+                for (int i = 0; i < jsonCapsules.length(); i++) {
+                    JSONObject jsonCapsule = jsonCapsules.getJSONObject(i);
+                    // Parse the Capsule and add it to the collection
+                    capsules.add(new CapsuleOwnership(jsonCapsule));
+                }
+            }
         }
 
         return capsules;
