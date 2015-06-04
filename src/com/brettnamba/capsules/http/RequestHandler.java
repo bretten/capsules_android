@@ -3,11 +3,11 @@ package com.brettnamba.capsules.http;
 import android.util.Base64;
 
 import com.brettnamba.capsules.dataaccess.Capsule;
+import com.brettnamba.capsules.dataaccess.CapsuleOwnership;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
 import org.apache.http.ParseException;
-import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpDelete;
@@ -16,7 +16,6 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.protocol.HTTP;
-import org.apache.http.util.EntityUtils;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -24,9 +23,8 @@ import java.util.List;
 
 /**
  * Handles general HTTP requests and responses.
- * 
- * @author Brett Namba
  *
+ * @author Brett Namba
  */
 public class RequestHandler {
 
@@ -42,7 +40,7 @@ public class RequestHandler {
 
     /**
      * Constructor
-     * 
+     *
      * @param client
      */
     public RequestHandler(HttpClient client) {
@@ -51,11 +49,11 @@ public class RequestHandler {
 
     /**
      * Authenticates a user via GET and returns their authentication token.
-     * 
+     *
      * @param username
      * @param password
      * @return HttpResponse
-     * @throws ParseException 
+     * @throws ParseException
      * @throws IOException
      */
     public HttpResponse authenticate(String username, String password) throws IOException {
@@ -67,7 +65,7 @@ public class RequestHandler {
         request.addHeader(RequestContract.AUTH_HEADER, "Basic " + Base64.encodeToString((username + ":" + password).getBytes(), Base64.DEFAULT));
 
         // Send and get the response
-        return mClient.execute(request);
+        return this.mClient.execute(request);
     }
 
     /**
@@ -97,7 +95,7 @@ public class RequestHandler {
         request.setEntity(new UrlEncodedFormEntity(params));
 
         // Send and get the response
-        return mClient.execute(request);
+        return this.mClient.execute(request);
     }
 
     /**
@@ -127,7 +125,7 @@ public class RequestHandler {
         request.setEntity(new UrlEncodedFormEntity(params));
 
         // Send the request and get the response
-        return mClient.execute(request);
+        return this.mClient.execute(request);
     }
 
     /**
@@ -158,47 +156,46 @@ public class RequestHandler {
         request.setEntity(new UrlEncodedFormEntity(params));
 
         // Send and get the response
-        return mClient.execute(request);
+        return this.mClient.execute(request);
     }
 
     /**
-     * Sends a request to the server to retrieve the ctag for the collection specified in the URI.
-     * 
-     * @param authToken
-     * @param uri
-     * @return
+     * Sends a request to the server to retrieve the ctag for the collection specified in the URI
+     *
+     * @param authToken The authentication token
+     * @param uri       The URI that determines which collection to get the ctag for
+     * @return HTTP response object
      * @throws ParseException
      * @throws IOException
      */
-    public String requestCtag(String authToken, String uri) throws ParseException, IOException {
+    public HttpResponse requestCtag(String authToken, String uri) throws ParseException, IOException {
         // GET
         HttpGet request = new HttpGet(RequestContract.BASE_URL + uri);
 
         // Headers
         request.addHeader(HTTP.TARGET_HOST, RequestContract.HOST);
-        request.addHeader(RequestContract.AUTH_HEADER, Base64.encodeToString((authToken).getBytes(), Base64.URL_SAFE|Base64.NO_WRAP));
+        request.addHeader(RequestContract.AUTH_HEADER, Base64.encodeToString((authToken).getBytes(), Base64.URL_SAFE | Base64.NO_WRAP));
 
         // Send and get the response
-        HttpResponse response = mClient.execute(request);
-        return EntityUtils.toString(response.getEntity());
+        return this.mClient.execute(request);
     }
 
     /**
-     * Sends a request to the server to update an Ownership Capsule.
-     * 
-     * @param authToken
-     * @param capsule
-     * @return
+     * Sends a request to the server to update an Ownership Capsule
+     *
+     * @param authToken The authentication token
+     * @param capsule   The Capsule to update
+     * @return HttpResponse object
      * @throws ParseException
      * @throws IOException
      */
-    public String requestOwnershipUpdate(String authToken, Capsule capsule) throws ParseException, IOException {
+    public HttpResponse requestOwnershipUpdate(String authToken, Capsule capsule) throws ParseException, IOException {
         // POST
-        HttpPost request = new HttpPost(RequestContract.BASE_URL + RequestContract.Uri.OWNERSHIP_URI);
+        HttpPost request = new HttpPost(RequestContract.BASE_URL + RequestContract.Uri.OWNERSHIP_URI + "/" + String.valueOf(capsule.getSyncId()));
 
         // Headers
         request.addHeader(HTTP.TARGET_HOST, RequestContract.HOST);
-        request.addHeader(RequestContract.AUTH_HEADER, Base64.encodeToString((authToken).getBytes(), Base64.URL_SAFE|Base64.NO_WRAP));
+        request.addHeader(RequestContract.AUTH_HEADER, Base64.encodeToString((authToken).getBytes(), Base64.URL_SAFE | Base64.NO_WRAP));
         request.addHeader(HTTP.CONTENT_TYPE, URLEncodedUtils.CONTENT_TYPE);
 
         // POST body
@@ -212,69 +209,63 @@ public class RequestHandler {
         request.setEntity(new UrlEncodedFormEntity(params));
 
         // Send and get the response
-        HttpResponse response = mClient.execute(request);
-        return EntityUtils.toString(response.getEntity());
+        return this.mClient.execute(request);
     }
 
     /**
-     * Sends a DELETE request to the Capsule Ownership URI
-     * 
-     * @param authToken
-     * @param capsuleId
-     * @return
-     * @throws ClientProtocolException
+     * Sends a DELETE request for the specified Capsule
+     *
+     * @param authToken The Capsule to DELETE
+     * @param syncId    The sync ID of the Capsule
+     * @return HTTP response object
      * @throws IOException
      */
-    public int requestOwnershipDelete(String authToken, long capsuleId) throws ClientProtocolException, IOException {
-         // DELETE
-        HttpDelete request = new HttpDelete(RequestContract.BASE_URL + RequestContract.Uri.OWNERSHIP_URI + "/" + String.valueOf(capsuleId));
+    public HttpResponse requestOwnershipDelete(String authToken, long syncId) throws IOException {
+        // DELETE
+        HttpDelete request = new HttpDelete(RequestContract.BASE_URL + RequestContract.Uri.OWNERSHIP_URI + "/" + String.valueOf(syncId));
 
         // Headers
         request.addHeader(HTTP.TARGET_HOST, RequestContract.HOST);
-        request.addHeader(RequestContract.AUTH_HEADER, Base64.encodeToString((authToken).getBytes(), Base64.URL_SAFE|Base64.NO_WRAP));
+        request.addHeader(RequestContract.AUTH_HEADER, Base64.encodeToString((authToken).getBytes(), Base64.URL_SAFE | Base64.NO_WRAP));
 
         // Send and get the response
-        HttpResponse response = mClient.execute(request);
-        return response.getStatusLine().getStatusCode();
+        return this.mClient.execute(request);
     }
 
     /**
-     * Requests the Capsule Ownership status information
-     * 
-     * @param authToken
-     * @return
-     * @throws ClientProtocolException
+     * Returns the status of a user's Capsules
+     *
+     * @param authToken The authentication token
+     * @return Collection of user's Capsules and their status
      * @throws IOException
      */
-    public String requestOwnershipStatus(String authToken) throws ClientProtocolException, IOException {
+    public HttpResponse requestOwnershipStatus(String authToken) throws IOException {
         // GET
         HttpGet request = new HttpGet(RequestContract.BASE_URL + RequestContract.Uri.OWNERSHIP_STATUS_URI);
 
         // Headers
         request.addHeader(HTTP.TARGET_HOST, RequestContract.HOST);
-        request.addHeader(RequestContract.AUTH_HEADER, Base64.encodeToString((authToken).getBytes(), Base64.URL_SAFE|Base64.NO_WRAP));
+        request.addHeader(RequestContract.AUTH_HEADER, Base64.encodeToString((authToken).getBytes(), Base64.URL_SAFE | Base64.NO_WRAP));
 
         // Send and get the response
-        HttpResponse response = mClient.execute(request);
-        return EntityUtils.toString(response.getEntity());
+        return this.mClient.execute(request);
     }
 
     /**
-     * Requests a REPORT on the given Capsule Ownerships
-     * 
-     * @param authToken
-     * @param capsules
-     * @return
-     * @throws ClientProtocolException
+     * Requests a report on the specified Capsules
+     *
+     * @param authToken The authentication token
+     * @param capsules  The Capsules to report on
+     * @return HTTP response object
      * @throws IOException
      */
-    public String requestOwnershipReport(String authToken, List<Capsule> capsules) throws ClientProtocolException, IOException {
+    public HttpResponse requestOwnershipReport(String authToken, List<CapsuleOwnership> capsules) throws IOException {
         // POST
         HttpPost request = new HttpPost(RequestContract.BASE_URL + RequestContract.Uri.OWNERSHIP_REPORT_URI);
 
         // Headers
         request.addHeader(HTTP.TARGET_HOST, RequestContract.HOST);
-        request.addHeader(RequestContract.AUTH_HEADER, Base64.encodeToString((authToken).getBytes(), Base64.URL_SAFE|Base64.NO_WRAP));
+        request.addHeader(RequestContract.AUTH_HEADER, Base64.encodeToString((authToken).getBytes(), Base64.URL_SAFE | Base64.NO_WRAP));
         request.addHeader(HTTP.CONTENT_TYPE, URLEncodedUtils.CONTENT_TYPE);
 
         // POST body
@@ -285,8 +276,7 @@ public class RequestHandler {
         request.setEntity(new UrlEncodedFormEntity(params));
 
         // Send and get the response
-        HttpResponse response = mClient.execute(request);
-        return EntityUtils.toString(response.getEntity());
+        return this.mClient.execute(request);
     }
 
 }
