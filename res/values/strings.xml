@@ -26,6 +26,8 @@
     <string name="title_my_collection">My Collection</string>
     <string name="title_my_capsules">My Capsules</string>
     <string name="title_my_discoveries">My Discoveries</string>
+    <!-- Upload source chooser -->
+    <string name="title_upload_source_chooser">Choose</string>
 
     <!--
         Activities
@@ -50,6 +52,7 @@
     <string name="label_email">E-mail Address</string>
     <string name="label_password">Password</string>
     <string name="label_confirm_password">Confirm Password</string>
+    <string name="label_upload_image">Image</string>
     <!-- Capsule -->
     <string name="label_capsule_name">Name</string>
     <!-- Buttons -->
@@ -57,6 +60,7 @@
     <string name="label_register">Register</string>
     <string name="label_add_account">Add Account</string>
     <string name="label_save">Save</string>
+    <string name="label_choose_image">Choose an image&#8230;</string>
     <!-- Digits -->
     <string name="alphanumeric_digits">abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789</string>
 
@@ -86,6 +90,9 @@
     <!-- Capsule validation -->
     <string name="validation_capsule_missing">The capsule data could not be found.</string>
     <string name="validation_capsule_name">Please enter a valid capsule name.</string>
+    <!-- Upload validation -->
+    <string name="validation_upload_missing">An upload file was not chosen.</string>
+    <string name="validation_upload_exceeds_size_limit">The chosen upload exceeds the file limit:\u0020</string>
     <!-- Authentication -->
     <string name="error_missing_auth_token">A valid authentication token was not received.</string>
     <string name="error_no_account">You are not currently logged into an account.</string>
@@ -99,6 +106,10 @@
     <string name="error_cannot_retrieve_location">Your current location could no be retrieved.</string>
     <!-- Map -->
     <string name="error_marker_too_far">The capsule is too far away to open.</string>
+    <!-- Upload -->
+    <string name="error_upload_file_not_found">The file could not be found.  Please try choosing another.</string>
+    <string name="error_upload_file_content_empty">The file content was empty.</string>
+    <string name="error_upload_cannot_process">The file could not be processed.</string>
 
     <!--
         Navigation Drawer
