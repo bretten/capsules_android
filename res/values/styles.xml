@@ -46,6 +46,12 @@
         <item name="android:layout_marginRight">20dp</item>
         <item name="android:layout_marginBottom">10dp</item>
     </style>
+    <!-- Upload preview -->
+    <style name="AppTheme.Input.UploadPreview" parent="AppTheme.Input">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_gravity">center</item>
+    </style>
     <!-- Submit button -->
     <style name="AppTheme.Input.Button" parent="AppTheme.Input">
         <item name="android:layout_marginLeft">20dp</item>

@@ -1,20 +1,40 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:orientation="vertical">
+    android:layout_height="wrap_content">
 
-    <TextView
-        android:text="@string/label_capsule_name"
-        style="@style/AppTheme.Input.Label" />
-    <EditText
-        android:id="@+id/fragment_capsule_editor_name"
-        android:inputType="text"
-        style="@style/AppTheme.Input.EditText" />
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
 
-    <Button
-        android:id="@+id/fragment_capsule_editor_save"
-        android:text="@string/label_save"
-        style="@style/AppTheme.Input.Button" />
+        <TextView
+            style="@style/AppTheme.Input.Label"
+            android:text="@string/label_capsule_name" />
 
-</LinearLayout>
+        <EditText
+            android:id="@+id/fragment_capsule_editor_name"
+            style="@style/AppTheme.Input.EditText"
+            android:inputType="text" />
+
+        <TextView
+            style="@style/AppTheme.Input.Label"
+            android:text="@string/label_upload_image" />
+
+        <Button
+            android:id="@+id/fragment_capsule_editor_file_chooser_button"
+            style="@style/AppTheme.Input.Button"
+            android:text="@string/label_choose_image" />
+
+        <ImageView
+            android:id="@+id/fragment_capsule_editor_upload_image_view"
+            style="@style/AppTheme.Input.UploadPreview"
+            tools:ignore="ContentDescription" />
+
+        <Button
+            android:id="@+id/fragment_capsule_editor_save"
+            style="@style/AppTheme.Input.Button"
+            android:text="@string/label_save" />
+    </LinearLayout>
+</ScrollView>

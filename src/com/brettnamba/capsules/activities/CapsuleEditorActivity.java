@@ -39,9 +39,19 @@ public class CapsuleEditorActivity extends FragmentActivity implements
     private Account mAccount;
 
     /**
+     * Fragment used to edit the Capsule
+     */
+    private CapsuleEditorFragment mEditorFragment;
+
+    /**
      * Displays messages to the user
      */
     private TextView mMessageView;
+
+    /**
+     * Key for the CapsuleEditorFragment to be used in transactions
+     */
+    private static final String KEY_CAPSULE_EDITOR_FRAGMENT = "capsule_editor_fragment";
 
     /**
      * onCreate
@@ -65,19 +75,26 @@ public class CapsuleEditorActivity extends FragmentActivity implements
             this.finish();
         }
 
-        // Bundle the Fragment arguments
-        Bundle bundle = new Bundle();
-        bundle.putParcelable("capsule", this.mCapsule);
-        bundle.putParcelable("account", this.mAccount);
-
-        // Add any Fragments
-        CapsuleEditorFragment capsuleEditorFragment = new CapsuleEditorFragment();
-        capsuleEditorFragment.setArguments(bundle);
+        // FragmentManager
+        FragmentManager fragmentManager = this.getSupportFragmentManager();
+        // See if the Activity is being recreated
         if (savedInstanceState == null) {
-            FragmentManager fragmentManager = getSupportFragmentManager();
+            // Bundle the Fragment arguments
+            Bundle bundle = new Bundle();
+            bundle.putParcelable("capsule", this.mCapsule);
+            bundle.putParcelable("account", this.mAccount);
+            // Fragment for editing Capsules
+            this.mEditorFragment = new CapsuleEditorFragment();
+            this.mEditorFragment.setArguments(bundle);
+            // FragmentTransaction
             FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
-            fragmentTransaction.add(R.id.fragment_capsule_editor, capsuleEditorFragment);
+            fragmentTransaction.add(R.id.fragment_capsule_editor, this.mEditorFragment,
+                    CapsuleEditorActivity.KEY_CAPSULE_EDITOR_FRAGMENT);
             fragmentTransaction.commit();
+        } else {
+            // The Activity has previous state data
+            this.mEditorFragment = (CapsuleEditorFragment) fragmentManager.getFragment(
+                    savedInstanceState, CapsuleEditorActivity.KEY_CAPSULE_EDITOR_FRAGMENT);
         }
 
         // Setup the Toolbar
@@ -92,6 +109,21 @@ public class CapsuleEditorActivity extends FragmentActivity implements
 
         // Find the messages View
         this.mMessageView = (TextView) this.findViewById(R.id.messages);
+    }
+
+    /**
+     * onSaveInstanceState
+     *
+     * @param outState Bundle containing saved Fragment states
+     */
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        // Save the state of the CapsuleEditorFragment
+        if (this.mEditorFragment != null) {
+            this.getSupportFragmentManager().putFragment(outState,
+                    CapsuleEditorActivity.KEY_CAPSULE_EDITOR_FRAGMENT, this.mEditorFragment);
+        }
     }
 
     /**
@@ -120,6 +152,17 @@ public class CapsuleEditorActivity extends FragmentActivity implements
                                      List<String> messages) {
         // Show the validation error messages
         this.setMessages(messages);
+    }
+
+    /**
+     * Callback for when the Fragment triggers the file upload chooser
+     *
+     * @param capsuleEditorFragment The Fragment that is choosing the upload source
+     */
+    @Override
+    public void onChooseUploadSource(CapsuleEditorFragment capsuleEditorFragment) {
+        // Clear any existing validation messages
+        this.clearMessages();
     }
 
     /**
