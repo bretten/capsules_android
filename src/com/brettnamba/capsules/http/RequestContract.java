@@ -176,4 +176,23 @@ public final class RequestContract {
 
     }
 
+    /**
+     * File upload contract
+     */
+    public static final class Upload {
+
+        /**
+         * The max file size for an image upload
+         */
+        public static final int MAX_IMAGE_FILE_SIZE = 5120000;
+
+        /**
+         * The max file size for an image upload in a human readable format.  This needs to be
+         * kept in sync with MAX_IMAGE_FILE_SIZE, otherwise should determine the human
+         * readable value dynamically.
+         */
+        public static final String MAX_IMAGE_FILE_SIZE_HUMAN = "5MB";
+
+    }
+
 }
