@@ -67,6 +67,16 @@ public final class RequestContract {
          */
         public static final String OWNERSHIP_REPORT_URI = "/api/report/capsules";
 
+        /**
+         * URI for validating a Capsule
+         */
+        public static final String VALIDATE_CAPSULE_URI = "/api/capsule/?validate=true";
+
+        /**
+         * URI for saving a Capsule
+         */
+        public static final String SAVE_CAPSULE_URI = "/api/capsule/?validate=false";
+
     }
 
     /**
@@ -118,6 +128,11 @@ public final class RequestContract {
          * The key for a single Capsule
          */
         public static final String CAPSULE = "capsule";
+
+        /**
+         * The key for a Capsule entity
+         */
+        public static final String CAPSULE_ENTITY = "Capsule";
 
         /**
          * The key for a collection of Capsules
@@ -173,6 +188,31 @@ public final class RequestContract {
          * The field for the rating of the Discovery
          */
         public static final String DISCOVERY_RATING = "rating";
+
+        /**
+         * The key for a single Memoir object
+         */
+        public static final String MEMOIR = "memoir";
+
+        /**
+         * The key for a Memoir entity
+         */
+        public static final String MEMOIR_ENTITY = "Memoir";
+
+        /**
+         * The field for the Memoir title
+         */
+        public static final String MEMOIR_TITLE = "title";
+
+        /**
+         * The field for the Memoir message
+         */
+        public static final String MEMOIR_MESSAGE = "message";
+
+        /**
+         * The field for the Memoir file
+         */
+        public static final String MEMOIR_FILE = "file";
 
     }
 

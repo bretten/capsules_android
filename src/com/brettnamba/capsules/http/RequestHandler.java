@@ -1,9 +1,13 @@
 package com.brettnamba.capsules.http;
 
+import android.accounts.Account;
+import android.content.Context;
 import android.util.Base64;
 
+import com.brettnamba.capsules.Constants;
 import com.brettnamba.capsules.dataaccess.Capsule;
 import com.brettnamba.capsules.dataaccess.CapsuleOwnership;
+import com.brettnamba.capsules.dataaccess.Memoir;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
@@ -277,6 +281,126 @@ public class RequestHandler {
 
         // Send and get the response
         return this.mClient.execute(request);
+    }
+
+    /**
+     * Sends a Capsule validation request and returns HTTP request object also containing the
+     * request data
+     *
+     * @param context            The current Context
+     * @param account            The Account used to authenticate the request
+     * @param capsule            The Capsule to validate
+     * @param onDataSentListener The listener that will receive updates on the amount of data sent.
+     *                           If not needed, use null.
+     * @return The HTTP request object which also contains the response data
+     */
+    public static HttpUrlWwwFormRequest validateCapsule(Context context, Account account,
+                                                        Capsule capsule,
+                                                        HttpUrlConnectionRequest.DataSentListener
+                                                                onDataSentListener) {
+        HttpUrlWwwFormRequest httpRequest = new HttpUrlWwwFormRequest(
+                context, HttpPost.METHOD_NAME,
+                RequestContract.BASE_URL + RequestContract.Uri.VALIDATE_CAPSULE_URI,
+                account, Constants.AUTH_TOKEN_TYPE
+        );
+        // Add the listener
+        if (onDataSentListener != null) {
+            httpRequest.setListener(onDataSentListener);
+        }
+        // Add the request parameters
+        RequestHandler.addCapsuleRequestParameters(httpRequest, capsule);
+        // Send the request
+        httpRequest.send();
+
+        return httpRequest;
+    }
+
+    /**
+     * Sends a Capsule save request and returns the HTTP request object also containing the
+     * response data
+     *
+     * @param context            The current Context
+     * @param account            The Account used to authenticate the request
+     * @param capsule            The Capsule to save
+     * @param onDataSentListener The listener that will receive updates on the amount of data sent.
+     *                           If not needed, use null.
+     * @return The HTTP request object which also contains the response data
+     */
+    public static HttpUrlMultiPartRequest saveCapsule(Context context, Account account,
+                                                      Capsule capsule,
+                                                      HttpUrlConnectionRequest.DataSentListener
+                                                              onDataSentListener) {
+        HttpUrlMultiPartRequest httpRequest = new HttpUrlMultiPartRequest(
+                context, HttpPost.METHOD_NAME,
+                RequestContract.BASE_URL + RequestContract.Uri.SAVE_CAPSULE_URI,
+                account, Constants.AUTH_TOKEN_TYPE
+        );
+        // Add the listener
+        if (onDataSentListener != null) {
+            httpRequest.setListener(onDataSentListener);
+        }
+        // Add the request parameters
+        RequestHandler.addCapsuleRequestParameters(httpRequest, capsule);
+        // Add the file upload to the request
+        RequestHandler.addCapsuleUploadRequestParameters(httpRequest, capsule);
+        // Execute
+        httpRequest.send();
+
+        return httpRequest;
+    }
+
+    /**
+     * Adds the standard Capsule request parameters to an instance of HttpUrlConnectionRequest
+     *
+     * @param httpRequest The HttpUrlConnectionRequest to add the request parameters to
+     * @param capsule     The Capsule to get the request parameter data from
+     */
+    public static void addCapsuleRequestParameters(HttpUrlConnectionRequest httpRequest,
+                                                   Capsule capsule) {
+        if (capsule.getName() != null) {
+            httpRequest.addRequestParameter(
+                    String.format("data[%1$s][%2$s]", RequestContract.Field.CAPSULE_ENTITY,
+                            RequestContract.Field.CAPSULE_NAME), capsule.getName());
+        }
+        httpRequest.addRequestParameter(
+                String.format("data[%1$s][%2$s]", RequestContract.Field.CAPSULE_ENTITY,
+                        RequestContract.Field.CAPSULE_LATITUDE),
+                String.valueOf(capsule.getLatitude()));
+        httpRequest.addRequestParameter(
+                String.format("data[%1$s][%2$s]", RequestContract.Field.CAPSULE_ENTITY,
+                        RequestContract.Field.CAPSULE_LONGITUDE),
+                String.valueOf(capsule.getLongitude()));
+        Memoir memoir = capsule.getMemoir();
+        if (memoir != null) {
+            if (memoir.getTitle() != null) {
+                httpRequest.addRequestParameter(
+                        String.format("data[%1$s][0][%2$s]", RequestContract.Field.MEMOIR_ENTITY,
+                                RequestContract.Field.MEMOIR_TITLE), memoir.getTitle());
+            }
+            if (memoir.getMessage() != null) {
+                httpRequest.addRequestParameter(
+                        String.format("data[%1$s][0][%2$s]", RequestContract.Field.MEMOIR_ENTITY,
+                                RequestContract.Field.MEMOIR_MESSAGE), memoir.getMessage());
+            }
+        }
+    }
+
+    /**
+     * Adds the Capsule file upload request parameters to an instance of HttpUrlMultiPartRequest
+     *
+     * @param httpRequest The HttpUrlMultiPartRequest to add the file upload request parameters to
+     * @param capsule     The Capsule to get the file upload request parameter data from
+     */
+    public static void addCapsuleUploadRequestParameters(HttpUrlMultiPartRequest httpRequest,
+                                                         Capsule capsule) {
+        if (capsule != null && capsule.getMemoir() != null) {
+            Memoir memoir = capsule.getMemoir();
+            if (memoir.getFileContentUri() != null) {
+                httpRequest.addFileUploadContentUri(
+                        String.format("data[%1$s][0][%2$s]", RequestContract.Field.MEMOIR_ENTITY,
+                                RequestContract.Field.MEMOIR_FILE), memoir.getFileContentUri());
+            }
+        }
     }
 
 }
