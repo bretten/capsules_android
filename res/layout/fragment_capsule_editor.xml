@@ -20,6 +20,24 @@
 
         <TextView
             style="@style/AppTheme.Input.Label"
+            android:text="@string/label_memoir_title" />
+
+        <EditText
+            android:id="@+id/fragment_capsule_editor_memoir_title"
+            style="@style/AppTheme.Input.EditText"
+            android:inputType="text" />
+
+        <TextView
+            style="@style/AppTheme.Input.Label"
+            android:text="@string/label_memoir_message" />
+
+        <EditText
+            android:id="@+id/fragment_capsule_editor_memoir_message"
+            style="@style/AppTheme.Input.EditText"
+            android:inputType="text" />
+
+        <TextView
+            style="@style/AppTheme.Input.Label"
             android:text="@string/label_upload_image" />
 
         <Button

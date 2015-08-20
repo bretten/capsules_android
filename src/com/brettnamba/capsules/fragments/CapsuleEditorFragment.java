@@ -2,7 +2,10 @@ package com.brettnamba.capsules.fragments;
 
 import android.accounts.Account;
 import android.app.Activity;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
@@ -19,11 +22,9 @@ import android.widget.ImageView;
 
 import com.brettnamba.capsules.R;
 import com.brettnamba.capsules.dataaccess.CapsuleOwnership;
+import com.brettnamba.capsules.dataaccess.Memoir;
 import com.brettnamba.capsules.http.RequestContract;
-import com.brettnamba.capsules.os.AsyncListenerTask;
-import com.brettnamba.capsules.os.OwnershipSaveTask;
-import com.brettnamba.capsules.provider.CapsuleContract;
-import com.brettnamba.capsules.provider.CapsuleOperations;
+import com.brettnamba.capsules.services.SaveCapsuleService;
 import com.brettnamba.capsules.util.Files;
 import com.brettnamba.capsules.util.Images;
 import com.brettnamba.capsules.util.Intents;
@@ -37,8 +38,7 @@ import java.util.List;
  *
  * @author Brett Namba
  */
-public class CapsuleEditorFragment extends Fragment implements
-        AsyncListenerTask.OwnershipSaveTaskListener {
+public class CapsuleEditorFragment extends Fragment {
 
     /**
      * The Capsule being edited
@@ -61,9 +61,19 @@ public class CapsuleEditorFragment extends Fragment implements
     private Button mSaveButton;
 
     /**
-     * The name input
+     * The Capsule name input
      */
-    private EditText mNameEditText;
+    private EditText mCapsuleNameEditText;
+
+    /**
+     * The Memoir title input
+     */
+    private EditText mMemoirTitleEditText;
+
+    /**
+     * The Memoir message input
+     */
+    private EditText mMemoirMessageEditText;
 
     /**
      * URI of the file upload
@@ -79,6 +89,11 @@ public class CapsuleEditorFragment extends Fragment implements
      * Listener that handles callbacks
      */
     private CapsuleEditorFragmentListener mListener;
+
+    /**
+     * The BroadcastReceiver for listening for updates from SaveCapsuleService
+     */
+    private SaveCapsuleReceiver mReceiver;
 
     /**
      * Request code for starting an Activity to choose an upload
@@ -130,14 +145,33 @@ public class CapsuleEditorFragment extends Fragment implements
         // Inflate the layout View
         View view = inflater.inflate(R.layout.fragment_capsule_editor, container, false);
 
+        // Get references to the EditTexts
+        this.mCapsuleNameEditText = (EditText) view.findViewById(
+                R.id.fragment_capsule_editor_name);
+        this.mMemoirTitleEditText = (EditText) view.findViewById(
+                R.id.fragment_capsule_editor_memoir_title);
+        this.mMemoirMessageEditText = (EditText) view.findViewById(
+                R.id.fragment_capsule_editor_memoir_message);
+
         // Populate the Views
         if (this.mCapsule != null && this.mAccount != null) {
             // Clone the Capsule
             this.mCapsuleClone = new CapsuleOwnership(this.mCapsule);
             // Capsule name
-            this.mNameEditText = (EditText) view.findViewById(R.id.fragment_capsule_editor_name);
             if (this.mCapsule.getName() != null) {
-                this.mNameEditText.setText(this.mCapsule.getName());
+                this.mCapsuleNameEditText.setText(this.mCapsule.getName());
+            }
+            // Set the Memoir
+            Memoir memoir = this.mCapsule.getMemoir();
+            if (memoir != null) {
+                // Set the Memoir title
+                if (memoir.getTitle() != null) {
+                    this.mMemoirTitleEditText.setText(memoir.getTitle());
+                }
+                // Set the Memoir message
+                if (memoir.getMessage() != null) {
+                    this.mMemoirMessageEditText.setText(memoir.getMessage());
+                }
             }
         }
 
@@ -186,6 +220,28 @@ public class CapsuleEditorFragment extends Fragment implements
             // Preview the upload
             this.setUploadImageView(this.mUploadUri);
         }
+    }
+
+    /**
+     * onResume
+     */
+    @Override
+    public void onResume() {
+        super.onResume();
+        // Register with the BroadcastReceiver
+        this.mReceiver = new SaveCapsuleReceiver();
+        IntentFilter intentFilter = new IntentFilter(SaveCapsuleService.BROADCAST_ACTION);
+        this.getActivity().registerReceiver(this.mReceiver, intentFilter);
+    }
+
+    /**
+     * onPause
+     */
+    @Override
+    public void onPause() {
+        super.onPause();
+        // Unregister the BroadcastReceiver
+        this.getActivity().unregisterReceiver(this.mReceiver);
     }
 
     /**
@@ -240,56 +296,10 @@ public class CapsuleEditorFragment extends Fragment implements
     }
 
     /**
-     * Saves the Capsule on the background thread
-     *
-     * @param params The Capsule being saved
-     * @return The result of the save
-     */
-    @Override
-    public boolean duringOwnershipSave(CapsuleOwnership... params) {
-        return CapsuleOperations.Ownerships.save(this.getActivity().getContentResolver(),
-                params[0], CapsuleContract.SyncStateAction.DIRTY);
-    }
-
-    /**
-     * Disables certain parts of the UI on the UI thread before the Capsule is saved on the background
-     * thread
-     */
-    @Override
-    public void onPreOwnershipSave() {
-        this.mSaveButton.setEnabled(false);
-    }
-
-    /**
-     * If the save was a success, work is delegated to the listener, otherwise the UI
-     * is re-enabled
-     *
-     * @param success The result of the save
-     */
-    @Override
-    public void onPostOwnershipSave(Boolean success) {
-        if (success != null && success && this.mListener != null) {
-            this.mCapsule = this.mCapsuleClone;
-            // Delegates the handling of the success to the listener
-            this.mListener.onSaveSuccess(this, this.mCapsule);
-        } else {
-            this.mSaveButton.setEnabled(true);
-        }
-    }
-
-    /**
-     * Re-enables the UI on the UI thread if the Capsule save background task was cancelled
-     */
-    @Override
-    public void onOwnershipSaveCancelled() {
-        this.mSaveButton.setEnabled(true);
-    }
-
-    /**
      * Checks if the Capsule is valid
      *
-     * @param capsule
-     * @return
+     * @param capsule The Capsule being validated
+     * @return True if it is valid, otherwise false
      */
     private boolean isValid(CapsuleOwnership capsule) {
         // Will hold any errors from validation
@@ -303,11 +313,21 @@ public class CapsuleEditorFragment extends Fragment implements
             if (capsule.getName() == null || TextUtils.isEmpty(capsule.getName())) {
                 errors.add(this.getString(R.string.validation_capsule_name));
             }
-        }
 
-        // Validate the upload
-        if (this.mUploadUri == null) {
-            errors.add(this.getString(R.string.validation_upload_missing));
+            // Validate the Memoir
+            Memoir memoir = capsule.getMemoir();
+            if (memoir == null) {
+                errors.add(this.getString(R.string.validation_memoir_missing));
+            } else {
+                // Memoir title
+                if (memoir.getTitle() == null || TextUtils.isEmpty(memoir.getTitle())) {
+                    errors.add(this.getString(R.string.validation_memoir_missing_title));
+                }
+                // Memoir file content URI
+                if (memoir.getFileContentUri() == null) {
+                    errors.add(this.getString(R.string.validation_upload_missing));
+                }
+            }
         }
 
         boolean isValid = errors.isEmpty();
@@ -371,13 +391,32 @@ public class CapsuleEditorFragment extends Fragment implements
     private final OnClickListener mSaveButtonListener = new OnClickListener() {
         @Override
         public void onClick(View v) {
-            // Capsule name
+            // Set the Capsule name
             CapsuleEditorFragment.this.mCapsuleClone.setName(
-                    CapsuleEditorFragment.this.mNameEditText.getText().toString()
+                    CapsuleEditorFragment.this.mCapsuleNameEditText.getText().toString()
             );
+            // Instantiate new Memoir
+            Memoir memoir = new Memoir();
+            // Set the Memoir title
+            memoir.setTitle(CapsuleEditorFragment.this.mMemoirTitleEditText.getText().toString());
+            // Set the Memoir message
+            memoir.setMessage(
+                    CapsuleEditorFragment.this.mMemoirMessageEditText.getText().toString());
+            // Set the file content URI
+            memoir.setFileContentUri(CapsuleEditorFragment.this.mUploadUri);
+            // Set the Memoir on the Capsule
+            CapsuleEditorFragment.this.mCapsuleClone.setMemoir(memoir);
+
+            // Validate the Capsule
             if (CapsuleEditorFragment.this.isValid(CapsuleEditorFragment.this.mCapsuleClone)) {
+                // Disable the save button
+                CapsuleEditorFragment.this.mSaveButton.setEnabled(false);
                 // Save the Capsule on the background thread
-                new OwnershipSaveTask(CapsuleEditorFragment.this).execute(CapsuleEditorFragment.this.mCapsuleClone);
+                Intent saveIntent = new Intent(CapsuleEditorFragment.this.getActivity(),
+                        SaveCapsuleService.class);
+                saveIntent.putExtra("capsule", CapsuleEditorFragment.this.mCapsuleClone);
+                saveIntent.putExtra("account", CapsuleEditorFragment.this.mAccount);
+                CapsuleEditorFragment.this.getActivity().startService(saveIntent);
             }
         }
     };
@@ -407,6 +446,56 @@ public class CapsuleEditorFragment extends Fragment implements
                     android.R.color.transparent);
         }
     };
+
+    /**
+     * BroadcastReceiver for listening for updates from SaveCapsuleService
+     */
+    private class SaveCapsuleReceiver extends BroadcastReceiver {
+
+        /**
+         * onReceive
+         *
+         * @param context The Context running the BroadcastReceiver
+         * @param intent  The Intent that was broadcast from the Service
+         */
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            // Make sure the Intent is not null
+            if (intent == null) {
+                return;
+            }
+            // Make sure the Intent has extras
+            Bundle extras = intent.getExtras();
+            if (extras == null) {
+                return;
+            }
+            // Check if there was a Capsule object
+            if (extras.containsKey("capsule")) {
+                CapsuleOwnership capsule = extras.getParcelable("capsule");
+                if (capsule != null) {
+                    if (CapsuleEditorFragment.this.mListener != null) {
+                        // Delegates the handling of the success to the listener
+                        CapsuleEditorFragment.this.mListener.onSaveSuccess(
+                                CapsuleEditorFragment.this, capsule);
+                    } else {
+                        // Close the Activity for editing Capsules
+                        CapsuleEditorFragment.this.getActivity().finish();
+                    }
+                }
+            } else if (extras.containsKey("messages")) {
+                // There were messages broadcast from the Service
+                List<String> messages = extras.getStringArrayList("messages");
+                // Delegate the messages to the listener
+                CapsuleEditorFragment.this.mListener.onInvalidCapsuleData(
+                        CapsuleEditorFragment.this, CapsuleEditorFragment.this.mCapsuleClone,
+                        messages);
+            }
+
+            // Re-enable the save button
+            CapsuleEditorFragment.this.mSaveButton.setEnabled(true);
+        }
+
+    }
 
     /**
      * Listener that provides event callbacks for this Fragment
