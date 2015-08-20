@@ -48,6 +48,79 @@ public final class JSONParser {
     }
 
     /**
+     * Parses the messages out of a API response for saving a Capsule
+     *
+     * @param jsonObject JSONObject representing a Web API response
+     * @return Collection of flattened messages
+     * @throws JSONException
+     */
+    public static List<String> parseSaveCapsuleMessages(JSONObject jsonObject)
+            throws JSONException {
+        // Will hold the messages
+        List<String> messages = new ArrayList<String>();
+
+        // Make sure there is a messages key
+        if (!jsonObject.has(RequestContract.Field.MESSAGES)) {
+            return messages;
+        }
+
+        // Get the message object
+        JSONObject jsonMessages = jsonObject.getJSONObject(RequestContract.Field.MESSAGES);
+
+        // Check for the Capsule name key
+        if (jsonMessages.has(RequestContract.Field.CAPSULE_NAME)) {
+            // Get the name key messages
+            JSONArray capsuleNameMessages = jsonMessages.getJSONArray(
+                    RequestContract.Field.CAPSULE_NAME);
+            for (int i = 0; i < capsuleNameMessages.length(); i++) {
+                messages.add(capsuleNameMessages.getString(i));
+            }
+        }
+
+        // Check for the Memoir key
+        if (!jsonMessages.has(RequestContract.Field.MEMOIR_ENTITY)) {
+            return messages;
+        }
+
+        // Get the Memoir array
+        JSONArray jsonMemoirs = jsonMessages.getJSONArray(RequestContract.Field.MEMOIR_ENTITY);
+
+        // Validate the Memoirs
+        for (int i = 0; i < jsonMemoirs.length(); i++) {
+            JSONObject jsonMemoir = jsonMemoirs.getJSONObject(i);
+            // Check for the Memoir title key
+            if (jsonMemoir.has(RequestContract.Field.MEMOIR_TITLE)) {
+                // Get the Memoir title messages
+                JSONArray memoirTitleMessages = jsonMemoir.getJSONArray(
+                        RequestContract.Field.MEMOIR_TITLE);
+                for (int j = 0; j < memoirTitleMessages.length(); j++) {
+                    messages.add(memoirTitleMessages.getString(j));
+                }
+            }
+            // Check for the Memoir message key
+            if (jsonMemoir.has(RequestContract.Field.MEMOIR_MESSAGE)) {
+                // Get the Memoir message messages
+                JSONArray memoirMessageMessages = jsonMemoir.getJSONArray(
+                        RequestContract.Field.MEMOIR_MESSAGE);
+                for (int j = 0; j < memoirMessageMessages.length(); j++) {
+                    messages.add(memoirMessageMessages.getString(j));
+                }
+            }
+            // Check for the Memoir file key
+            if (jsonMemoir.has(RequestContract.Field.MEMOIR_FILE)) {
+                // Get the Memoir file messages
+                JSONArray memoirFileMessages = jsonMemoir.getJSONArray(
+                        RequestContract.Field.MEMOIR_FILE);
+                for (int j = 0; j < memoirFileMessages.length(); j++) {
+                    messages.add(memoirFileMessages.getString(j));
+                }
+            }
+        }
+
+        return messages;
+    }
+
+    /**
      * Parses an authentication token from a JSONObject
      *
      * @param jsonObject JSONObject representing a Web API JSON response
