@@ -43,6 +43,11 @@ public class Capsule implements Parcelable {
     protected double mLongitude;
 
     /**
+     * The Capsule's Memoir
+     */
+    protected Memoir mMemoir;
+
+    /**
      * The database cursor used when populating a Capsule instance on the fly from the database
      */
     protected Cursor mCursor;
@@ -69,6 +74,7 @@ public class Capsule implements Parcelable {
         this.mName = capsule.getName();
         this.mLatitude = capsule.getLatitude();
         this.mLongitude = capsule.getLongitude();
+        this.mMemoir = capsule.getMemoir();
     }
 
     /**
@@ -82,6 +88,7 @@ public class Capsule implements Parcelable {
         this.mName = in.readString();
         this.mLatitude = in.readDouble();
         this.mLongitude = in.readDouble();
+        this.mMemoir = in.readParcelable(Memoir.class.getClassLoader());
     }
 
     /**
@@ -257,6 +264,15 @@ public class Capsule implements Parcelable {
     }
 
     /**
+     * Gets Capsule's Memoir
+     *
+     * @return The Capsule's Memoir
+     */
+    public Memoir getMemoir() {
+        return this.mMemoir;
+    }
+
+    /**
      * Sets the app-specific ID
      *
      * @param id The ID of the Capsule
@@ -299,6 +315,15 @@ public class Capsule implements Parcelable {
      */
     public void setLongitude(double longitude) {
         this.mLongitude = longitude;
+    }
+
+    /**
+     * Sets the Capsule's Memoir
+     *
+     * @param memoir The Memoir belonging to the Capsule
+     */
+    public void setMemoir(Memoir memoir) {
+        this.mMemoir = memoir;
     }
 
     /**
@@ -367,6 +392,7 @@ public class Capsule implements Parcelable {
         dest.writeString(this.mName);
         dest.writeDouble(this.mLatitude);
         dest.writeDouble(this.mLongitude);
+        dest.writeParcelable(this.mMemoir, flags);
     }
 
     /**
