@@ -55,6 +55,9 @@
     <string name="label_upload_image">Image</string>
     <!-- Capsule -->
     <string name="label_capsule_name">Name</string>
+    <!-- Memoir -->
+    <string name="label_memoir_title">Title</string>
+    <string name="label_memoir_message">Message</string>
     <!-- Buttons -->
     <string name="label_login">Login</string>
     <string name="label_register">Register</string>
@@ -69,10 +72,15 @@
     -->
     <!-- General -->
     <string name="progress_please_wait">Please wait&#8230;</string>
+    <!-- Capsule -->
+    <string name="progress_saving_capsule">Saving the capsule&#8230;</string>
 
     <!--
         Result messages
     -->
+    <!-- General -->
+    <string name="result_complete">Complete!</string>
+    <string name="result_error_encountered">The process encountered an error.</string>
     <!-- Capsule -->
     <string name="result_opened_capsule">Opened!</string>
 
@@ -90,6 +98,9 @@
     <!-- Capsule validation -->
     <string name="validation_capsule_missing">The capsule data could not be found.</string>
     <string name="validation_capsule_name">Please enter a valid capsule name.</string>
+    <!-- Memoir validation -->
+    <string name="validation_memoir_missing">The image attachment data could not be found.</string>
+    <string name="validation_memoir_missing_title">Please enter a valid image attachment title.</string>
     <!-- Upload validation -->
     <string name="validation_upload_missing">An upload file was not chosen.</string>
     <string name="validation_upload_exceeds_size_limit">The chosen upload exceeds the file limit:\u0020</string>
@@ -101,6 +112,8 @@
     <string name="error_cannot_open_capsule">The capsule could not be opened.</string>
     <string name="error_cannot_open_missing_data">Something was missing so the capsule could not be opened.</string>
     <string name="error_cannot_load_capsules">The capsules could not be loaded.</string>
+    <!-- HTTP -->
+    <string name="error_cannot_parse_http_response">The HTTP response could not be parsed.</string>
     <!-- Google API -->
     <string name="error_google_api_cannot_connect">The Google API services cannot be reached.</string>
     <string name="error_cannot_retrieve_location">Your current location could no be retrieved.</string>

@@ -24,6 +24,8 @@
         android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission
         android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission
+        android:name="android.permission.WAKE_LOCK" />
 
     <uses-sdk
         android:minSdkVersion="9"
@@ -71,6 +73,9 @@
 		        android:name="android.content.SyncAdapter"
 		        android:resource="@xml/syncadapter" />
 		</service>
+        <service
+            android:name=".services.SaveCapsuleService"
+            android:exported="false"></service>
         <activity
             android:name=".authenticator.LoginActivity"
             android:excludeFromRecents="true">
