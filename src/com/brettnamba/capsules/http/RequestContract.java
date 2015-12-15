@@ -30,12 +30,12 @@ public final class RequestContract {
         /**
          * The URI for user authentication.
          */
-        public static final String AUTH_URI = "/api/authenticate";
+        public static final String AUTH_URI = "/api/token";
 
         /**
          * The URI for user registration.
          */
-        public static final String REGISTER_URI = "/api/register";
+        public static final String REGISTER_URI = "/api/user";
 
         /**
          * The URI for getting nearby undiscovered Capsules.
