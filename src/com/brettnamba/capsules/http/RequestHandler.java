@@ -8,6 +8,7 @@ import com.brettnamba.capsules.Constants;
 import com.brettnamba.capsules.dataaccess.Capsule;
 import com.brettnamba.capsules.dataaccess.CapsuleOwnership;
 import com.brettnamba.capsules.dataaccess.Memoir;
+import com.brettnamba.capsules.http.response.JsonResponse;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
@@ -52,54 +53,62 @@ public class RequestHandler {
     }
 
     /**
-     * Authenticates a user via GET and returns their authentication token.
+     * Sends an HTTP request to authenticate a user with the specified username and password
      *
-     * @param username
-     * @param password
-     * @return HttpResponse
-     * @throws ParseException
+     * @param context  The current Context
+     * @param username The username
+     * @param password The password
+     * @return HTTP response object
      * @throws IOException
      */
-    public HttpResponse authenticate(String username, String password) throws IOException {
-        // GET
-        HttpGet request = new HttpGet(RequestContract.BASE_URL + RequestContract.Uri.AUTH_URI);
+    public static JsonResponse authenticate(Context context, String username, String password)
+            throws IOException {
+        // Initialize the request
+        HttpUrlGetRequest request = new HttpUrlGetRequest(context,
+                RequestContract.BASE_URL + RequestContract.Uri.AUTH_URI);
+        request.addRequestHeader("Accept", "application/json");
 
-        // Headers
-        request.addHeader(HTTP.TARGET_HOST, RequestContract.HOST);
-        request.addHeader(RequestContract.AUTH_HEADER, "Basic " + Base64.encodeToString((username + ":" + password).getBytes(), Base64.DEFAULT));
+        // Add the authentication header
+        request.addRequestHeader(RequestContract.AUTH_HEADER, "Basic " +
+                Base64.encodeToString((username + ":" + password).getBytes(), Base64.DEFAULT));
 
-        // Send and get the response
-        return this.mClient.execute(request);
+        // Send
+        request.send();
+
+        // Initialize the response
+        return new JsonResponse(request);
     }
 
     /**
-     * Registers a user and returns an authentication token.
+     * Sends an HTTP request that registers a new user
      *
-     * @param username
-     * @param email
-     * @param password
-     * @param passwordConfirm
-     * @return
+     * @param context         The current Context
+     * @param username        The username to register
+     * @param email           The email
+     * @param password        The password
+     * @param passwordConfirm The password confirmation
+     * @return HTTP response object
      * @throws IOException
      */
-    public HttpResponse register(String username, String email, String password, String passwordConfirm) throws IOException {
-        // POST
-        HttpPost request = new HttpPost(RequestContract.BASE_URL + RequestContract.Uri.REGISTER_URI);
+    public static JsonResponse register(Context context, String username, String email,
+                                        String password, String passwordConfirm)
+            throws IOException {
+        // Initialize the request
+        HttpUrlWwwFormRequest request = new HttpUrlWwwFormRequest(context,
+                RequestContract.BASE_URL + RequestContract.Uri.REGISTER_URI);
+        request.addRequestHeader("Accept", "application/json");
 
-        // Headers
-        request.addHeader(HTTP.TARGET_HOST, RequestContract.HOST);
-        request.addHeader(HTTP.CONTENT_TYPE, URLEncodedUtils.CONTENT_TYPE);
+        // Add the request body
+        request.addRequestParameter(RequestContract.Field.USERNAME, username);
+        request.addRequestParameter(RequestContract.Field.EMAIL, email);
+        request.addRequestParameter(RequestContract.Field.PASSWORD, password);
+        request.addRequestParameter(RequestContract.Field.PASSWORD_CONFIRMATION, passwordConfirm);
 
-        // POST body
-        ArrayList<NameValuePair> params = new ArrayList<NameValuePair>();
-        params.add(new BasicNameValuePair("data[" + RequestContract.Field.USERNAME + "]", username));
-        params.add(new BasicNameValuePair("data[" + RequestContract.Field.EMAIL + "]", email));
-        params.add(new BasicNameValuePair("data[" + RequestContract.Field.PASSWORD + "]", password));
-        params.add(new BasicNameValuePair("data[" + RequestContract.Field.PASSWORD_CONFIRMATION + "]", passwordConfirm));
-        request.setEntity(new UrlEncodedFormEntity(params));
+        // Send
+        request.send();
 
-        // Send and get the response
-        return this.mClient.execute(request);
+        // Initialize the response
+        return new JsonResponse(request);
     }
 
     /**
@@ -299,7 +308,7 @@ public class RequestHandler {
                                                         HttpUrlConnectionRequest.DataSentListener
                                                                 onDataSentListener) {
         HttpUrlWwwFormRequest httpRequest = new HttpUrlWwwFormRequest(
-                context, HttpPost.METHOD_NAME,
+                context,
                 RequestContract.BASE_URL + RequestContract.Uri.VALIDATE_CAPSULE_URI,
                 account, Constants.AUTH_TOKEN_TYPE
         );
@@ -331,7 +340,7 @@ public class RequestHandler {
                                                       HttpUrlConnectionRequest.DataSentListener
                                                               onDataSentListener) {
         HttpUrlMultiPartRequest httpRequest = new HttpUrlMultiPartRequest(
-                context, HttpPost.METHOD_NAME,
+                context,
                 RequestContract.BASE_URL + RequestContract.Uri.SAVE_CAPSULE_URI,
                 account, Constants.AUTH_TOKEN_TYPE
         );

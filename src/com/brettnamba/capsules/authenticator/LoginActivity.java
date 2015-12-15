@@ -17,15 +17,12 @@ import android.widget.TextView;
 
 import com.brettnamba.capsules.Constants;
 import com.brettnamba.capsules.R;
-import com.brettnamba.capsules.http.HttpFactory;
 import com.brettnamba.capsules.http.RequestHandler;
-import com.brettnamba.capsules.http.response.AuthenticationResponse;
+import com.brettnamba.capsules.http.response.JsonResponse;
 import com.brettnamba.capsules.os.AsyncListenerTask;
 import com.brettnamba.capsules.os.AuthenticationTask;
 import com.brettnamba.capsules.os.RetainedTaskFragment;
 import com.brettnamba.capsules.util.Widgets;
-
-import org.apache.http.HttpResponse;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -41,11 +38,6 @@ public class LoginActivity extends FragmentActivity implements AsyncListenerTask
      * Handles adding Accounts to the device
      */
     private AccountManager mAccountManager;
-
-    /**
-     * Handles HTTP requests
-     */
-    private RequestHandler mRequestHandler;
 
     /**
      * Fragment to persist an authentication AsyncTask over the Activity's lifecycle
@@ -94,15 +86,14 @@ public class LoginActivity extends FragmentActivity implements AsyncListenerTask
         this.setContentView(R.layout.activity_login);
 
         // Check to see if an AccountAuthenticatorResponse was passed with the Intent
-        this.mAccountAuthenticatorResponse = this.getIntent().getParcelableExtra(AccountManager.KEY_ACCOUNT_AUTHENTICATOR_RESPONSE);
+        this.mAccountAuthenticatorResponse = this.getIntent().getParcelableExtra(
+                AccountManager.KEY_ACCOUNT_AUTHENTICATOR_RESPONSE);
         if (this.mAccountAuthenticatorResponse != null) {
             this.mAccountAuthenticatorResponse.onRequestContinued();
         }
 
         // AccountManager
         this.mAccountManager = AccountManager.get(this);
-        // HTTP request handler
-        this.mRequestHandler = new RequestHandler(HttpFactory.getInstance());
 
         // If the Activity is being recreated, see if there are any retained Fragments
         FragmentManager fragmentManager = this.getSupportFragmentManager();
@@ -207,7 +198,7 @@ public class LoginActivity extends FragmentActivity implements AsyncListenerTask
      *
      * @param response HTTP response representing the authentication result
      */
-    private void handleAuthenticationResponse(AuthenticationResponse response) {
+    private void handleAuthenticationResponse(JsonResponse response) {
         // Check if there is an authentication token in the response
         if (response.getAuthToken() != null && response.getAuthToken().length() > 0) {
             // Get the username
@@ -285,15 +276,14 @@ public class LoginActivity extends FragmentActivity implements AsyncListenerTask
      * Callback for the authentication AsyncTask's doInBackground()
      *
      * @param params Credentials to be used in the authentication HTTP request
-     * @return AuthenticationResponse Response of the authentication request
+     * @return JsonResponse Response of the authentication request
      */
     @Override
-    public AuthenticationResponse duringAuthentication(String... params) {
+    public JsonResponse duringAuthentication(String... params) {
         try {
             final String username = params[0];
             final String password = params[1];
-            HttpResponse httpResponse = this.mRequestHandler.authenticate(username, password);
-            return new AuthenticationResponse(httpResponse);
+            return RequestHandler.authenticate(this.getApplicationContext(), username, password);
         } catch (IOException e) {
             return null;
         }
@@ -318,9 +308,9 @@ public class LoginActivity extends FragmentActivity implements AsyncListenerTask
      * @param response The HTTP response from the authentication request
      */
     @Override
-    public void onPostAuthentication(AuthenticationResponse response) {
+    public void onPostAuthentication(JsonResponse response) {
         if (response != null) {
-            if (response.isClientError() || response.isServerError()) {
+            if (response.isError()) {
                 // Show messages
                 this.setMessages(response.getMessages());
             } else {

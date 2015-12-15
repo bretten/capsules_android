@@ -17,15 +17,12 @@ import android.widget.TextView;
 import com.brettnamba.capsules.Constants;
 import com.brettnamba.capsules.MainActivity;
 import com.brettnamba.capsules.R;
-import com.brettnamba.capsules.http.HttpFactory;
 import com.brettnamba.capsules.http.RequestHandler;
-import com.brettnamba.capsules.http.response.AuthenticationResponse;
+import com.brettnamba.capsules.http.response.JsonResponse;
 import com.brettnamba.capsules.os.AsyncListenerTask;
 import com.brettnamba.capsules.os.AuthenticationTask;
 import com.brettnamba.capsules.os.RetainedTaskFragment;
 import com.brettnamba.capsules.util.Widgets;
-
-import org.apache.http.HttpResponse;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -41,11 +38,6 @@ public class RegisterActivity extends FragmentActivity implements AsyncListenerT
      * AccountManager to handle adding Accounts
      */
     private AccountManager mAccountManager;
-
-    /**
-     * Handles HTTP requests
-     */
-    private RequestHandler mRequestHandler;
 
     /**
      * Fragment to persist the authentication AsyncTask over the Activity's lifecycle since
@@ -95,8 +87,6 @@ public class RegisterActivity extends FragmentActivity implements AsyncListenerT
 
         // AccountManager
         this.mAccountManager = AccountManager.get(this);
-        // HTTP request handler
-        this.mRequestHandler = new RequestHandler(HttpFactory.getInstance());
 
         // If the Activity is being recreated, see if there are any RetainedTaskFragments
         FragmentManager fragmentManager = this.getSupportFragmentManager();
@@ -161,7 +151,7 @@ public class RegisterActivity extends FragmentActivity implements AsyncListenerT
      *
      * @param response Represents the response of the registration request
      */
-    private void finishRegistration(AuthenticationResponse response) {
+    private void finishRegistration(JsonResponse response) {
         // Check the response for an authentication token
         if (response.getAuthToken() != null && response.getAuthToken().length() > 0) {
             // Get the username
@@ -254,17 +244,17 @@ public class RegisterActivity extends FragmentActivity implements AsyncListenerT
      * Callback for the authentication AsyncTask's doInBackground()
      *
      * @param params Credentials to be used in the authentication HTTP request
-     * @return AuthenticationResponse Response of the authentication request
+     * @return JsonResponse Response of the authentication request
      */
     @Override
-    public AuthenticationResponse duringAuthentication(String... params) {
+    public JsonResponse duringAuthentication(String... params) {
         try {
             final String username = params[0];
             final String email = params[1];
             final String password = params[2];
             final String passwordConfirm = params[3];
-            final HttpResponse httpResponse = this.mRequestHandler.register(username, email, password, passwordConfirm);
-            return new AuthenticationResponse(httpResponse);
+            return RequestHandler.register(this.getApplicationContext(), username, email, password,
+                    passwordConfirm);
         } catch (IOException e) {
             return null;
         }
@@ -289,9 +279,9 @@ public class RegisterActivity extends FragmentActivity implements AsyncListenerT
      * @param response The HTTP response from the authentication request
      */
     @Override
-    public void onPostAuthentication(AuthenticationResponse response) {
+    public void onPostAuthentication(JsonResponse response) {
         if (response != null) {
-            if (response.isClientError() || response.isServerError()) {
+            if (response.isError()) {
                 // Set messages
                 this.setMessages(response.getMessages());
             } else {

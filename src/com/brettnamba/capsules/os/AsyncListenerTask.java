@@ -5,9 +5,9 @@ import android.os.AsyncTask;
 
 import com.brettnamba.capsules.dataaccess.CapsuleDiscovery;
 import com.brettnamba.capsules.dataaccess.CapsuleOwnership;
-import com.brettnamba.capsules.http.response.AuthenticationResponse;
 import com.brettnamba.capsules.http.response.CapsuleOpenResponse;
 import com.brettnamba.capsules.http.response.CapsulePingResponse;
+import com.brettnamba.capsules.http.response.JsonResponse;
 
 /**
  * Abstraction of AsyncTask that is meant to use listeners when the
@@ -20,7 +20,8 @@ import com.brettnamba.capsules.http.response.CapsulePingResponse;
  * @param <Progress>
  * @param <Result>
  */
-public abstract class AsyncListenerTask<Params, Progress, Result> extends AsyncTask<Params, Progress, Result> {
+public abstract class AsyncListenerTask<Params, Progress, Result>
+        extends AsyncTask<Params, Progress, Result> {
 
     /**
      * Sets the listener for the AsyncTask
@@ -50,7 +51,7 @@ public abstract class AsyncListenerTask<Params, Progress, Result> extends AsyncT
          * @param params Credentials to be used in the authentication HTTP request
          * @return AuthenticationResponse
          */
-        AuthenticationResponse duringAuthentication(String... params);
+        JsonResponse duringAuthentication(String... params);
 
         /**
          * Should handle onPreExecute() work
@@ -62,7 +63,7 @@ public abstract class AsyncListenerTask<Params, Progress, Result> extends AsyncT
          *
          * @param response The HTTP response from the authentication request
          */
-        void onPostAuthentication(AuthenticationResponse response);
+        void onPostAuthentication(JsonResponse response);
 
         /**
          * Should handle onCancelled() work

@@ -1,11 +1,11 @@
 package com.brettnamba.capsules.os;
 
-import com.brettnamba.capsules.http.response.AuthenticationResponse;
+import com.brettnamba.capsules.http.response.JsonResponse;
 
 /**
  * AsyncTask to handle registering a new user via the API
  */
-public class AuthenticationTask extends AsyncListenerTask<String, Void, AuthenticationResponse> {
+public class AuthenticationTask extends AsyncListenerTask<String, Void, JsonResponse> {
 
     /**
      * The listener that handles the callbacks
@@ -31,7 +31,8 @@ public class AuthenticationTask extends AsyncListenerTask<String, Void, Authenti
         try {
             this.mListener = (AuthenticationTaskListener) listener;
         } catch (ClassCastException e) {
-            throw new ClassCastException(listener.toString() + " does not implement AuthenticationTaskListener");
+            throw new ClassCastException(
+                    listener.toString() + " does not implement AuthenticationTaskListener");
         }
     }
 
@@ -50,7 +51,7 @@ public class AuthenticationTask extends AsyncListenerTask<String, Void, Authenti
      * @return The result of the authentication request
      */
     @Override
-    protected AuthenticationResponse doInBackground(String... params) {
+    protected JsonResponse doInBackground(String... params) {
         if (this.mListener != null) {
             return this.mListener.duringAuthentication(params);
         }
@@ -73,7 +74,7 @@ public class AuthenticationTask extends AsyncListenerTask<String, Void, Authenti
      * @param response The HTTP response of the authentication
      */
     @Override
-    protected void onPostExecute(AuthenticationResponse response) {
+    protected void onPostExecute(JsonResponse response) {
         if (this.mListener != null) {
             this.mListener.onPostAuthentication(response);
         }
