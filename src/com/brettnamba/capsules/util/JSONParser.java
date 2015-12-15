@@ -181,6 +181,48 @@ public final class JSONParser {
     }
 
     /**
+     * Parses a collection of Capsules from a JSONObject
+     *
+     * @param json The JSONObject
+     * @return A collection of Capsules parsed from the JSONObject
+     * @throws JSONException
+     */
+    public static List<Capsule> parseCapsules(JSONObject json) throws JSONException {
+        // Will hold the Capsule objects
+        List<Capsule> capsules = new ArrayList<Capsule>();
+
+        // Make sure the JSON object has the resource key
+        if (!json.has(RequestContract.Field.DATA)) {
+            return capsules;
+        }
+
+        // Get the JSON data object
+        JSONObject data = json.getJSONObject(RequestContract.Field.DATA);
+
+        // Make sure the Capsules key exists
+        if (!data.has(RequestContract.Field.CAPSULE_COLLECTION)) {
+            return capsules;
+        }
+
+        // Get the array of Capsules from the data object
+        JSONArray jsonCapsules = data.getJSONArray(RequestContract.Field.CAPSULE_COLLECTION);
+        // Iterate through the array and build Capsules from the JSON objects
+        for (int i = 0; i < jsonCapsules.length(); i++) {
+            // Get the Capsule entry
+            JSONObject entry = jsonCapsules.getJSONObject(i);
+            if (!entry.has(RequestContract.Field.CAPSULE_ENTITY)) {
+                continue;
+            }
+            // Get the Capsule object
+            JSONObject jsonCapsule = entry.getJSONObject(RequestContract.Field.CAPSULE_ENTITY);
+            // Parse the Capsule and add it to the collection
+            capsules.add(new Capsule(jsonCapsule));
+        }
+
+        return capsules;
+    }
+
+    /**
      * Parses a JSON response from the API that holds undiscovered Capsules
      *
      * @param json JSON object created from the HTTP response
