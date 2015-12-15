@@ -93,32 +93,29 @@ public class HttpUrlMultiPartRequest extends HttpUrlConnectionRequest {
     private static final int BUFFER_LENGTH = 4096;
 
     /**
-     * Constructs an instance without authentication information
+     * Constructs an instance only with the request URL
      *
-     * @param context       The current Context
-     * @param requestMethod The HTTP request method
-     * @param requestUrl    The HTTP request URL
+     * @param context    The current Context
+     * @param requestUrl The HTTP request URL
      */
-    public HttpUrlMultiPartRequest(Context context, String requestMethod, String requestUrl) {
-        super(context, requestMethod, requestUrl);
+    public HttpUrlMultiPartRequest(Context context, String requestUrl) {
+        super(context, requestUrl);
         this.mRequestParameterBytesCollection = new ArrayList<byte[]>();
         this.mFileUploadContentUris = new HashMap<String, Uri>();
         this.mFileUploadHeaderBytesCollection = new HashMap<Uri, byte[]>();
     }
 
     /**
-     * Constructs an instance with authentication information and adds the authentication header to
-     * the collection of request headers
+     * Constructs an instance only with the request URL and authentication header
      *
      * @param context       The current Context
-     * @param requestMethod The HTTP request method
      * @param requestUrl    The HTTP request URL
      * @param account       The Account that will be used to get the authentication token
      * @param authTokenType The type of authentication token
      */
-    public HttpUrlMultiPartRequest(Context context, String requestMethod, String requestUrl,
-                                   Account account, String authTokenType) {
-        super(context, requestMethod, requestUrl, account, authTokenType);
+    public HttpUrlMultiPartRequest(Context context, String requestUrl, Account account,
+                                   String authTokenType) {
+        super(context, requestUrl, account, authTokenType);
         this.mRequestParameterBytesCollection = new ArrayList<byte[]>();
         this.mFileUploadContentUris = new HashMap<String, Uri>();
         this.mFileUploadHeaderBytesCollection = new HashMap<Uri, byte[]>();

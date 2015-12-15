@@ -9,14 +9,19 @@ import android.os.Build;
 import android.support.v4.util.Pair;
 import android.util.Base64;
 
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.protocol.HTTP;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.ProtocolException;
 import java.net.URL;
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -64,6 +69,11 @@ public abstract class HttpUrlConnectionRequest {
     protected String mRequestUrl;
 
     /**
+     * Collection of query parameters to append to the request URL
+     */
+    protected List<Pair<String, String>> mQueryParameters;
+
+    /**
      * Collection of HTTP request headers to be added to the request
      */
     protected List<Pair<String, String>> mRequestHeaders;
@@ -83,6 +93,11 @@ public abstract class HttpUrlConnectionRequest {
      * The stream used for writing the HTTP request data
      */
     protected OutputStream mRequestStream;
+
+    /**
+     * The HTTP response code
+     */
+    protected int mResponseCode;
 
     /**
      * The stream used for writing the HTTP response data
@@ -114,9 +129,40 @@ public abstract class HttpUrlConnectionRequest {
      * other constructors
      */
     protected HttpUrlConnectionRequest() {
+        this.mQueryParameters = new ArrayList<Pair<String, String>>();
         this.mRequestHeaders = new ArrayList<Pair<String, String>>();
+        this.mRequestParameters = new ArrayList<Pair<String, String>>();
         // Add default HTTP headers
         this.addDefaultRequestHeaders();
+    }
+
+    /**
+     * Constructs an instance only with the request URL
+     *
+     * @param context    The current Context
+     * @param requestUrl The HTTP request URL
+     */
+    public HttpUrlConnectionRequest(Context context, String requestUrl) {
+        this();
+        this.mContext = context;
+        this.mRequestUrl = requestUrl;
+    }
+
+    /**
+     * Constructs an instance only with the request URL and authentication header
+     *
+     * @param context       The current Context
+     * @param requestUrl    The HTTP request URL
+     * @param account       The Account that will be used to get the authentication token
+     * @param authTokenType The type of authentication token
+     */
+    public HttpUrlConnectionRequest(Context context, String requestUrl, Account account,
+                                    String authTokenType) {
+        this(context, requestUrl);
+        this.mAccount = account;
+        this.mAuthTokenType = authTokenType;
+        // Add the auth header
+        this.addAuthHeader(this.mAuthTokenType, this.mAccount);
     }
 
     /**
@@ -131,7 +177,6 @@ public abstract class HttpUrlConnectionRequest {
         this.mContext = context;
         this.mRequestMethod = requestMethod;
         this.mRequestUrl = requestUrl;
-        this.mRequestParameters = new ArrayList<Pair<String, String>>();
     }
 
     /**
@@ -161,6 +206,19 @@ public abstract class HttpUrlConnectionRequest {
      */
     public void setListener(DataSentListener dataSentListener) {
         this.mListener = dataSentListener;
+    }
+
+    /**
+     * Adds a query parameter
+     *
+     * @param parameter The query parameter name
+     * @param value     The query parameter value
+     */
+    public void addQueryParameter(String parameter, String value) {
+        if (parameter == null || value == null) {
+            throw new IllegalArgumentException("Parameter or value cannot be null");
+        }
+        this.mQueryParameters.add(new Pair<String, String>(parameter, value));
     }
 
     /**
@@ -199,6 +257,15 @@ public abstract class HttpUrlConnectionRequest {
     }
 
     /**
+     * Returns the HTTP response code
+     *
+     * @return Returns the HTTP response code
+     */
+    public int getResponseCode() {
+        return this.mResponseCode;
+    }
+
+    /**
      * Returns the HTTP response body as a String
      *
      * @return The HTTP response body string
@@ -213,6 +280,8 @@ public abstract class HttpUrlConnectionRequest {
      */
     public void send() {
         try {
+            // Append the request parameters
+            this.appendQueryParameters(this.mQueryParameters);
             // Instantiate the HttpUrlConnection
             final URL url = new URL(this.mRequestUrl);
             this.mHttpUrlConnection = (HttpURLConnection) url.openConnection();
@@ -223,27 +292,31 @@ public abstract class HttpUrlConnectionRequest {
             // Set the request headers to the connection object
             this.addRequestHeadersToConnection(this.mRequestHeaders);
 
-            // Determine the content length of the request body
-            this.mRequestBodyLength = this.determineRequestBodyLength();
+            // Check to see if the request method supports a request body
+            if (this.supportsRequestBody()) {
+                // Determine the content length of the request body
+                this.mRequestBodyLength = this.determineRequestBodyLength();
 
-            // Set the pre-determined content length
-            if (Build.VERSION.SDK_INT >= 19) {
-                this.mHttpUrlConnection.setFixedLengthStreamingMode(this.mRequestBodyLength);
-            } else {
-                this.mHttpUrlConnection.setFixedLengthStreamingMode((int) this.mRequestBodyLength);
+                // Set the pre-determined content length
+                if (Build.VERSION.SDK_INT >= 19) {
+                    this.mHttpUrlConnection.setFixedLengthStreamingMode(this.mRequestBodyLength);
+                } else {
+                    this.mHttpUrlConnection
+                            .setFixedLengthStreamingMode((int) this.mRequestBodyLength);
+                }
+
+                // Get the stream for the request
+                this.mRequestStream = this.mHttpUrlConnection.getOutputStream();
+
+                // Write to the request stream
+                this.writeToRequestStream();
             }
 
-            // Get the stream for the request
-            this.mRequestStream = this.mHttpUrlConnection.getOutputStream();
-
-            // Write to the request stream
-            this.writeToRequestStream();
-
             // Get the HTTP response code
-            final int responseCode = this.mHttpUrlConnection.getResponseCode();
+            this.mResponseCode = this.mHttpUrlConnection.getResponseCode();
 
             // Check if the response code was in the success range
-            if (responseCode >= 200 && responseCode <= 299) {
+            if (this.mResponseCode >= 200 && this.mResponseCode <= 299) {
                 this.mResponseStream = this.mHttpUrlConnection.getInputStream();
                 this.mIsSuccess = true;
             } else {
@@ -268,7 +341,8 @@ public abstract class HttpUrlConnectionRequest {
      * @param httpUrlConnection The HTTP request object that will be setup
      * @throws ProtocolException
      */
-    protected abstract void setupRequest(HttpURLConnection httpUrlConnection) throws ProtocolException;
+    protected abstract void setupRequest(HttpURLConnection httpUrlConnection)
+            throws ProtocolException;
 
     /**
      * Determines the content length of the HTTP request body.  Implementing classes should
@@ -314,6 +388,38 @@ public abstract class HttpUrlConnectionRequest {
     }
 
     /**
+     * URL encodes all the parameters
+     *
+     * @param parameters The collection of parameters to encode
+     * @return The full URL encoded representation of all the parameters
+     * @throws UnsupportedEncodingException
+     */
+    protected String urlEncodeParameters(List<Pair<String, String>> parameters)
+            throws UnsupportedEncodingException {
+        if (parameters == null || parameters.isEmpty()) {
+            return "";
+        }
+
+        StringBuilder stringBuilder = new StringBuilder();
+        boolean isFirst = true;
+
+        for (Pair<String, String> parameter : parameters) {
+            // See if an ampersand needs to be added
+            if (isFirst) {
+                isFirst = false;
+            } else {
+                stringBuilder.append("&");
+            }
+
+            stringBuilder.append(URLEncoder.encode(parameter.first, HTTP.UTF_8));
+            stringBuilder.append("=");
+            stringBuilder.append(URLEncoder.encode(parameter.second, HTTP.UTF_8));
+        }
+
+        return stringBuilder.toString();
+    }
+
+    /**
      * Notifies the DataSentListener the number of bytes that were just uploaded and the total
      * number of bytes it needs to upload
      *
@@ -323,6 +429,34 @@ public abstract class HttpUrlConnectionRequest {
     protected void notifyDataSentListener(long bytesUploaded, long totalBytes) {
         if (this.mListener != null) {
             this.mListener.onDataSent(bytesUploaded, totalBytes);
+        }
+    }
+
+    /**
+     * Determines if this request supports a request body
+     *
+     * @return True if it supports a request body, otherwise false
+     */
+    private boolean supportsRequestBody() {
+        return this.mHttpUrlConnection.getRequestMethod().equals(HttpPost.METHOD_NAME);
+    }
+
+    /**
+     * Appends the query parameters to the request URL
+     *
+     * @param queryParameters The query parameters to append to the request URL
+     * @throws UnsupportedEncodingException
+     */
+    private void appendQueryParameters(List<Pair<String, String>> queryParameters)
+            throws UnsupportedEncodingException {
+        if (queryParameters == null || queryParameters.isEmpty()) {
+            return;
+        }
+        // Combine and encode the query parameters
+        String combinedQueryParameters = this.urlEncodeParameters(queryParameters);
+        // Append the query parameters to the request URL
+        if (this.mRequestUrl != null) {
+            this.mRequestUrl += "?" + combinedQueryParameters;
         }
     }
 

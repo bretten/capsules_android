@@ -2,17 +2,13 @@ package com.brettnamba.capsules.http;
 
 import android.accounts.Account;
 import android.content.Context;
-import android.support.v4.util.Pair;
 
 import org.apache.http.client.methods.HttpPost;
-import org.apache.http.protocol.HTTP;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.ProtocolException;
-import java.net.URLEncoder;
-import java.util.List;
 
 /**
  * Implementation of HttpUrlConnectionRequest that provides functionality for sending a
@@ -28,29 +24,26 @@ public class HttpUrlWwwFormRequest extends HttpUrlConnectionRequest {
     protected byte[] mRequestParameterBytes;
 
     /**
-     * Constructs an instance without authentication information
+     * Constructs an instance only with the request URL
      *
-     * @param context       The current Context
-     * @param requestMethod The HTTP request method
-     * @param requestUrl    The HTTP request URL
+     * @param context    The current Context
+     * @param requestUrl The HTTP request URL
      */
-    public HttpUrlWwwFormRequest(Context context, String requestMethod, String requestUrl) {
-        super(context, requestMethod, requestUrl);
+    public HttpUrlWwwFormRequest(Context context, String requestUrl) {
+        super(context, requestUrl);
     }
 
     /**
-     * Constructs an instance with authentication information and adds the authentication header to
-     * the collection of request headers
+     * Constructs an instance only with the request URL and authentication header
      *
      * @param context       The current Context
-     * @param requestMethod The HTTP request method
      * @param requestUrl    The HTTP request URL
      * @param account       The Account that will be used to get the authentication token
      * @param authTokenType The type of authentication token
      */
-    public HttpUrlWwwFormRequest(Context context, String requestMethod, String requestUrl,
-                                 Account account, String authTokenType) {
-        super(context, requestMethod, requestUrl, account, authTokenType);
+    public HttpUrlWwwFormRequest(Context context, String requestUrl, Account account,
+                                 String authTokenType) {
+        super(context, requestUrl, account, authTokenType);
     }
 
     /**
@@ -90,7 +83,8 @@ public class HttpUrlWwwFormRequest extends HttpUrlConnectionRequest {
             // Write the final boundary to the stream
             this.mRequestStream.write(this.mRequestParameterBytes);
             // Notify the listener tracking the amount of data sent
-            this.notifyDataSentListener(this.mRequestParameterBytes.length, this.mRequestBodyLength);
+            this.notifyDataSentListener(this.mRequestParameterBytes.length,
+                    this.mRequestBodyLength);
         } catch (IOException e) {
         }
     }
@@ -109,33 +103,6 @@ public class HttpUrlWwwFormRequest extends HttpUrlConnectionRequest {
             this.mTotalRequestParameterByteCount = this.mRequestParameterBytes.length;
         } catch (UnsupportedEncodingException e) {
         }
-    }
-
-    /**
-     * URL encodes all the request parameters and builds the request body string
-     *
-     * @param requestParameters The collection of request parameters to add to the request body
-     * @return The full URL encoded representation of all the request parameters
-     * @throws UnsupportedEncodingException
-     */
-    private String urlEncodeParameters(List<Pair<String, String>> requestParameters) throws UnsupportedEncodingException {
-        StringBuilder stringBuilder = new StringBuilder();
-        boolean isFirst = true;
-
-        for (Pair<String, String> requestParameter : requestParameters) {
-            // See if an ampersand needs to be added
-            if (isFirst) {
-                isFirst = false;
-            } else {
-                stringBuilder.append("&");
-            }
-
-            stringBuilder.append(URLEncoder.encode(requestParameter.first, HTTP.UTF_8));
-            stringBuilder.append("=");
-            stringBuilder.append(URLEncoder.encode(requestParameter.second, HTTP.UTF_8));
-        }
-
-        return stringBuilder.toString();
     }
 
 }
