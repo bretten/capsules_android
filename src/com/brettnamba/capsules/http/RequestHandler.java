@@ -293,6 +293,56 @@ public class RequestHandler {
     }
 
     /**
+     * Requests a collection of Capsules
+     *
+     * @param context    The current Context
+     * @param account    The Account to be used for authentication
+     * @param parameters Parameters for the HTTP request
+     * @return HTTP response object
+     */
+    public static JsonResponse requestCapsules(Context context, Account account,
+                                               CapsuleRequestParameters parameters) {
+        // Initialize the request
+        HttpUrlGetRequest request = new HttpUrlGetRequest(context,
+                RequestContract.BASE_URL + RequestContract.Uri.CAPSULES_URI, account,
+                Constants.AUTH_TOKEN_TYPE);
+        request.addRequestHeader("Accept", "application/json");
+
+        // Add the query parameters
+        request.addAllQueryParameters(parameters.getAsCollection());
+
+        // Send the request
+        request.send();
+
+        return new JsonResponse(request);
+    }
+
+    /**
+     * Requests a collection of Discoveries
+     *
+     * @param context    The current Context
+     * @param account    The Account to be used for authentication
+     * @param parameters Parameters for the HTTP request
+     * @return HTTP response object
+     */
+    public static JsonResponse requestDiscoveries(Context context, Account account,
+                                                  CapsuleRequestParameters parameters) {
+        // Initialize the request
+        HttpUrlGetRequest request = new HttpUrlGetRequest(context,
+                RequestContract.BASE_URL + RequestContract.Uri.DISCOVERIES_URI, account,
+                Constants.AUTH_TOKEN_TYPE);
+        request.addRequestHeader("Accept", "application/json");
+
+        // Add the query parameters
+        request.addAllQueryParameters(parameters.getAsCollection());
+
+        // Send the request
+        request.send();
+
+        return new JsonResponse(request);
+    }
+
+    /**
      * Sends a Capsule validation request and returns HTTP request object also containing the
      * request data
      *

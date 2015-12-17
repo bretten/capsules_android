@@ -3,11 +3,15 @@ package com.brettnamba.capsules.os;
 import android.accounts.Account;
 import android.os.AsyncTask;
 
+import com.brettnamba.capsules.dataaccess.Capsule;
 import com.brettnamba.capsules.dataaccess.CapsuleDiscovery;
 import com.brettnamba.capsules.dataaccess.CapsuleOwnership;
+import com.brettnamba.capsules.http.CapsuleRequestParameters;
 import com.brettnamba.capsules.http.response.CapsuleOpenResponse;
 import com.brettnamba.capsules.http.response.CapsulePingResponse;
 import com.brettnamba.capsules.http.response.JsonResponse;
+
+import java.util.List;
 
 /**
  * Abstraction of AsyncTask that is meant to use listeners when the
@@ -219,6 +223,39 @@ public abstract class AsyncListenerTask<Params, Progress, Result>
          * Should handle onCancelled() work
          */
         void onOwnershipSaveCancelled();
+    }
+
+    /**
+     * Listener for AsyncTask that handles requesting Capsules from the server and parsing
+     * the results
+     */
+    public interface GetCapsulesTaskListener extends TaskListener {
+
+        /**
+         * Should handle doInBackground() work
+         *
+         * @param params Parameters for the request
+         * @return The parsed collection of Capsules
+         */
+        List<Capsule> duringGetCapsules(CapsuleRequestParameters params);
+
+        /**
+         * Should handle onPreExecute() work
+         */
+        void onPreGetCapsules();
+
+        /**
+         * Should handle onPostExecute() work
+         *
+         * @param capsules The parsed collection of Capsules returned from the request
+         */
+        void onPostGetCapsules(List<Capsule> capsules);
+
+        /**
+         * Should handle onCancelled() work
+         */
+        void onGetCapsulesCancelled();
+
     }
 
 }
