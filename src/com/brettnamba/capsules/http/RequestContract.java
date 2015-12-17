@@ -68,6 +68,16 @@ public final class RequestContract {
         public static final String OWNERSHIP_REPORT_URI = "/api/report/capsules";
 
         /**
+         * URI for a collection of Capsules
+         */
+        public static final String CAPSULES_URI = "/api/capsules";
+
+        /**
+         * URI for a collection of Discoveries
+         */
+        public static final String DISCOVERIES_URI = "/api/discoveries";
+
+        /**
          * URI for validating a Capsule
          */
         public static final String VALIDATE_CAPSULE_URI = "/api/capsule/?validate=true";
@@ -93,6 +103,26 @@ public final class RequestContract {
          * The key for a collection of messages
          */
         public static final String MESSAGES = "messages";
+
+        /**
+         * The field name for sorting
+         */
+        public static final String SORT = "sort";
+
+        /**
+         * The field name for filtering
+         */
+        public static final String FILTER = "filter";
+
+        /**
+         * The field name for paging results
+         */
+        public static final String PAGE = "page";
+
+        /**
+         * The field name for search key terms
+         */
+        public static final String SEARCH = "search";
 
         /**
          * The name of the field storing the authentication token in the authentication response JSON body.
@@ -213,6 +243,58 @@ public final class RequestContract {
          * The field for the Memoir file
          */
         public static final String MEMOIR_FILE = "file";
+
+    }
+
+    /**
+     * Pre-determined values for HTTP requests and responses
+     */
+    public static final class Value {
+
+        /**
+         * Sort key for sorting Capsules by name, A-Z
+         */
+        public static final int CAPSULE_SORT_NAME_ASC = 1;
+
+        /**
+         * Sort key for sorting Capsules from highest to lowest rating
+         */
+        public static final int CAPSULE_SORT_RATING_DESC = 2;
+
+        /**
+         * Sort key for sorting Capsules from most to least discoveries
+         */
+        public static final int CAPSULE_SORT_DISCOVERY_COUNT_DESC = 3;
+
+        /**
+         * Sort key for sorting Capsules from most to least favorites
+         */
+        public static final int CAPSULE_SORT_FAVORITE_COUNT_DESC = 4;
+
+        /**
+         * Filter key for filtering Capsules that have been set as favorites
+         */
+        public static final int CAPSULE_FILTER_FAVORITES = 1;
+
+        /**
+         * Filter key for filtering Capsules that have been rated up
+         */
+        public static final int CAPSULE_FILTER_UP_VOTES = 2;
+
+        /**
+         * Filter key for filtering Capsules that have been rated down
+         */
+        public static final int CAPSULE_FILTER_DOWN_VOTES = 3;
+
+        /**
+         * Filter key for filtering Capsules that have not been rated
+         */
+        public static final int CAPSULE_FILTER_NO_VOTES = 4;
+
+        /**
+         * Filter key for filtering Capsules that have not been opened
+         */
+        public static final int CAPSULE_FILTER_UNOPENED = 5;
 
     }
 
