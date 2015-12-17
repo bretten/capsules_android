@@ -222,6 +222,15 @@ public abstract class HttpUrlConnectionRequest {
     }
 
     /**
+     * Adds a collection of query parameters
+     *
+     * @param parameters Collection of query parameters
+     */
+    public void addAllQueryParameters(List<Pair<String, String>> parameters) {
+        this.mQueryParameters.addAll(parameters);
+    }
+
+    /**
      * Adds an HTTP request header
      *
      * @param header The request header
@@ -235,6 +244,15 @@ public abstract class HttpUrlConnectionRequest {
     }
 
     /**
+     * Adds a collection of request headers
+     *
+     * @param headers Collection of request headers
+     */
+    public void addAllRequestHeaders(List<Pair<String, String>> headers) {
+        this.mRequestHeaders.addAll(headers);
+    }
+
+    /**
      * Adds an HTTP request parameter
      *
      * @param parameter The request parameter name
@@ -245,6 +263,15 @@ public abstract class HttpUrlConnectionRequest {
             throw new IllegalArgumentException("Parameter or value cannot be null");
         }
         this.mRequestParameters.add(new Pair<String, String>(parameter, value));
+    }
+
+    /**
+     * Adds a collection of request parameters
+     *
+     * @param parameters Collection of request parameters
+     */
+    public void addAllRequestParameters(List<Pair<String, String>> parameters) {
+        this.mRequestParameters.addAll(parameters);
     }
 
     /**
