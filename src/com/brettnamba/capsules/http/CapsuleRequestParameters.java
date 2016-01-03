@@ -1,5 +1,7 @@
 package com.brettnamba.capsules.http;
 
+import android.os.Parcel;
+import android.os.Parcelable;
 import android.support.v4.util.Pair;
 
 import java.util.ArrayList;
@@ -9,7 +11,7 @@ import java.util.List;
  * Simple object representing the collection of different request parameters that can be used when
  * requesting Capsules from the web service
  */
-public class CapsuleRequestParameters {
+public class CapsuleRequestParameters implements Parcelable {
 
     /**
      * The sort order parameter value
@@ -30,6 +32,24 @@ public class CapsuleRequestParameters {
      * The search term parameter value
      */
     private String mSearch;
+
+    /**
+     * Empty constructor
+     */
+    public CapsuleRequestParameters() {
+    }
+
+    /**
+     * Instantiates a CapsuleRequestParameters given a Parcel
+     *
+     * @param in The Parcel used to instantiate the CapsuleRequestParameters
+     */
+    private CapsuleRequestParameters(Parcel in) {
+        this.mSort = in.readInt();
+        this.mFilter = in.readInt();
+        this.mPage = in.readInt();
+        this.mSearch = in.readString();
+    }
 
     /**
      * Sets the sort parameter value
@@ -76,6 +96,49 @@ public class CapsuleRequestParameters {
     }
 
     /**
+     * Gets the current sort parameter value
+     *
+     * @return The sort parameter value
+     */
+    public int getSort() {
+        return this.mSort;
+    }
+
+    /**
+     * Gets the current filter parameter value
+     *
+     * @return The filter parameter value
+     */
+    public int getFilter() {
+        return this.mFilter;
+    }
+
+    /**
+     * Gets the current page parameter value
+     *
+     * @return The page parameter value
+     */
+    public int getPage() {
+        return this.mPage;
+    }
+
+    /**
+     * Gets the current search parameter value
+     *
+     * @return The search parameter value
+     */
+    public String getSearch() {
+        return this.mSearch;
+    }
+
+    /**
+     * Increments the page count
+     */
+    public void incrementPage() {
+        this.mPage++;
+    }
+
+    /**
      * Gets the request parameters as a collection
      *
      * @return The collection of request parameters
@@ -107,5 +170,59 @@ public class CapsuleRequestParameters {
 
         return collection;
     }
+
+    /**
+     * Describes the contents for the Parcelable
+     *
+     * @return The hash code
+     */
+    @Override
+    public int describeContents() {
+        return this.hashCode();
+    }
+
+    /**
+     * Given a parcel, writes instance data to it
+     *
+     * @param dest  The parcel to write the data to
+     * @param flags Flags for writing data
+     */
+    @Override
+    public void writeToParcel(Parcel dest, int flags) {
+        dest.writeInt(this.mSort);
+        dest.writeInt(this.mFilter);
+        dest.writeInt(this.mPage);
+        dest.writeString(this.mSearch);
+    }
+
+    /**
+     * Class that rebuilds a copy of the CapsuleRequestParameters Parcelable.
+     */
+    public static final Parcelable.Creator<CapsuleRequestParameters> CREATOR =
+            new Parcelable.Creator<CapsuleRequestParameters>() {
+
+                /**
+                 * Instantiates a CapsuleRequestParameters from a Parcel
+                 *
+                 * @param source Parcel to use in instantiation
+                 * @return The new CapsuleRequestParameters
+                 */
+                @Override
+                public CapsuleRequestParameters createFromParcel(Parcel source) {
+                    return new CapsuleRequestParameters(source);
+                }
+
+                /**
+                 * Creates a CapsuleRequestParameters array of the specified size
+                 *
+                 * @param size The size of the array to create
+                 * @return The new array
+                 */
+                @Override
+                public CapsuleRequestParameters[] newArray(int size) {
+                    return new CapsuleRequestParameters[size];
+                }
+
+            };
 
 }
