@@ -30,14 +30,14 @@ import java.util.List;
  *
  * @author Brett Namba
  */
-public class CapsuleListActivity extends FragmentActivity implements
+public abstract class CapsuleListActivity extends FragmentActivity implements
         AsyncListenerTask.GetCapsulesTaskListener,
         SortDialogFragment.SortDialogListener {
 
     /**
      * The current Account
      */
-    private Account mAccount;
+    protected Account mAccount;
 
     /**
      * Fragment used to retain background thread tasks
@@ -47,7 +47,7 @@ public class CapsuleListActivity extends FragmentActivity implements
     /**
      * The request parameters for retrieving Capsules from the Web API
      */
-    private CapsuleRequestParameters mRequestParams;
+    protected CapsuleRequestParameters mRequestParams;
 
     /**
      * Flag that determines if the ListView is loading more Capsule items due to being scrolled
@@ -58,7 +58,7 @@ public class CapsuleListActivity extends FragmentActivity implements
     /**
      * Adapter that loads the Capsule data
      */
-    private ArrayAdapter<String> mAdapter;
+    protected ArrayAdapter<String> mAdapter;
 
     /**
      * Collection of Capsules that are displayed in the ListView
@@ -152,11 +152,7 @@ public class CapsuleListActivity extends FragmentActivity implements
      * @return The parsed collection of Capsules
      */
     @Override
-    public List<Capsule> duringGetCapsules(CapsuleRequestParameters params) {
-        JsonResponse response = RequestHandler.requestCapsules(this.getApplicationContext(),
-                this.mAccount, params);
-        return response.getCapsules();
-    }
+    public abstract List<Capsule> duringGetCapsules(CapsuleRequestParameters params);
 
     /**
      * Executes before the request for Capsules is made
@@ -251,6 +247,16 @@ public class CapsuleListActivity extends FragmentActivity implements
     }
 
     /**
+     * Sets up the ListView's Adapter
+     */
+    protected abstract void setupListViewAdapter();
+
+    /**
+     * Sets up the Toolbar
+     */
+    protected abstract void setupToolbar();
+
+    /**
      * Attempts to get RetainedTaskFragment if its state has been retained.  Otherwise, will
      * instantiate a new RetainedTaskFragment
      */
@@ -277,8 +283,8 @@ public class CapsuleListActivity extends FragmentActivity implements
         // Get a reference to the ListView
         ListView listView = (ListView) this.findViewById(R.id.capsule_list);
         // Instantiate the Adapter
-        this.mAdapter = new ArrayAdapter<String>(this.getApplicationContext(),
-                R.layout.account_list_item, R.id.account_list_item_text);
+        this.setupListViewAdapter();
+        // Set the Adapter on the ListView
         listView.setAdapter(this.mAdapter);
         // Add the initial items
         if (capsules != null && capsules.size() > 0) {
@@ -312,35 +318,129 @@ public class CapsuleListActivity extends FragmentActivity implements
     }
 
     /**
-     * Sets up the Toolbar
+     * Extension of CapsuleListActivity for Capsules
      */
-    private void setupToolbar() {
-        // Setup the Toolbar
-        Toolbar toolbar = Widgets.createToolbar(this, this.getString(R.string.title_my_collection));
-        toolbar.inflateMenu(R.menu.capsule_list_activity);
-        toolbar.setNavigationOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                // Close this Activity
-                CapsuleListActivity.this.finish();
-            }
-        });
-        toolbar.setOnMenuItemClickListener(new Toolbar.OnMenuItemClickListener() {
-            @Override
-            public boolean onMenuItemClick(MenuItem item) {
-                switch (item.getItemId()) {
-                    case R.id.action_sort:
-                        // Launch the SortDialogFragment
-                        SortDialogFragment fragment = SortDialogFragment.createInstance(
-                                CapsuleListActivity.this.mRequestParams);
-                        fragment.show(CapsuleListActivity.this.getSupportFragmentManager(),
-                                CapsuleListActivity.TAG_SORT_DIALOG);
-                        return true;
-                    default:
-                        return false;
+    public static class CapsulesListActivity extends CapsuleListActivity {
+
+        /**
+         * Requests Capsules from the server and parses the response
+         *
+         * @param params Parameters for the request
+         * @return The parsed collection of Capsules
+         */
+        @Override
+        public List<Capsule> duringGetCapsules(CapsuleRequestParameters params) {
+            JsonResponse response = RequestHandler.requestCapsules(this.getApplicationContext(),
+                    this.mAccount, params);
+            return response.getCapsules();
+        }
+
+        /**
+         * Sets up the ListView's Adapter
+         */
+        @Override
+        protected void setupListViewAdapter() {
+            // Instantiate the Adapter
+            this.mAdapter = new ArrayAdapter<String>(this.getApplicationContext(),
+                    R.layout.account_list_item, R.id.account_list_item_text);
+        }
+
+        /**
+         * Sets up the Toolbar
+         */
+        @Override
+        protected void setupToolbar() {
+            // Setup the Toolbar
+            Toolbar toolbar =
+                    Widgets.createToolbar(this, this.getString(R.string.title_my_collection));
+            toolbar.inflateMenu(R.menu.capsule_list_activity);
+            toolbar.setNavigationOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    // Close this Activity
+                    CapsulesListActivity.this.finish();
                 }
-            }
-        });
+            });
+            toolbar.setOnMenuItemClickListener(new Toolbar.OnMenuItemClickListener() {
+                @Override
+                public boolean onMenuItemClick(MenuItem item) {
+                    switch (item.getItemId()) {
+                        case R.id.action_sort:
+                            // Launch the SortDialogFragment
+                            SortDialogFragment fragment = SortDialogFragment.createInstance(
+                                    CapsulesListActivity.this.mRequestParams);
+                            fragment.show(CapsulesListActivity.this.getSupportFragmentManager(),
+                                    CapsuleListActivity.TAG_SORT_DIALOG);
+                            return true;
+                        default:
+                            return false;
+                    }
+                }
+            });
+        }
+    }
+
+    /**
+     * Extension of CapsuleListActivity for Discovery Capsules
+     */
+    public static class DiscoveriesListActivity extends CapsuleListActivity {
+
+        /**
+         * Requests Discovery Capsules from the server and parses the response
+         *
+         * @param params Parameters for the request
+         * @return The parsed collection of Capsules
+         */
+        @Override
+        public List<Capsule> duringGetCapsules(CapsuleRequestParameters params) {
+            JsonResponse response = RequestHandler.requestDiscoveries(this.getApplicationContext(),
+                    this.mAccount, params);
+            return response.getCapsules();
+        }
+
+        /**
+         * Sets up the ListView's Adapter
+         */
+        @Override
+        protected void setupListViewAdapter() {
+            // Instantiate the Adapter
+            this.mAdapter = new ArrayAdapter<String>(this.getApplicationContext(),
+                    R.layout.account_list_item, R.id.account_list_item_text);
+        }
+
+        /**
+         * Sets up the Toolbar
+         */
+        @Override
+        protected void setupToolbar() {
+            // Setup the Toolbar
+            Toolbar toolbar =
+                    Widgets.createToolbar(this, this.getString(R.string.title_my_discoveries));
+            toolbar.inflateMenu(R.menu.capsule_list_activity);
+            toolbar.setNavigationOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    // Close this Activity
+                    DiscoveriesListActivity.this.finish();
+                }
+            });
+            toolbar.setOnMenuItemClickListener(new Toolbar.OnMenuItemClickListener() {
+                @Override
+                public boolean onMenuItemClick(MenuItem item) {
+                    switch (item.getItemId()) {
+                        case R.id.action_sort:
+                            // Launch the SortDialogFragment
+                            SortDialogFragment fragment = SortDialogFragment.createInstance(
+                                    DiscoveriesListActivity.this.mRequestParams);
+                            fragment.show(DiscoveriesListActivity.this.getSupportFragmentManager(),
+                                    CapsuleListActivity.TAG_SORT_DIALOG);
+                            return true;
+                        default:
+                            return false;
+                    }
+                }
+            });
+        }
     }
 
 }

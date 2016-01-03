@@ -3,7 +3,7 @@
     package="com.brettnamba.capsules"
     android:versionCode="1"
     android:versionName="1.0" >
-    
+
     <uses-permission
         android:name="android.permission.GET_ACCOUNTS" />
 	<uses-permission
@@ -97,8 +97,12 @@
             android:label="@string/title_activity_capsule" >
         </activity>
         <activity
-            android:name="com.brettnamba.capsules.activities.CapsuleListActivity"
+            android:name="com.brettnamba.capsules.activities.CapsuleListActivity$CapsulesListActivity"
             android:label="@string/title_activity_capsule_list" >
+        </activity>
+        <activity
+            android:name="com.brettnamba.capsules.activities.CapsuleListActivity$DiscoveriesListActivity"
+            android:label="@string/title_activity_capsule_list">
         </activity>
         <activity
             android:name="com.brettnamba.capsules.activities.CapsuleEditorActivity"
