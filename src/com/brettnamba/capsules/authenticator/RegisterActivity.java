@@ -2,6 +2,7 @@ package com.brettnamba.capsules.authenticator;
 
 import android.accounts.Account;
 import android.accounts.AccountManager;
+import android.app.ProgressDialog;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.app.FragmentActivity;
@@ -71,6 +72,11 @@ public class RegisterActivity extends FragmentActivity implements AsyncListenerT
     private TextView mMessageView;
 
     /**
+     * The progress indicator to be displayed
+     */
+    private ProgressDialog mProgressDialog;
+
+    /**
      * Tag for referencing the Fragment that persists the authentication AsyncTask
      */
     private static final String AUTHENTICATION_TASK_FRAGMENT_TAG = "register_task";
@@ -116,6 +122,10 @@ public class RegisterActivity extends FragmentActivity implements AsyncListenerT
                 RegisterActivity.this.handleRegistration();
             }
         });
+
+        // Instantiate a new ProgressDialog
+        this.mProgressDialog = new ProgressDialog(this);
+        this.mProgressDialog.setMessage(this.getString(R.string.progress_please_wait));
 
         // Keep references to the TextViews so findViewById() doesn't need to be called on multiple registration attempts
         this.mUsernameInput = (EditText) this.findViewById(R.id.activity_register_username);
@@ -268,8 +278,9 @@ public class RegisterActivity extends FragmentActivity implements AsyncListenerT
         // Clear any old messages
         this.clearMessages();
         // Show the progress indicator
-        if (this.mAuthenticationTaskFragment != null) {
-            this.mAuthenticationTaskFragment.showProgress();
+        if (this.mAuthenticationTaskFragment != null
+                && this.mAuthenticationTaskFragment.isTaskRunning()) {
+            this.mProgressDialog.show();
         }
     }
 
@@ -288,9 +299,8 @@ public class RegisterActivity extends FragmentActivity implements AsyncListenerT
                 this.finishRegistration(response);
             }
         }
-        if (this.mAuthenticationTaskFragment != null) {
-            this.mAuthenticationTaskFragment.hideProgress();
-        }
+        // Hide the progress dialog
+        this.mProgressDialog.hide();
     }
 
     /**
@@ -298,9 +308,8 @@ public class RegisterActivity extends FragmentActivity implements AsyncListenerT
      */
     @Override
     public void onAuthenticationCancelled() {
-        if (this.mAuthenticationTaskFragment != null) {
-            this.mAuthenticationTaskFragment.hideProgress();
-        }
+        // Hide the progress dialog
+        this.mProgressDialog.hide();
     }
 
 }

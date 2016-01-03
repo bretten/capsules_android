@@ -23,11 +23,6 @@ public class RetainedTaskFragment extends Fragment {
     private AsyncListenerTask mTask;
 
     /**
-     * The progress indicator to be displayed
-     */
-    private ProgressDialog mProgressDialog;
-
-    /**
      * onCreate
      *
      * Sets the instance of to be retained throughout the parent Activity's lifecycle
@@ -52,16 +47,9 @@ public class RetainedTaskFragment extends Fragment {
     @Override
     public void onAttach(Activity activity) {
         super.onAttach(activity);
-        // Instantiate a new ProgressDialog
-        this.mProgressDialog = new ProgressDialog(activity);
-        this.mProgressDialog.setMessage(activity.getString(R.string.progress_please_wait));
         if (this.mTask != null) {
             // Set the newly attached Activity as the listener for the AsyncTask
             this.mTask.setListener((AsyncListenerTask.TaskListener) activity);
-            // If the AsyncTask is running, show the progress indicator
-            if (this.mTask.getStatus() == AsyncTask.Status.RUNNING) {
-                this.mProgressDialog.show();
-            }
         }
     }
 
@@ -73,11 +61,6 @@ public class RetainedTaskFragment extends Fragment {
     @Override
     public void onDetach() {
         super.onDetach();
-        // Cancel the ProgressDialog and clear it out
-        if (this.mProgressDialog != null) {
-            this.mProgressDialog.cancel();
-            this.mProgressDialog = null;
-        }
         // Remove the listener from the AsyncTask
         if (this.mTask != null) {
             this.mTask.removeListener();
@@ -94,21 +77,12 @@ public class RetainedTaskFragment extends Fragment {
     }
 
     /**
-     * Shows the progress indicator if it exists
+     * Determines if the associated background task is running
+     *
+     * @return True if it is running, otherwise false
      */
-    public void showProgress() {
-        if (this.mProgressDialog != null) {
-            this.mProgressDialog.show();
-        }
-    }
-
-    /**
-     * Stops the progress indicator if it exists
-     */
-    public void hideProgress() {
-        if (this.mProgressDialog != null) {
-            this.mProgressDialog.cancel();
-        }
+    public boolean isTaskRunning() {
+        return this.mTask != null && this.mTask.getStatus() == AsyncTask.Status.RUNNING;
     }
 
 }

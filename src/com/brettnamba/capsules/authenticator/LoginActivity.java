@@ -3,6 +3,7 @@ package com.brettnamba.capsules.authenticator;
 import android.accounts.Account;
 import android.accounts.AccountAuthenticatorResponse;
 import android.accounts.AccountManager;
+import android.app.ProgressDialog;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.app.FragmentActivity;
@@ -69,6 +70,11 @@ public class LoginActivity extends FragmentActivity implements AsyncListenerTask
      * Input for the password
      */
     private EditText mPasswordInput;
+
+    /**
+     * The progress indicator to be displayed
+     */
+    private ProgressDialog mProgressDialog;
 
     /**
      * Tag for referencing the Fragment that persists the authentication AsyncTask
@@ -139,6 +145,10 @@ public class LoginActivity extends FragmentActivity implements AsyncListenerTask
                 LoginActivity.this.handleLogin();
             }
         });
+
+        // Instantiate a new ProgressDialog
+        this.mProgressDialog = new ProgressDialog(this);
+        this.mProgressDialog.setMessage(this.getString(R.string.progress_please_wait));
 
         // Keep references to the TextViews so findViewById() doesn't need to be called on multiple login attempts
         this.mUsernameInput = (EditText) this.findViewById(R.id.activity_login_username);
@@ -297,8 +307,9 @@ public class LoginActivity extends FragmentActivity implements AsyncListenerTask
         // Clear any messages
         this.clearMessages();
         // Show a progress indicator
-        if (this.mAuthenticationTaskFragment != null) {
-            this.mAuthenticationTaskFragment.showProgress();
+        if (this.mAuthenticationTaskFragment != null
+                && this.mAuthenticationTaskFragment.isTaskRunning()) {
+            this.mProgressDialog.show();
         }
     }
 
@@ -318,9 +329,7 @@ public class LoginActivity extends FragmentActivity implements AsyncListenerTask
             }
         }
         // Hide the progress indicator
-        if (this.mAuthenticationTaskFragment != null) {
-            this.mAuthenticationTaskFragment.hideProgress();
-        }
+        this.mProgressDialog.hide();
     }
 
     /**
@@ -329,9 +338,7 @@ public class LoginActivity extends FragmentActivity implements AsyncListenerTask
     @Override
     public void onAuthenticationCancelled() {
         // Hide the progress indicator
-        if (this.mAuthenticationTaskFragment != null) {
-            this.mAuthenticationTaskFragment.hideProgress();
-        }
+        this.mProgressDialog.hide();
     }
 
 }
