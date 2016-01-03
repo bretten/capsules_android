@@ -46,6 +46,12 @@
         <item name="android:layout_marginRight">20dp</item>
         <item name="android:layout_marginBottom">10dp</item>
     </style>
+    <!-- Spinner -->
+    <style name="AppTheme.Input.Spinner" parent="AppTheme.Input">
+        <item name="android:layout_marginLeft">20dp</item>
+        <item name="android:layout_marginRight">20dp</item>
+        <item name="android:layout_marginBottom">10dp</item>
+    </style>
     <!-- Upload preview -->
     <style name="AppTheme.Input.UploadPreview" parent="AppTheme.Input">
         <item name="android:layout_width">wrap_content</item>
@@ -77,12 +83,12 @@
     <style name="AppTheme.List" parent="AppTheme">
         <item name="android:layout_width">match_parent</item>
         <item name="android:layout_height">wrap_content</item>
-        <item name="android:fadeScrollbars">false</item>
-        <item name="android:choiceMode">singleChoice</item>
     </style>
     <!-- Accounts -->
     <style name="AppTheme.List.Accounts" parent="AppTheme.List">
         <item name="android:layout_height">200dp</item>
+        <item name="android:fadeScrollbars">false</item>
+        <item name="android:choiceMode">singleChoice</item>
     </style>
 
     <!--

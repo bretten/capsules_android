@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:layout_width="match_parent"
+              android:layout_height="match_parent"
+              android:descendantFocusability="beforeDescendants"
+              android:focusableInTouchMode="true"
+              android:orientation="vertical">
+
+    <TextView
+        style="@style/AppTheme.Input.Label"
+        android:text="@string/label_search" />
+
+    <EditText
+        android:id="@+id/fragment_sort_search"
+        style="@style/AppTheme.Input.EditText"
+        android:inputType="text" />
+
+    <TextView
+        style="@style/AppTheme.Input.Label"
+        android:text="@string/label_sort" />
+
+    <Spinner
+        android:id="@+id/fragment_sort_sort_spinner"
+        style="@style/AppTheme.Input.Spinner" />
+
+    <TextView
+        style="@style/AppTheme.Input.Label"
+        android:text="@string/label_reset" />
+
+    <Button
+        android:id="@+id/fragment_sort_reset"
+        style="@style/AppTheme.Input.Button"
+        android:text="@string/label_reset_to_defaults" />
+
+</LinearLayout>

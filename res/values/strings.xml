@@ -7,6 +7,7 @@
     <!-- Action Bar Menu -->
     <string name="action_settings">Settings</string>
     <string name="action_edit">Edit</string>
+    <string name="action_sort">Sort</string>
     <string name="action_created">Toggle Capsules</string>
     <string name="action_discovered">Toggle Discoveries</string>
     <string name="action_satellite">Toggle Satellite</string>
@@ -58,11 +59,18 @@
     <!-- Memoir -->
     <string name="label_memoir_title">Title</string>
     <string name="label_memoir_message">Message</string>
+    <!-- Sort -->
+    <string name="label_search">Search</string>
+    <string name="label_sort">Sort</string>
     <!-- Buttons -->
     <string name="label_login">Login</string>
     <string name="label_register">Register</string>
     <string name="label_add_account">Add Account</string>
     <string name="label_save">Save</string>
+    <string name="label_reset_to_defaults">Reset to defaults</string>
+    <string name="label_reset">Reset</string>
+    <string name="label_ok">OK</string>
+    <string name="label_cancel">Cancel</string>
     <string name="label_choose_image">Choose an image&#8230;</string>
     <!-- Digits -->
     <string name="alphanumeric_digits">abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789</string>
@@ -141,6 +149,34 @@
         <item>@string/title_my_collection</item>
         <item>Drop Capsule Here</item>
         <item>Settings</item>
+    </string-array>
+
+    <!--
+        Capsule Sort
+    -->
+    <!-- Sort labels -->
+    <string name="label_alphabetical">A - Z</string>
+    <string name="label_best_rating">Best Rating</string>
+    <string name="label_most_discoveries">Most Discoveries</string>
+    <string name="label_most_favorites">Most Favorites</string>
+    <!-- Sort parameter values -->
+    <string name="sort_key_alphabetical">1</string>
+    <string name="sort_key_rating_desc">2</string>
+    <string name="sort_key_discoveries_desc">3</string>
+    <string name="sort_key_favorites_desc">4</string>
+    <!-- Sort parameter values array -->
+    <string-array name="sort_key_values">
+        <item>@string/sort_key_alphabetical</item>
+        <item>@string/sort_key_rating_desc</item>
+        <item>@string/sort_key_discoveries_desc</item>
+        <item>@string/sort_key_favorites_desc</item>
+    </string-array>
+    <!-- Sort options array -->
+    <string-array name="sort_options">
+        <item>@string/label_alphabetical</item>
+        <item>@string/label_best_rating</item>
+        <item>@string/label_most_discoveries</item>
+        <item>@string/label_most_favorites</item>
     </string-array>
 
     <!--
