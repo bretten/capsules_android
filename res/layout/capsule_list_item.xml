@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
+
+    <TextView
+        android:id="@+id/capsule_list_item_owner_username"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentRight="true"
+        android:layout_margin="10dp"
+        android:drawableLeft="@drawable/ic_person_grey"
+        android:drawablePadding="2dp"
+        android:drawableStart="@drawable/ic_person_grey" />
+
+    <TextView
+        android:id="@+id/capsule_list_item_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentStart="true"
+        android:layout_toLeftOf="@id/capsule_list_item_owner_username"
+        android:layout_toStartOf="@id/capsule_list_item_owner_username"
+        android:padding="10dp"
+        android:textColor="@android:color/black"
+        android:textSize="30sp" />
+
+    <LinearLayout
+        android:id="@+id/capsule_list_item_stats"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/capsule_list_item_title"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:padding="10dp">
+
+        <TextView
+            android:id="@+id/capsule_list_item_total_rating"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:drawableLeft="@drawable/ic_whatshot_grey"
+            android:drawablePadding="2dp"
+            android:drawableStart="@drawable/ic_whatshot_grey"
+            android:gravity="center_vertical"
+            android:padding="10dp" />
+
+        <View
+            android:layout_width="0dp"
+            android:layout_height="1dp"
+            android:layout_weight="1" />
+
+        <TextView
+            android:id="@+id/capsule_list_item_discovery_count"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:drawableLeft="@drawable/ic_pin_drop_grey"
+            android:drawablePadding="2dp"
+            android:drawableStart="@drawable/ic_pin_drop_grey"
+            android:gravity="center_vertical"
+            android:padding="10dp" />
+
+        <View
+            android:layout_width="0dp"
+            android:layout_height="1dp"
+            android:layout_weight="1" />
+
+        <TextView
+            android:id="@+id/capsule_list_item_favorite_count"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:drawableLeft="@drawable/ic_star_grey"
+            android:drawablePadding="2dp"
+            android:drawableStart="@drawable/ic_star_grey"
+            android:gravity="center_vertical"
+            android:padding="10dp" />
+
+        <View
+            android:layout_width="0dp"
+            android:layout_height="1dp"
+            android:layout_weight="1" />
+
+    </LinearLayout>
+
+</RelativeLayout>

@@ -8,7 +8,6 @@ import android.support.v7.widget.Toolbar;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.AbsListView;
-import android.widget.ArrayAdapter;
 import android.widget.ListView;
 
 import com.brettnamba.capsules.R;
@@ -21,6 +20,7 @@ import com.brettnamba.capsules.os.AsyncListenerTask;
 import com.brettnamba.capsules.os.GetCapsulesTask;
 import com.brettnamba.capsules.os.RetainedTaskFragment;
 import com.brettnamba.capsules.util.Widgets;
+import com.brettnamba.capsules.widget.CapsuleArrayAdapter;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -58,7 +58,7 @@ public abstract class CapsuleListActivity extends FragmentActivity implements
     /**
      * Adapter that loads the Capsule data
      */
-    protected ArrayAdapter<String> mAdapter;
+    protected CapsuleArrayAdapter mAdapter;
 
     /**
      * Collection of Capsules that are displayed in the ListView
@@ -125,7 +125,7 @@ public abstract class CapsuleListActivity extends FragmentActivity implements
         }
 
         // Setup the ListView
-        this.setupListView(this.mCapsules);
+        this.setupListView();
 
         // Setup the Toolbar
         this.setupToolbar();
@@ -175,7 +175,7 @@ public abstract class CapsuleListActivity extends FragmentActivity implements
             // Add the Capsules to the Adapter and internal collection
             for (Capsule capsule : capsules) {
                 this.mCapsules.add(capsule);
-                this.mAdapter.add(capsule.getName());
+                this.mAdapter.add(capsule);
             }
             // Notify changes
             this.mAdapter.notifyDataSetChanged();
@@ -276,22 +276,14 @@ public abstract class CapsuleListActivity extends FragmentActivity implements
 
     /**
      * Sets up the ListView and populates the Adapter with the specified Capsules
-     *
-     * @param capsules The initial Capsules to add to the ListView
      */
-    private void setupListView(ArrayList<Capsule> capsules) {
+    private void setupListView() {
         // Get a reference to the ListView
         ListView listView = (ListView) this.findViewById(R.id.capsule_list);
         // Instantiate the Adapter
         this.setupListViewAdapter();
         // Set the Adapter on the ListView
         listView.setAdapter(this.mAdapter);
-        // Add the initial items
-        if (capsules != null && capsules.size() > 0) {
-            for (Capsule capsule : capsules) {
-                this.mAdapter.add(capsule.getName());
-            }
-        }
 
         // Set the scroll listener
         listView.setOnScrollListener(new AbsListView.OnScrollListener() {
@@ -341,8 +333,8 @@ public abstract class CapsuleListActivity extends FragmentActivity implements
         @Override
         protected void setupListViewAdapter() {
             // Instantiate the Adapter
-            this.mAdapter = new ArrayAdapter<String>(this.getApplicationContext(),
-                    R.layout.account_list_item, R.id.account_list_item_text);
+            this.mAdapter = new CapsuleArrayAdapter(this.getApplicationContext(),
+                    R.layout.capsule_list_item);
         }
 
         /**
@@ -404,8 +396,8 @@ public abstract class CapsuleListActivity extends FragmentActivity implements
         @Override
         protected void setupListViewAdapter() {
             // Instantiate the Adapter
-            this.mAdapter = new ArrayAdapter<String>(this.getApplicationContext(),
-                    R.layout.account_list_item, R.id.account_list_item_text);
+            this.mAdapter = new CapsuleArrayAdapter(this.getApplicationContext(),
+                    R.layout.capsule_list_item);
         }
 
         /**
