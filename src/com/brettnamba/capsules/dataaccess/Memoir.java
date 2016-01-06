@@ -4,8 +4,15 @@ import android.net.Uri;
 import android.os.Parcel;
 import android.os.Parcelable;
 
+import com.brettnamba.capsules.http.RequestContract;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+
 /**
- * Created by brett on 8/19/15.
+ * Represents a Capsule's Memoir.
+ *
+ * @author Brett Namba
  */
 public class Memoir implements Parcelable {
 
@@ -13,6 +20,11 @@ public class Memoir implements Parcelable {
      * The app-specific primary key
      */
     private long mId;
+
+    /**
+     * The server-side unique identifier
+     */
+    private long mSyncId;
 
     /**
      * The Memoir title
@@ -33,6 +45,24 @@ public class Memoir implements Parcelable {
      * Constructor
      */
     public Memoir() {
+    }
+
+    /**
+     * Constructs a Memoir given a JSON object
+     *
+     * @param jsonObject A JSON object representing a Memoir
+     * @throws JSONException
+     */
+    public Memoir(JSONObject jsonObject) throws JSONException {
+        if (jsonObject.has(RequestContract.Field.MEMOIR_SYNC_ID)) {
+            this.setSyncId(jsonObject.getLong(RequestContract.Field.MEMOIR_SYNC_ID));
+        }
+        if (jsonObject.has(RequestContract.Field.MEMOIR_TITLE)) {
+            this.setTitle(jsonObject.getString(RequestContract.Field.MEMOIR_TITLE));
+        }
+        if (jsonObject.has(RequestContract.Field.MEMOIR_MESSAGE)) {
+            this.setMessage(RequestContract.Field.MEMOIR_MESSAGE);
+        }
     }
 
     /**
@@ -63,6 +93,24 @@ public class Memoir implements Parcelable {
      */
     public void setId(long id) {
         this.mId = id;
+    }
+
+    /**
+     * Gets the sync ID
+     *
+     * @return The sync ID
+     */
+    public long getSyncId() {
+        return this.mSyncId;
+    }
+
+    /**
+     * Sets the sync ID
+     *
+     * @param syncId The sync ID
+     */
+    public void setSyncId(long syncId) {
+        this.mSyncId = syncId;
     }
 
     /**

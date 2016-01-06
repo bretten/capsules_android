@@ -170,7 +170,7 @@ public final class RequestContract {
         public static final String CAPSULE_COLLECTION = "capsules";
 
         /**
-         * The field storing a Capsule's external primary key.
+         * The field storing a Capsule's unique server-side identifier
          */
         public static final String CAPSULE_SYNC_ID = "id";
 
@@ -190,6 +190,21 @@ public final class RequestContract {
         public static final String CAPSULE_LONGITUDE = "lng";
 
         /**
+         * The field storing the Capsule's total rating.
+         */
+        public static final String CAPSULE_RATING = "total_rating";
+
+        /**
+         * The field storing the Capsule's discovery count.
+         */
+        public static final String CAPSULE_DISCOVERY_COUNT = "discovery_count";
+
+        /**
+         * The field storing the Capsule's favorite count.
+         */
+        public static final String CAPSULE_FAVORITE_COUNT = "favorite_count";
+
+        /**
          * The field for storing a Capsule's etag.
          */
         public static final String CAPSULE_ETAG = "etag";
@@ -200,14 +215,29 @@ public final class RequestContract {
         public static final String DISCOVERY = "discovery";
 
         /**
+         * The key for a Discovery entity
+         */
+        public static final String DISCOVERY_ENTITY = "Discovery";
+
+        /**
          * The key for a collection of Discovery objects
          */
         public static final String DISCOVERY_COLLECTION = "discoveries";
 
         /**
+         * The key for the Discovery's unique server-side identifier
+         */
+        public static final String DISCOVERY_SYNC_ID = "id";
+
+        /**
          * The field for a Discovery etag
          */
         public static final String DISCOVERY_ETAG = "etag";
+
+        /**
+         * The field that determines if a Discovery has been opened
+         */
+        public static final String DISCOVERY_OPENED = "opened";
 
         /**
          * The field for the Discovery favorite flag
@@ -230,6 +260,11 @@ public final class RequestContract {
         public static final String MEMOIR_ENTITY = "Memoir";
 
         /**
+         * The field for storing a Memoir's unique server-side identifier
+         */
+        public static final String MEMOIR_SYNC_ID = "id";
+
+        /**
          * The field for the Memoir title
          */
         public static final String MEMOIR_TITLE = "title";
@@ -243,6 +278,16 @@ public final class RequestContract {
          * The field for the Memoir file
          */
         public static final String MEMOIR_FILE = "file";
+
+        /**
+         * The field name for a User entity
+         */
+        public static final String USER_ENTITY = "User";
+
+        /**
+         * The field name for a User's username
+         */
+        public static final String USER_USERNAME = "username";
 
     }
 

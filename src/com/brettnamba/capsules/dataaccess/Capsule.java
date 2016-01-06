@@ -43,9 +43,34 @@ public class Capsule implements Parcelable {
     protected double mLongitude;
 
     /**
+     * The number of times the Capsule was discovered
+     */
+    protected int mDiscoveryCount;
+
+    /**
+     * The number of times the Capsule was set as a favorite
+     */
+    protected int mFavoriteCount;
+
+    /**
+     * The total rating of the Capsule
+     */
+    protected int mTotalRating;
+
+    /**
+     * The owner of the Capsule
+     */
+    protected User mUser;
+
+    /**
      * The Capsule's Memoir
      */
     protected Memoir mMemoir;
+
+    /**
+     * The Capsule's Discovery
+     */
+    protected Discovery mDiscovery;
 
     /**
      * The database cursor used when populating a Capsule instance on the fly from the database
@@ -156,6 +181,16 @@ public class Capsule implements Parcelable {
         if (jsonCapsule.has(RequestContract.Field.CAPSULE_LONGITUDE)) {
             this.setLongitude(jsonCapsule.getDouble(RequestContract.Field.CAPSULE_LONGITUDE));
         }
+        if (jsonCapsule.has(RequestContract.Field.CAPSULE_RATING)) {
+            this.setTotalRating(jsonCapsule.getInt(RequestContract.Field.CAPSULE_RATING));
+        }
+        if (jsonCapsule.has(RequestContract.Field.CAPSULE_DISCOVERY_COUNT)) {
+            this.setDiscoveryCount(
+                    jsonCapsule.getInt(RequestContract.Field.CAPSULE_DISCOVERY_COUNT));
+        }
+        if (jsonCapsule.has(RequestContract.Field.CAPSULE_FAVORITE_COUNT)) {
+            this.setFavoriteCount(jsonCapsule.getInt(RequestContract.Field.CAPSULE_FAVORITE_COUNT));
+        }
     }
 
     /**
@@ -264,12 +299,57 @@ public class Capsule implements Parcelable {
     }
 
     /**
+     * Gets the discovery count
+     *
+     * @return The discovery count of the Capsule
+     */
+    public int getDiscoveryCount() {
+        return this.mDiscoveryCount;
+    }
+
+    /**
+     * Gets the favorite count
+     *
+     * @return The favorite count of the Capsule
+     */
+    public int getFavoriteCount() {
+        return this.mFavoriteCount;
+    }
+
+    /**
+     * Gets the total rating
+     *
+     * @return The total rating of the Capsule
+     */
+    public int getTotalRating() {
+        return this.mTotalRating;
+    }
+
+    /**
+     * Gets the owner of this Capsule
+     *
+     * @return The owner of this Capsule
+     */
+    public User getUser() {
+        return this.mUser;
+    }
+
+    /**
      * Gets Capsule's Memoir
      *
      * @return The Capsule's Memoir
      */
     public Memoir getMemoir() {
         return this.mMemoir;
+    }
+
+    /**
+     * Gets the Capsule's Discovery
+     *
+     * @return The Capsule's Discovery
+     */
+    public Discovery getDiscovery() {
+        return this.mDiscovery;
     }
 
     /**
@@ -318,12 +398,57 @@ public class Capsule implements Parcelable {
     }
 
     /**
+     * Sets the discovery count
+     *
+     * @param discoveryCount The number of times the Capsule was discovered
+     */
+    public void setDiscoveryCount(int discoveryCount) {
+        this.mDiscoveryCount = discoveryCount;
+    }
+
+    /**
+     * Sets the favorite count
+     *
+     * @param favoriteCount The number of times the Capsule was set as a favorite
+     */
+    public void setFavoriteCount(int favoriteCount) {
+        this.mFavoriteCount = favoriteCount;
+    }
+
+    /**
+     * Sets the total rating of the Capsule
+     *
+     * @param totalRating The total rating of the Capsule
+     */
+    public void setTotalRating(int totalRating) {
+        this.mTotalRating = totalRating;
+    }
+
+    /**
+     * Sets the owner of this Capsule
+     *
+     * @param user The owner of this Capsule
+     */
+    public void setUser(User user) {
+        this.mUser = user;
+    }
+
+    /**
      * Sets the Capsule's Memoir
      *
      * @param memoir The Memoir belonging to the Capsule
      */
     public void setMemoir(Memoir memoir) {
         this.mMemoir = memoir;
+    }
+
+    /**
+     * Sets the Capsule's Discovery
+     *
+     * @param discovery The Discovery belonging to the Capsule
+     */
+    public void setDiscovery(Discovery discovery) {
+        this.mDiscovery = discovery;
     }
 
     /**

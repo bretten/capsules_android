@@ -3,6 +3,9 @@ package com.brettnamba.capsules.util;
 import com.brettnamba.capsules.dataaccess.Capsule;
 import com.brettnamba.capsules.dataaccess.CapsuleDiscovery;
 import com.brettnamba.capsules.dataaccess.CapsuleOwnership;
+import com.brettnamba.capsules.dataaccess.Discovery;
+import com.brettnamba.capsules.dataaccess.Memoir;
+import com.brettnamba.capsules.dataaccess.User;
 import com.brettnamba.capsules.http.RequestContract;
 
 import org.json.JSONArray;
@@ -215,8 +218,36 @@ public final class JSONParser {
             }
             // Get the Capsule object
             JSONObject jsonCapsule = entry.getJSONObject(RequestContract.Field.CAPSULE_ENTITY);
-            // Parse the Capsule and add it to the collection
-            capsules.add(new Capsule(jsonCapsule));
+            // Parse the Capsule
+            Capsule capsule = new Capsule(jsonCapsule);
+
+            // Parse the Memoir if there is one
+            if (entry.has(RequestContract.Field.MEMOIR_ENTITY)) {
+                // Get the Memoir object
+                JSONObject jsonMemoir = entry.getJSONObject(RequestContract.Field.MEMOIR_ENTITY);
+                // Parse the Memoir and add it to the Capsule
+                capsule.setMemoir(new Memoir(jsonMemoir));
+            }
+
+            // Parse the Discovery if there is one
+            if (entry.has(RequestContract.Field.DISCOVERY_ENTITY)) {
+                // Get the Discovery object
+                JSONObject jsonDiscovery =
+                        entry.getJSONObject(RequestContract.Field.DISCOVERY_ENTITY);
+                // Parse the Discovery and add it to the Capsule
+                capsule.setDiscovery(new Discovery(jsonDiscovery));
+            }
+
+            // Parse the User if there is one
+            if (entry.has(RequestContract.Field.USER_ENTITY)) {
+                // Get the User object
+                JSONObject jsonUser = entry.getJSONObject(RequestContract.Field.USER_ENTITY);
+                // Parse the User and add it to the Capsule
+                capsule.setUser(new User(jsonUser));
+            }
+
+            // Add the Capsule to the collection
+            capsules.add(capsule);
         }
 
         return capsules;
