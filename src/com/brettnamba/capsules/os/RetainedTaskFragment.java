@@ -1,12 +1,10 @@
 package com.brettnamba.capsules.os;
 
 import android.app.Activity;
-import android.app.ProgressDialog;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
-
-import com.brettnamba.capsules.R;
+import android.support.v4.app.FragmentManager;
 
 /**
  * Fragment that is used to retain a reference to an AsyncTask.  The state is retained
@@ -21,6 +19,11 @@ public class RetainedTaskFragment extends Fragment {
      * The AsyncTask that is retained
      */
     private AsyncListenerTask mTask;
+
+    /**
+     * Tag to be used with the FragmentManager
+     */
+    public static final String TAG = "retained_fragment";
 
     /**
      * onCreate
@@ -83,6 +86,23 @@ public class RetainedTaskFragment extends Fragment {
      */
     public boolean isTaskRunning() {
         return this.mTask != null && this.mTask.getStatus() == AsyncTask.Status.RUNNING;
+    }
+
+    /**
+     * Using the specified FragmentManager, will find the already added instance of
+     * RetainedTaskFragment by its tag.  If it does not exist, will instantiate it and add it to
+     * the FragmentManager.
+     *
+     * @param fm The FragmentManager
+     * @return The RetainedTaskFragment found in the FragmentManager or a new instance
+     */
+    public static RetainedTaskFragment findOrCreate(FragmentManager fm) {
+        RetainedTaskFragment fragment = (RetainedTaskFragment) fm.findFragmentByTag(TAG);
+        if (fragment == null) {
+            fragment = new RetainedTaskFragment();
+            fm.beginTransaction().add(fragment, TAG).commit();
+        }
+        return fragment;
     }
 
 }

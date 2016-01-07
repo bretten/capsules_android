@@ -3,7 +3,6 @@ package com.brettnamba.capsules.activities;
 import android.accounts.Account;
 import android.os.Bundle;
 import android.support.v4.app.FragmentActivity;
-import android.support.v4.app.FragmentManager;
 import android.support.v7.widget.Toolbar;
 import android.view.MenuItem;
 import android.view.View;
@@ -76,11 +75,6 @@ public abstract class CapsuleListActivity extends FragmentActivity implements
     private static final String TAG_REQUEST_PARAMS = "request_params";
 
     /**
-     * Tag for the Fragment that retains background thread tasks
-     */
-    private static final String TAG_RETAINING_FRAGMENT = "retaining_fragment";
-
-    /**
      * Tag for the Fragment that displays the sort options
      */
     private static final String TAG_SORT_DIALOG = "sort_dialog";
@@ -106,8 +100,9 @@ public abstract class CapsuleListActivity extends FragmentActivity implements
             this.finish();
         }
 
-        // Set up the Fragment that retains background thread tasks
-        this.setupRetainedFragment();
+        // Get the Fragment that retains the background thread task for retrieving the Capsules
+        this.mRetainingFragment =
+                RetainedTaskFragment.findOrCreate(this.getSupportFragmentManager());
 
         // Check if the Activity has any retained state data
         if (savedInstanceState != null) {
@@ -255,24 +250,6 @@ public abstract class CapsuleListActivity extends FragmentActivity implements
      * Sets up the Toolbar
      */
     protected abstract void setupToolbar();
-
-    /**
-     * Attempts to get RetainedTaskFragment if its state has been retained.  Otherwise, will
-     * instantiate a new RetainedTaskFragment
-     */
-    private void setupRetainedFragment() {
-        // Attempt to get the retaining Fragment
-        FragmentManager fragmentManager = this.getSupportFragmentManager();
-        this.mRetainingFragment =
-                (RetainedTaskFragment) fragmentManager.findFragmentByTag(TAG_RETAINING_FRAGMENT);
-        // If the retaining Fragment was not found, this Fragment is being created for the first time
-        if (this.mRetainingFragment == null) {
-            // Instantiate the retaining Fragment
-            this.mRetainingFragment = new RetainedTaskFragment();
-            fragmentManager.beginTransaction().add(this.mRetainingFragment, TAG_RETAINING_FRAGMENT)
-                    .commit();
-        }
-    }
 
     /**
      * Sets up the ListView and populates the Adapter with the specified Capsules

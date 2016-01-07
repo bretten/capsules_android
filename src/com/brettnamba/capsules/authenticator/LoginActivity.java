@@ -77,11 +77,6 @@ public class LoginActivity extends FragmentActivity implements AsyncListenerTask
     private ProgressDialog mProgressDialog;
 
     /**
-     * Tag for referencing the Fragment that persists the authentication AsyncTask
-     */
-    private static final String AUTHENTICATION_TASK_FRAGMENT_TAG = "auth_task";
-
-    /**
      * onCreate
      *
      * @param icicle
@@ -101,14 +96,9 @@ public class LoginActivity extends FragmentActivity implements AsyncListenerTask
         // AccountManager
         this.mAccountManager = AccountManager.get(this);
 
-        // If the Activity is being recreated, see if there are any retained Fragments
-        FragmentManager fragmentManager = this.getSupportFragmentManager();
-        this.mAuthenticationTaskFragment = ((RetainedTaskFragment) fragmentManager.findFragmentByTag(AUTHENTICATION_TASK_FRAGMENT_TAG));
-        // If the Activity is being created for the first time, create the RetainedTaskFragments
-        if (this.mAuthenticationTaskFragment == null) {
-            this.mAuthenticationTaskFragment = new RetainedTaskFragment();
-            fragmentManager.beginTransaction().add(this.mAuthenticationTaskFragment, AUTHENTICATION_TASK_FRAGMENT_TAG).commit();
-        }
+        // Get the Fragment to retain the background thread task for authenticating
+        this.mAuthenticationTaskFragment =
+                RetainedTaskFragment.findOrCreate(this.getSupportFragmentManager());
 
         // Setup the Toolbar
         Toolbar toolbar = Widgets.createToolbar(this, this.getString(R.string.title_login));
