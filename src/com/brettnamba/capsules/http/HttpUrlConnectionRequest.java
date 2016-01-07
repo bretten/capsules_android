@@ -293,6 +293,15 @@ public abstract class HttpUrlConnectionRequest {
     }
 
     /**
+     * Returns the HTTP response stream
+     *
+     * @return The HTTP response stream
+     */
+    public InputStream getResponseStream() {
+        return this.mResponseStream;
+    }
+
+    /**
      * Returns the HTTP response body as a String
      *
      * @return The HTTP response body string
@@ -307,37 +316,8 @@ public abstract class HttpUrlConnectionRequest {
      */
     public void send() {
         try {
-            // Append the request parameters
-            this.appendQueryParameters(this.mQueryParameters);
-            // Instantiate the HttpUrlConnection
-            final URL url = new URL(this.mRequestUrl);
-            this.mHttpUrlConnection = (HttpURLConnection) url.openConnection();
-
-            // Setup the options on the request
-            this.setupRequest(this.mHttpUrlConnection);
-
-            // Set the request headers to the connection object
-            this.addRequestHeadersToConnection(this.mRequestHeaders);
-
-            // Check to see if the request method supports a request body
-            if (this.supportsRequestBody()) {
-                // Determine the content length of the request body
-                this.mRequestBodyLength = this.determineRequestBodyLength();
-
-                // Set the pre-determined content length
-                if (Build.VERSION.SDK_INT >= 19) {
-                    this.mHttpUrlConnection.setFixedLengthStreamingMode(this.mRequestBodyLength);
-                } else {
-                    this.mHttpUrlConnection
-                            .setFixedLengthStreamingMode((int) this.mRequestBodyLength);
-                }
-
-                // Get the stream for the request
-                this.mRequestStream = this.mHttpUrlConnection.getOutputStream();
-
-                // Write to the request stream
-                this.writeToRequestStream();
-            }
+            // Build the request
+            this.buildRequest();
 
             // Get the HTTP response code
             this.mResponseCode = this.mHttpUrlConnection.getResponseCode();
@@ -355,10 +335,44 @@ public abstract class HttpUrlConnectionRequest {
             this.mResponseBodyString = this.buildResponseBody(this.mResponseStream);
         } catch (IOException e) {
         } finally {
-            this.closeOutputStream(this.mRequestStream);
-            this.closeInputStream(this.mResponseStream);
-            this.closeHttpConnection(this.mHttpUrlConnection);
+            this.close();
         }
+    }
+
+    /**
+     * Opens a connection but unlike send(), does not automatically close the connection and
+     * streams
+     */
+    public void connect() {
+        try {
+            // Build the request
+            this.buildRequest();
+
+            // Connect to the resource
+            this.mHttpUrlConnection.connect();
+
+            // Get the HTTP response code
+            this.mResponseCode = this.mHttpUrlConnection.getResponseCode();
+
+            // Check if the response code was in the success range
+            if (this.mResponseCode >= 200 && this.mResponseCode <= 299) {
+                this.mResponseStream = this.mHttpUrlConnection.getInputStream();
+                this.mIsSuccess = true;
+            } else {
+                this.mResponseStream = this.mHttpUrlConnection.getErrorStream();
+                this.mIsSuccess = false;
+            }
+        } catch (IOException e) {
+        }
+    }
+
+    /**
+     * Closes all connections and streams
+     */
+    public void close() {
+        this.closeOutputStream(this.mRequestStream);
+        this.closeInputStream(this.mResponseStream);
+        this.closeHttpConnection(this.mHttpUrlConnection);
     }
 
     /**
@@ -495,6 +509,45 @@ public abstract class HttpUrlConnectionRequest {
     private void addRequestHeadersToConnection(List<Pair<String, String>> requestHeaders) {
         for (Pair<String, String> requestHeader : requestHeaders) {
             this.mHttpUrlConnection.setRequestProperty(requestHeader.first, requestHeader.second);
+        }
+    }
+
+    /**
+     * Builds the request by appending parameters and setting up the HTTP request object
+     *
+     * @throws IOException
+     */
+    private void buildRequest() throws IOException {
+        // Append the request parameters
+        this.appendQueryParameters(this.mQueryParameters);
+        // Instantiate the HttpUrlConnection
+        final URL url = new URL(this.mRequestUrl);
+        this.mHttpUrlConnection = (HttpURLConnection) url.openConnection();
+
+        // Setup the options on the request
+        this.setupRequest(this.mHttpUrlConnection);
+
+        // Set the request headers to the connection object
+        this.addRequestHeadersToConnection(this.mRequestHeaders);
+
+        // Check to see if the request method supports a request body
+        if (this.supportsRequestBody()) {
+            // Determine the content length of the request body
+            this.mRequestBodyLength = this.determineRequestBodyLength();
+
+            // Set the pre-determined content length
+            if (Build.VERSION.SDK_INT >= 19) {
+                this.mHttpUrlConnection.setFixedLengthStreamingMode(this.mRequestBodyLength);
+            } else {
+                this.mHttpUrlConnection
+                        .setFixedLengthStreamingMode((int) this.mRequestBodyLength);
+            }
+
+            // Get the stream for the request
+            this.mRequestStream = this.mHttpUrlConnection.getOutputStream();
+
+            // Write to the request stream
+            this.writeToRequestStream();
         }
     }
 
