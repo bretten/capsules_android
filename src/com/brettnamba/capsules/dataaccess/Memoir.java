@@ -61,7 +61,7 @@ public class Memoir implements Parcelable {
             this.setTitle(jsonObject.getString(RequestContract.Field.MEMOIR_TITLE));
         }
         if (jsonObject.has(RequestContract.Field.MEMOIR_MESSAGE)) {
-            this.setMessage(RequestContract.Field.MEMOIR_MESSAGE);
+            this.setMessage(jsonObject.getString(RequestContract.Field.MEMOIR_MESSAGE));
         }
     }
 
@@ -72,6 +72,7 @@ public class Memoir implements Parcelable {
      */
     private Memoir(Parcel in) {
         this.mId = in.readLong();
+        this.mSyncId = in.readLong();
         this.mTitle = in.readString();
         this.mMessage = in.readString();
         this.mFileContentUri = in.readParcelable(Uri.class.getClassLoader());
@@ -186,6 +187,7 @@ public class Memoir implements Parcelable {
     @Override
     public void writeToParcel(Parcel dest, int flags) {
         dest.writeLong(this.mId);
+        dest.writeLong(this.mSyncId);
         dest.writeString(this.mTitle);
         dest.writeString(this.mMessage);
         dest.writeParcelable(this.mFileContentUri, flags);

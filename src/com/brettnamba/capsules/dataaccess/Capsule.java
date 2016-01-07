@@ -43,6 +43,11 @@ public class Capsule implements Parcelable {
     protected double mLongitude;
 
     /**
+     * The total rating of the Capsule
+     */
+    protected int mTotalRating;
+
+    /**
      * The number of times the Capsule was discovered
      */
     protected int mDiscoveryCount;
@@ -51,11 +56,6 @@ public class Capsule implements Parcelable {
      * The number of times the Capsule was set as a favorite
      */
     protected int mFavoriteCount;
-
-    /**
-     * The total rating of the Capsule
-     */
-    protected int mTotalRating;
 
     /**
      * The owner of the Capsule
@@ -99,7 +99,12 @@ public class Capsule implements Parcelable {
         this.mName = capsule.getName();
         this.mLatitude = capsule.getLatitude();
         this.mLongitude = capsule.getLongitude();
+        this.mTotalRating = capsule.getTotalRating();
+        this.mDiscoveryCount = capsule.getDiscoveryCount();
+        this.mFavoriteCount = capsule.getFavoriteCount();
+        this.mUser = capsule.getUser();
         this.mMemoir = capsule.getMemoir();
+        this.mDiscovery = capsule.getDiscovery();
     }
 
     /**
@@ -113,7 +118,12 @@ public class Capsule implements Parcelable {
         this.mName = in.readString();
         this.mLatitude = in.readDouble();
         this.mLongitude = in.readDouble();
+        this.mTotalRating = in.readInt();
+        this.mDiscoveryCount = in.readInt();
+        this.mFavoriteCount = in.readInt();
+        this.mUser = in.readParcelable(User.class.getClassLoader());
         this.mMemoir = in.readParcelable(Memoir.class.getClassLoader());
+        this.mDiscovery = in.readParcelable(Discovery.class.getClassLoader());
     }
 
     /**
@@ -299,6 +309,15 @@ public class Capsule implements Parcelable {
     }
 
     /**
+     * Gets the total rating
+     *
+     * @return The total rating of the Capsule
+     */
+    public int getTotalRating() {
+        return this.mTotalRating;
+    }
+
+    /**
      * Gets the discovery count
      *
      * @return The discovery count of the Capsule
@@ -314,15 +333,6 @@ public class Capsule implements Parcelable {
      */
     public int getFavoriteCount() {
         return this.mFavoriteCount;
-    }
-
-    /**
-     * Gets the total rating
-     *
-     * @return The total rating of the Capsule
-     */
-    public int getTotalRating() {
-        return this.mTotalRating;
     }
 
     /**
@@ -398,6 +408,15 @@ public class Capsule implements Parcelable {
     }
 
     /**
+     * Sets the total rating of the Capsule
+     *
+     * @param totalRating The total rating of the Capsule
+     */
+    public void setTotalRating(int totalRating) {
+        this.mTotalRating = totalRating;
+    }
+
+    /**
      * Sets the discovery count
      *
      * @param discoveryCount The number of times the Capsule was discovered
@@ -413,15 +432,6 @@ public class Capsule implements Parcelable {
      */
     public void setFavoriteCount(int favoriteCount) {
         this.mFavoriteCount = favoriteCount;
-    }
-
-    /**
-     * Sets the total rating of the Capsule
-     *
-     * @param totalRating The total rating of the Capsule
-     */
-    public void setTotalRating(int totalRating) {
-        this.mTotalRating = totalRating;
     }
 
     /**
@@ -449,6 +459,15 @@ public class Capsule implements Parcelable {
      */
     public void setDiscovery(Discovery discovery) {
         this.mDiscovery = discovery;
+    }
+
+    /**
+     * Determines if the Capsule is a Discovery
+     *
+     * @return True if the Capsule is a Discovery
+     */
+    public boolean isDiscovery() {
+        return this.mDiscovery != null;
     }
 
     /**
@@ -517,7 +536,12 @@ public class Capsule implements Parcelable {
         dest.writeString(this.mName);
         dest.writeDouble(this.mLatitude);
         dest.writeDouble(this.mLongitude);
+        dest.writeInt(this.mTotalRating);
+        dest.writeInt(this.mDiscoveryCount);
+        dest.writeInt(this.mFavoriteCount);
+        dest.writeParcelable(this.mUser, flags);
         dest.writeParcelable(this.mMemoir, flags);
+        dest.writeParcelable(this.mDiscovery, flags);
     }
 
     /**
