@@ -1,12 +1,14 @@
 package com.brettnamba.capsules.activities;
 
 import android.accounts.Account;
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.app.FragmentActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.AbsListView;
+import android.widget.AdapterView;
 import android.widget.ListView;
 
 import com.brettnamba.capsules.R;
@@ -78,6 +80,11 @@ public abstract class CapsuleListActivity extends FragmentActivity implements
      * Tag for the Fragment that displays the sort options
      */
     private static final String TAG_SORT_DIALOG = "sort_dialog";
+
+    /**
+     * The request code for CapsuleActivity
+     */
+    private static final int REQUEST_CODE_CAPSULE = 1;
 
     /**
      * onCreate
@@ -269,6 +276,21 @@ public abstract class CapsuleListActivity extends FragmentActivity implements
                 this.mAdapter.add(capsule);
             }
         }
+
+        // Set the ListView item click listener
+        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                // Get the Capsule for the corresponding clicked position
+                Capsule capsule = CapsuleListActivity.this.mAdapter.getItem(position);
+                // Start the Activity for viewing the Capsule
+                Intent intent = new Intent(CapsuleListActivity.this.getApplicationContext(),
+                        CapsuleActivity.class);
+                intent.putExtra("account", CapsuleListActivity.this.mAccount);
+                intent.putExtra("capsule", capsule);
+                CapsuleListActivity.this.startActivityForResult(intent, REQUEST_CODE_CAPSULE);
+            }
+        });
 
         // Set the scroll listener
         listView.setOnScrollListener(new AbsListView.OnScrollListener() {

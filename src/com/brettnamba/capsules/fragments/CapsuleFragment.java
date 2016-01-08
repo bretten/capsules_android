@@ -1,11 +1,15 @@
 package com.brettnamba.capsules.fragments;
 
+import android.accounts.Account;
 import android.app.Activity;
+import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import com.brettnamba.capsules.R;
@@ -29,9 +33,49 @@ public class CapsuleFragment extends Fragment {
     private CapsuleFragmentListener mListener;
 
     /**
-     * The layout View
+     * The TextView for the Capsule name
      */
-    private View mLayoutView;
+    private TextView mCapsuleNameView;
+
+    /**
+     * The TextView for the Capsule's owner's username
+     */
+    private TextView mOwnerUsernameView;
+
+    /**
+     * The ImageView for the Memoir image
+     */
+    private ImageView mMemoirImageView;
+
+    /**
+     * The TextView for the Memoir title
+     */
+    private TextView mMemoirTitleView;
+
+    /**
+     * The TextView for the Memoir message
+     */
+    private TextView mMemoirMessageView;
+
+    /**
+     * The TextView for the rating of the Capsule
+     */
+    private TextView mTotalRatingView;
+
+    /**
+     * The TextView for the number of times the Capsule was discovered
+     */
+    private TextView mDiscoveryCountView;
+
+    /**
+     * The TextView for the number of times the Capsule was set as a favorite
+     */
+    private TextView mFavoriteCountView;
+
+    /**
+     * ProgressBar for the Memoir image
+     */
+    private ProgressBar mProgressBar;
 
     /**
      * onAttach
@@ -45,7 +89,8 @@ public class CapsuleFragment extends Fragment {
         try {
             this.mListener = (CapsuleFragmentListener) activity;
         } catch (ClassCastException e) {
-            throw new ClassCastException(activity.toString() + " does not implement CapsuleFragmentListener");
+            throw new ClassCastException(
+                    activity.toString() + " does not implement CapsuleFragmentListener");
         }
     }
 
@@ -73,16 +118,18 @@ public class CapsuleFragment extends Fragment {
      * @return
      */
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+    public View onCreateView(LayoutInflater inflater, ViewGroup container,
+                             Bundle savedInstanceState) {
         // Inflate the layout View
-        this.mLayoutView = inflater.inflate(R.layout.fragment_capsule, container, false);
+        View view = inflater.inflate(R.layout.fragment_capsule, container, false);
+
+        // Get references to the Views
+        this.getViewReferences(view);
 
         // Populate the Views
-        if (this.mCapsule != null) {
-            this.populateViews(this.mCapsule);
-        }
+        this.populateTextViews(this.mCapsule);
 
-        return this.mLayoutView;
+        return view;
     }
 
     /**
@@ -100,16 +147,103 @@ public class CapsuleFragment extends Fragment {
     }
 
     /**
-     * Populates the Views with the Capsule data
+     * Populates the TextViews with the Capsule data
      *
-     * @param capsule The Capsule to use to populate the Views
+     * @param capsule The Capsule to use to populate the TextViews
      */
-    public void populateViews(Capsule capsule) {
-        if (this.mLayoutView != null) {
-            // Capsule name
-            TextView name = (TextView) this.mLayoutView.findViewById(R.id.fragment_capsule_info_name);
-            name.setText(capsule.getName());
+    public void populateTextViews(Capsule capsule) {
+        if (capsule == null) {
+            return;
         }
+
+        // Capsule name
+        if (this.mCapsuleNameView != null && capsule.getName() != null) {
+            this.mCapsuleNameView.setText(capsule.getName());
+        }
+        // Capsule owner username
+        if (this.mOwnerUsernameView != null && capsule.getUser() != null &&
+                capsule.getUser().getUsername() != null) {
+            this.mOwnerUsernameView.setText(capsule.getUser().getUsername());
+        }
+        // Memoir title
+        if (this.mMemoirTitleView != null && capsule.getMemoir() != null &&
+                capsule.getMemoir().getTitle() != null) {
+            this.mMemoirTitleView.setText(capsule.getMemoir().getTitle());
+        }
+        // Memoir message
+        if (this.mMemoirMessageView != null && capsule.getMemoir() != null &&
+                capsule.getMemoir().getMessage() != null) {
+            this.mMemoirMessageView.setText(capsule.getMemoir().getMessage());
+        }
+        // Total rating
+        if (this.mTotalRatingView != null) {
+            this.mTotalRatingView.setText(String.valueOf(capsule.getTotalRating()));
+        }
+        // Discovery count
+        if (this.mDiscoveryCountView != null) {
+            this.mDiscoveryCountView.setText(String.valueOf(capsule.getDiscoveryCount()));
+        }
+        // Favorite count
+        if (this.mFavoriteCountView != null) {
+            this.mFavoriteCountView.setText(String.valueOf(capsule.getFavoriteCount()));
+        }
+    }
+
+    /**
+     * Sets the Memoir image Bitmap
+     *
+     * @param bitmap The Memoir image bitmap
+     */
+    public void setMemoirImageView(Bitmap bitmap) {
+        if (this.mMemoirImageView == null || bitmap == null) {
+            return;
+        }
+
+        // Hide the ProgressBar
+        this.mProgressBar.setVisibility(View.GONE);
+        // Set the Bitmap on the ImageView
+        this.mMemoirImageView.setImageBitmap(bitmap);
+    }
+
+    /**
+     * Gets references to the layout View's nested Views
+     *
+     * @param layout The layout View
+     */
+    private void getViewReferences(View layout) {
+        this.mCapsuleNameView = (TextView) layout.findViewById(R.id.fragment_capsule_name);
+        this.mOwnerUsernameView =
+                (TextView) layout.findViewById(R.id.fragment_capsule_owner_username);
+        this.mMemoirImageView = (ImageView) layout.findViewById(R.id.fragment_capsule_memoir_image);
+        this.mMemoirTitleView = (TextView) layout.findViewById(R.id.fragment_capsule_memoir_title);
+        this.mMemoirMessageView =
+                (TextView) layout.findViewById(R.id.fragment_capsule_memoir_message);
+        this.mTotalRatingView = (TextView) layout.findViewById(R.id.fragment_capsule_total_rating);
+        this.mDiscoveryCountView =
+                (TextView) layout.findViewById(R.id.fragment_capsule_discovery_count);
+        this.mFavoriteCountView =
+                (TextView) layout.findViewById(R.id.fragment_capsule_favorite_count);
+        this.mProgressBar = (ProgressBar) layout.findViewById(R.id.fragment_capsule_progress_bar);
+    }
+
+    /**
+     * Instantiates a CapsuleFragment given a Capsule and Account
+     *
+     * @param capsule The Capsule that will populate the Fragment
+     * @param account The current Account
+     * @return The CapsuleFragment instance
+     */
+    public static CapsuleFragment createInstance(Capsule capsule, Account account) {
+        CapsuleFragment fragment = new CapsuleFragment();
+
+        // Bundle the Fragment arguments
+        Bundle bundle = new Bundle();
+        bundle.putParcelable("capsule", capsule);
+        bundle.putParcelable("account", account);
+        // Set the arguments on the Fragment
+        fragment.setArguments(bundle);
+
+        return fragment;
     }
 
     /**
