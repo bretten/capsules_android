@@ -87,6 +87,11 @@ public final class RequestContract {
          */
         public static final String SAVE_CAPSULE_URI = "/api/capsule/?validate=false";
 
+        /**
+         * URI for a Memoir entity
+         */
+        public static final String MEMOIR_URI = "/api/memoir/";
+
     }
 
     /**

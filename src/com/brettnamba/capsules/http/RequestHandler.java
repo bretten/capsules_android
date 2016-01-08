@@ -409,6 +409,27 @@ public class RequestHandler {
     }
 
     /**
+     * Opens a connection to a Memoir resource and returns the HTTP request object
+     *
+     * @param context  The current Context
+     * @param account  The Account used to authenticate the request
+     * @param memoirId The server-side ID of the Memoir
+     * @return The HTTP request object
+     */
+    public static HttpUrlGetRequest requestMemoirImage(Context context, Account account,
+                                                       long memoirId) {
+        // Initialize the request
+        HttpUrlGetRequest request = new HttpUrlGetRequest(context,
+                RequestContract.BASE_URL + RequestContract.Uri.MEMOIR_URI +
+                        String.valueOf(memoirId), account, Constants.AUTH_TOKEN_TYPE);
+
+        // Send the request
+        request.connect();
+
+        return request;
+    }
+
+    /**
      * Adds the standard Capsule request parameters to an instance of HttpUrlConnectionRequest
      *
      * @param httpRequest The HttpUrlConnectionRequest to add the request parameters to
