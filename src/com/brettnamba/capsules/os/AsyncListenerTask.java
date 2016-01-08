@@ -1,6 +1,7 @@
 package com.brettnamba.capsules.os;
 
 import android.accounts.Account;
+import android.graphics.Bitmap;
 import android.os.AsyncTask;
 
 import com.brettnamba.capsules.dataaccess.Capsule;
@@ -255,6 +256,38 @@ public abstract class AsyncListenerTask<Params, Progress, Result>
          * Should handle onCancelled() work
          */
         void onGetCapsulesCancelled();
+
+    }
+
+    /**
+     * Listener that handles requesting a Memoir's image data from the server and building a Bitmap
+     */
+    public interface GetMemoirBitmapTaskListener extends TaskListener {
+
+        /**
+         * Should handle doInBackground() work
+         *
+         * @param memoirId The server-side ID of the Memoir
+         * @return The Memoir's Bitmap
+         */
+        Bitmap duringGetMemoirBitmap(long memoirId);
+
+        /**
+         * Should handle onPreExecute() work
+         */
+        void onPreGetMemoirBitmap();
+
+        /**
+         * Should handle onPostExecute() work
+         *
+         * @param bitmap The constructed Bitmap from the server's image data
+         */
+        void onPostGetMemoirBitmap(Bitmap bitmap);
+
+        /**
+         * Should handle onCancelled() work
+         */
+        void onGetMemoirBitmapCancelled();
 
     }
 
