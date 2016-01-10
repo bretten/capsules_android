@@ -111,6 +111,15 @@ public class Discovery implements Parcelable {
     }
 
     /**
+     * Returns the raw binary value of the Favorite member variable
+     *
+     * @return 1 if the Discovery is a favorite, otherwise 0
+     */
+    public int getFavorite() {
+        return this.mIsFavorite ? 1 : 0;
+    }
+
+    /**
      * Gets the rating of the Discovery
      *
      * @return The rating of the Discovery
