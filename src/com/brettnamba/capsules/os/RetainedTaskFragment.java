@@ -105,4 +105,22 @@ public class RetainedTaskFragment extends Fragment {
         return fragment;
     }
 
+    /**
+     * Using the specified FragmentManager, will find the already added instance of
+     * RetainedTaskFragment by the specified tag.  If it does not exist, will instantiate it and
+     * add it to the FragmentManager.
+     *
+     * @param fm  The FragmentManager
+     * @param tag The tag that will be used with the FragmentManager
+     * @return The RetainedTaskFragment found in the FragmentManager or a new instance
+     */
+    public static RetainedTaskFragment findOrCreate(FragmentManager fm, String tag) {
+        RetainedTaskFragment fragment = (RetainedTaskFragment) fm.findFragmentByTag(tag);
+        if (fragment == null) {
+            fragment = new RetainedTaskFragment();
+            fm.beginTransaction().add(fragment, tag).commit();
+        }
+        return fragment;
+    }
+
 }
