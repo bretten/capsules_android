@@ -92,6 +92,11 @@ public final class RequestContract {
          */
         public static final String MEMOIR_URI = "/api/memoir/";
 
+        /**
+         * URI for a Discovery entity
+         */
+        public static final String DISCOVERY_URI = "/api/discovery/";
+
     }
 
     /**

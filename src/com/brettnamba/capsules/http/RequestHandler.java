@@ -7,6 +7,7 @@ import android.util.Base64;
 import com.brettnamba.capsules.Constants;
 import com.brettnamba.capsules.dataaccess.Capsule;
 import com.brettnamba.capsules.dataaccess.CapsuleOwnership;
+import com.brettnamba.capsules.dataaccess.Discovery;
 import com.brettnamba.capsules.dataaccess.Memoir;
 import com.brettnamba.capsules.http.response.JsonResponse;
 
@@ -406,6 +407,34 @@ public class RequestHandler {
         httpRequest.send();
 
         return httpRequest;
+    }
+
+    /**
+     * Sends a request to the server to update a Discovery
+     *
+     * @param context   The current Context
+     * @param account   The Account used to authenticate the request
+     * @param discovery The Discovery to update
+     * @return True on success of the request, otherwise false
+     */
+    public static boolean updateDiscovery(Context context, Account account, Discovery discovery) {
+        HttpUrlWwwFormRequest httpRequest = new HttpUrlWwwFormRequest(
+                context,
+                RequestContract.BASE_URL + RequestContract.Uri.DISCOVERY_URI +
+                        String.valueOf(discovery.getSyncId()),
+                account, Constants.AUTH_TOKEN_TYPE
+        );
+        // Add the request parameters
+        httpRequest.addRequestParameter(
+                String.format("data[%1$s]", RequestContract.Field.DISCOVERY_FAVORITE),
+                String.valueOf(discovery.getFavorite()));
+        httpRequest.addRequestParameter(
+                String.format("data[%1$s]", RequestContract.Field.DISCOVERY_RATING),
+                String.valueOf(discovery.getRating()));
+        // Execute
+        httpRequest.send();
+
+        return httpRequest.isSuccess();
     }
 
     /**
