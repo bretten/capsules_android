@@ -41,6 +41,19 @@ public class Discovery implements Parcelable {
     private int mRating;
 
     /**
+     * Constructor that clones the specified Discovery
+     *
+     * @param discovery The Discovery to clone
+     */
+    public Discovery(Discovery discovery) {
+        this.mId = discovery.getId();
+        this.mSyncId = discovery.getSyncId();
+        this.mIsOpened = discovery.isOpened();
+        this.mIsFavorite = discovery.isFavorite();
+        this.mRating = discovery.getRating();
+    }
+
+    /**
      * Constructs a Discovery given a JSONObject
      *
      * @param jsonObject A JSON object representing a Discovery
