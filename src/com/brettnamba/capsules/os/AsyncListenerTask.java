@@ -5,8 +5,8 @@ import android.graphics.Bitmap;
 import android.os.AsyncTask;
 
 import com.brettnamba.capsules.dataaccess.Capsule;
-import com.brettnamba.capsules.dataaccess.CapsuleDiscovery;
 import com.brettnamba.capsules.dataaccess.CapsuleOwnership;
+import com.brettnamba.capsules.dataaccess.Discovery;
 import com.brettnamba.capsules.http.CapsuleRequestParameters;
 import com.brettnamba.capsules.http.response.CapsuleOpenResponse;
 import com.brettnamba.capsules.http.response.CapsulePingResponse;
@@ -176,7 +176,7 @@ public abstract class AsyncListenerTask<Params, Progress, Result>
          * @param params The update data for the Discovery
          * @return The result of the update
          */
-        boolean duringUpdateDiscovery(CapsuleDiscovery... params);
+        boolean duringUpdateDiscovery(Discovery... params);
 
         /**
          * Should handle onPreExecute() work

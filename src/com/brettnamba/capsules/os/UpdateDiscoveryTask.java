@@ -1,11 +1,11 @@
 package com.brettnamba.capsules.os;
 
-import com.brettnamba.capsules.dataaccess.CapsuleDiscovery;
+import com.brettnamba.capsules.dataaccess.Discovery;
 
 /**
  * AsyncTask that handles updating a Discovery on the background thread
  */
-public class UpdateDiscoveryTask extends AsyncListenerTask<CapsuleDiscovery, Void, Boolean> {
+public class UpdateDiscoveryTask extends AsyncListenerTask<Discovery, Void, Boolean> {
 
     /**
      * Listener that will handle callbacks
@@ -31,7 +31,8 @@ public class UpdateDiscoveryTask extends AsyncListenerTask<CapsuleDiscovery, Voi
         try {
             this.mListener = (UpdateDiscoveryTaskListener) listener;
         } catch (ClassCastException e) {
-            throw new ClassCastException(listener.toString() + " does not implement UpdateDiscoveryTaskListener");
+            throw new ClassCastException(
+                    listener.toString() + " does not implement UpdateDiscoveryTaskListener");
         }
     }
 
@@ -50,7 +51,7 @@ public class UpdateDiscoveryTask extends AsyncListenerTask<CapsuleDiscovery, Voi
      * @return The result of the update
      */
     @Override
-    protected Boolean doInBackground(CapsuleDiscovery... params) {
+    protected Boolean doInBackground(Discovery... params) {
         if (this.mListener != null) {
             return this.mListener.duringUpdateDiscovery(params);
         }
