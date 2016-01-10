@@ -16,13 +16,16 @@ import android.widget.Toast;
 
 import com.brettnamba.capsules.R;
 import com.brettnamba.capsules.dataaccess.Capsule;
+import com.brettnamba.capsules.dataaccess.Discovery;
 import com.brettnamba.capsules.fragments.CapsuleFragment;
+import com.brettnamba.capsules.fragments.DiscoveryFragment;
 import com.brettnamba.capsules.http.HttpUrlGetRequest;
 import com.brettnamba.capsules.http.RequestHandler;
 import com.brettnamba.capsules.os.AsyncListenerTask;
 import com.brettnamba.capsules.os.GetMemoirBitmapTask;
 import com.brettnamba.capsules.os.RetainedBitmapCacheFragment;
 import com.brettnamba.capsules.os.RetainedTaskFragment;
+import com.brettnamba.capsules.os.UpdateDiscoveryTask;
 import com.brettnamba.capsules.util.Images;
 import com.brettnamba.capsules.util.Widgets;
 
@@ -33,12 +36,19 @@ import com.brettnamba.capsules.util.Widgets;
  */
 public class CapsuleActivity extends FragmentActivity implements
         CapsuleFragment.CapsuleFragmentListener,
-        AsyncListenerTask.GetMemoirBitmapTaskListener {
+        DiscoveryFragment.DiscoveryFragmentListener,
+        AsyncListenerTask.GetMemoirBitmapTaskListener,
+        AsyncListenerTask.UpdateDiscoveryTaskListener {
 
     /**
      * The Capsule for this Activity
      */
     private Capsule mCapsule;
+
+    /**
+     * Discovery copy that reflects the server-side state
+     */
+    private Discovery mServerDiscovery;
 
     /**
      * The Account that is opening this Activity
@@ -56,14 +66,36 @@ public class CapsuleActivity extends FragmentActivity implements
     private CapsuleFragment mCapsuleFragment;
 
     /**
+     * The Fragment for displaying Discovery UI elements
+     */
+    private DiscoveryFragment mDiscoveryFragment;
+
+    /**
      * Fragment to retain the background thread task for retrieving the Capsule's Memoir image
      */
-    private RetainedTaskFragment mRetainedTaskFragment;
+    private RetainedTaskFragment mRetainedMemoirTaskFragment;
+
+    /**
+     * Fragment to retain background thread task for updating a Discovery Capsule
+     */
+    private RetainedTaskFragment mRetainedDiscoveryTaskFragment;
 
     /**
      * Bitmap cache for storing the Memoir image
      */
     private LruCache<String, Bitmap> mBitmapCache;
+
+    /**
+     * The FragmentManager tag for the Fragment that retains the Memoir image background thread
+     * task
+     */
+    private static final String TAG_MEMOIR_FRAGMENT = "retained_memoir_fragment";
+
+    /**
+     * The FragmentManager tag for the Fragment that retains the Discovery update background
+     * thread task
+     */
+    private static final String TAG_DISCOVERY_FRAGMENT = "retained_discovery_fragment";
 
     /**
      * onCreate
@@ -80,6 +112,15 @@ public class CapsuleActivity extends FragmentActivity implements
         if (extras != null) {
             this.mCapsule = extras.getParcelable("capsule");
             this.mAccount = extras.getParcelable("account");
+        }
+        // See if state data was found
+        if (savedInstanceState != null) {
+            if (savedInstanceState.containsKey("capsule")) {
+                this.mCapsule = savedInstanceState.getParcelable("capsule");
+            }
+            if (savedInstanceState.containsKey("modified")) {
+                this.mModified = savedInstanceState.getBoolean("modified");
+            }
         }
 
         // Close the Activity if required members are missing
@@ -118,6 +159,20 @@ public class CapsuleActivity extends FragmentActivity implements
     }
 
     /**
+     * onSaveInstanceState
+     *
+     * @param outState State data to be saved
+     */
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+
+        // Save the Capsule in the state data
+        outState.putParcelable("capsule", this.mCapsule);
+        outState.putBoolean("modified", this.mModified);
+    }
+
+    /**
      * onBackPressed
      */
     @Override
@@ -140,6 +195,90 @@ public class CapsuleActivity extends FragmentActivity implements
         this.finish();
         Toast.makeText(this, this.getString(R.string.error_cannot_open_missing_data),
                 Toast.LENGTH_SHORT).show();
+    }
+
+    /**
+     * Should handle the case where the Fragment is not passed the required data
+     *
+     * @param discoveryFragment The Fragment that is missing data
+     */
+    @Override
+    public void onMissingData(DiscoveryFragment discoveryFragment) {
+        this.getSupportFragmentManager().beginTransaction().remove(discoveryFragment).commit();
+        this.setResult(Activity.RESULT_CANCELED);
+        this.finish();
+        Toast.makeText(this, this.getString(R.string.error_cannot_open_missing_data),
+                Toast.LENGTH_SHORT).show();
+    }
+
+    /**
+     * Executed when the DiscoveryFragment's RatingControl is rated up
+     */
+    @Override
+    public void onRateUp() {
+        if (!this.mCapsule.isDiscovery()) {
+            return;
+        }
+        Discovery discovery = this.mCapsule.getDiscovery();
+        // Copy the original state of the Discovery
+        this.copyServerDiscoveryState(discovery);
+        // Update the Discovery
+        discovery.setRating(1);
+        // Request the update to the server
+        this.requestDiscoveryUpdate();
+    }
+
+    /**
+     * Executed when the DiscoveryFragment's RatingControl is rated down
+     */
+    @Override
+    public void onRateDown() {
+        if (!this.mCapsule.isDiscovery()) {
+            return;
+        }
+        Discovery discovery = this.mCapsule.getDiscovery();
+        // Copy the original state of the Discovery
+        this.copyServerDiscoveryState(discovery);
+        // Update the Discovery
+        discovery.setRating(-1);
+        // Request the update to the server
+        this.requestDiscoveryUpdate();
+    }
+
+    /**
+     * Executed when the DiscoveryFragment's RatingControl is set to no rating
+     */
+    @Override
+    public void onRemoveRating() {
+        if (!this.mCapsule.isDiscovery()) {
+            return;
+        }
+        Discovery discovery = this.mCapsule.getDiscovery();
+        // Copy the original state of the Discovery
+        this.copyServerDiscoveryState(discovery);
+        // Update the Discovery
+        discovery.setRating(0);
+        // Request the update to the server
+        this.requestDiscoveryUpdate();
+    }
+
+    /**
+     * Executed when the DiscoveryFragment's favorite input is changed
+     *
+     * @param isFavorite True if it was set as a favorite, false if it was unset as a favorite
+     */
+    @Override
+    public void onFavorite(boolean isFavorite) {
+        if (!this.mCapsule.isDiscovery()) {
+            return;
+        }
+        Discovery discovery = this.mCapsule.getDiscovery();
+        // Copy the original state of the Discovery
+        this.copyServerDiscoveryState(discovery);
+        // Update the Discovery
+        discovery.setIsFavorite(isFavorite);
+        // Request the update to the server
+        this.requestDiscoveryUpdate();
     }
 
     /**
@@ -196,18 +335,97 @@ public class CapsuleActivity extends FragmentActivity implements
     }
 
     /**
+     * Called on the background thread while the background thread task for updating a Discovery
+     * is executing
+     *
+     * @param params The update data for the Discovery
+     * @return The result of the update
+     */
+    @Override
+    public boolean duringUpdateDiscovery(Discovery... params) {
+        return RequestHandler.updateDiscovery(this, this.mAccount, params[0]);
+    }
+
+    /**
+     * Called on the main thread before the background thread task for updating a Discovery is
+     * executed
+     */
+    @Override
+    public void onPreUpdateDiscovery() {
+        // Disable the rating buttons in the DiscoveryFragment
+        if (this.mDiscoveryFragment != null) {
+            this.mDiscoveryFragment.disableButtons();
+        }
+    }
+
+    /**
+     * Called on the main thread after the background thread task for updating a Discovery has
+     * executed
+     *
+     * @param result The result of the update
+     */
+    @Override
+    public void onPostUpdateDiscovery(Boolean result) {
+        // Check the result
+        if (result != null && result && this.mCapsule.isDiscovery()) {
+            // The result was a success, so the updated Discovery now reflects the server-side state
+            this.mServerDiscovery = this.mCapsule.getDiscovery();
+            // Flag that the Capsule was updated
+            this.mModified = true;
+        } else {
+            // The result was not a success, so revert to the server-side state
+            this.mCapsule.setDiscovery(this.mServerDiscovery);
+            // Reset the view to match the Discovery
+            if (this.mDiscoveryFragment != null) {
+                this.mDiscoveryFragment.matchStateToDiscovery(this.mServerDiscovery);
+            }
+        }
+        // Enable the rating buttons in the Discovery Fragment
+        if (this.mDiscoveryFragment != null) {
+            this.mDiscoveryFragment.enableButtons();
+        }
+    }
+
+    /**
+     * Called on the main thread after the background thread task for updating a Discovery has
+     * been cancelled
+     */
+    @Override
+    public void onUpdateDiscoveryCancelled() {
+        // Enable the rating buttons in the Discovery Fragment
+        if (this.mDiscoveryFragment != null) {
+            this.mDiscoveryFragment.enableButtons();
+        }
+    }
+
+    /**
+     * Executes a background thread task to update the Discovery
+     */
+    private void requestDiscoveryUpdate() {
+        if (!this.mCapsule.isDiscovery()) {
+            return;
+        }
+        // Instantiate the background thread task for updating a Discovery
+        UpdateDiscoveryTask task = new UpdateDiscoveryTask(this);
+        // Add the background thread task to a Fragment that retains its instance
+        this.mRetainedDiscoveryTaskFragment.setTask(task);
+        // Execute the task
+        task.execute(this.mCapsule.getDiscovery());
+    }
+
+    /**
      * Executes a background thread task to request the Memoir image from the server
      *
      * @param memoirId The server-side ID of the Memoir
      */
     private void requestMemoirImage(long memoirId) {
-        if (this.mRetainedTaskFragment == null) {
+        if (this.mRetainedMemoirTaskFragment == null) {
             return;
         }
         // Instantiate the background thread task for getting the Memoir image
         GetMemoirBitmapTask task = new GetMemoirBitmapTask(this);
         // Retain the task on a Fragment
-        this.mRetainedTaskFragment.setTask(task);
+        this.mRetainedMemoirTaskFragment.setTask(task);
         // Execute the background thread process
         task.execute(memoirId);
     }
@@ -237,7 +455,8 @@ public class CapsuleActivity extends FragmentActivity implements
         // FragmentManager
         FragmentManager fragmentManager = this.getSupportFragmentManager();
         // Get the Fragment for retaining the background thread task for getting a Memoir image
-        this.mRetainedTaskFragment = RetainedTaskFragment.findOrCreate(fragmentManager);
+        this.mRetainedMemoirTaskFragment =
+                RetainedTaskFragment.findOrCreate(fragmentManager, TAG_MEMOIR_FRAGMENT);
         // Get the Fragment for retaining the Bitmap cache
         RetainedBitmapCacheFragment bitmapCacheFragment =
                 RetainedBitmapCacheFragment.findOrCreate(fragmentManager);
@@ -254,6 +473,46 @@ public class CapsuleActivity extends FragmentActivity implements
 
         }
         fragmentTransaction.commit();
+
+        // Setup any Discovery-related Fragments
+        this.setupDiscoveryFragments(savedInstanceState, fragmentManager);
+    }
+
+    /**
+     * Sets up Discovery-related Fragments
+     *
+     * @param savedInstanceState The previous state data or null if the Activity is new
+     * @param fragmentManager    The FragmentManager
+     */
+    private void setupDiscoveryFragments(Bundle savedInstanceState,
+                                         FragmentManager fragmentManager) {
+        if (!this.mCapsule.isDiscovery()) {
+            return;
+        }
+
+        // Get the Fragment for retaining the background thread task for updating a Discovery
+        this.mRetainedDiscoveryTaskFragment =
+                RetainedTaskFragment.findOrCreate(fragmentManager, TAG_DISCOVERY_FRAGMENT);
+
+        // Instantiate the Fragment
+        this.mDiscoveryFragment = DiscoveryFragment.createInstance(this.mCapsule, this.mAccount);
+        FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+        if (savedInstanceState == null) {
+            fragmentTransaction.add(R.id.fragment_discovery, this.mDiscoveryFragment);
+        } else {
+            fragmentTransaction.replace(R.id.fragment_discovery, this.mDiscoveryFragment);
+
+        }
+        fragmentTransaction.commit();
+    }
+
+    /**
+     * Copies the server-side state of the Discovery
+     *
+     * @param discovery The Discovery to copy
+     */
+    private void copyServerDiscoveryState(Discovery discovery) {
+        this.mServerDiscovery = new Discovery(discovery);
     }
 
     /**

@@ -1,10 +1,8 @@
 package com.brettnamba.capsules.widget;
 
 import android.content.Context;
-import android.graphics.PorterDuff;
 import android.util.AttributeSet;
 import android.view.View;
-import android.widget.CompoundButton;
 import android.widget.LinearLayout;
 import android.widget.ToggleButton;
 
@@ -86,8 +84,6 @@ public class RatingControl extends LinearLayout {
                 }
             }
         });
-        this.mUpButton.setOnCheckedChangeListener(ON_CHECKED_LISTENER);
-        this.mDownButton.setOnCheckedChangeListener(ON_CHECKED_LISTENER);
     }
 
     /**
@@ -137,34 +133,9 @@ public class RatingControl extends LinearLayout {
         this.mDownButton.setTextOff(null);
         this.mDownButton.setTextOn(null);
         // Set the drawables
-        this.mUpButton.setBackgroundResource(R.drawable.ic_thumb_up_grey);
-        this.mDownButton.setBackgroundResource(R.drawable.ic_thumb_down_grey);
+        this.mUpButton.setBackgroundResource(R.drawable.rate_up_toggle);
+        this.mDownButton.setBackgroundResource(R.drawable.rate_down_toggle);
     }
-
-    /**
-     * Check listener for the up and down buttons that changes the visual state
-     */
-    public static final CompoundButton.OnCheckedChangeListener ON_CHECKED_LISTENER
-            = new CompoundButton.OnCheckedChangeListener() {
-
-        /**
-         * Listens for changes in the checked state of the button
-         *
-         * @param buttonView The button that was checked
-         * @param isChecked True means it was checked, false means it was un-checked
-         */
-        @Override
-        public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-            if (isChecked) {
-                // Change the color of the button
-                buttonView.getBackground().setColorFilter(R.color.primary_color, PorterDuff.Mode.SRC_ATOP);
-            } else {
-                // Remove the color
-                buttonView.getBackground().clearColorFilter();
-            }
-        }
-
-    };
 
     /**
      * Listener interface for handling callbacks on the RatingControl

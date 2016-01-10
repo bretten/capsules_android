@@ -148,6 +148,36 @@ public abstract class CapsuleListActivity extends FragmentActivity implements
     }
 
     /**
+     * onActivityResult
+     *
+     * @param requestCode
+     * @param resultCode
+     * @param data
+     */
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        switch (requestCode) {
+            case REQUEST_CODE_CAPSULE:
+                if (!data.hasExtra("capsule")) {
+                    break;
+                }
+                // Determine if the Activity updated the Capsule
+                boolean isUpdated = data.getBooleanExtra("modified", true);
+                // Get the Capsule that was passed in the result
+                Capsule capsule = data.getParcelableExtra("capsule");
+                // If the Capsule was updated, update the corresponding Capsule in the collections
+                if (isUpdated && capsule != null) {
+                    this.updateCapsule(capsule);
+                }
+                break;
+            default:
+                break;
+        }
+    }
+
+    /**
      * Requests Capsules from the server and parses the response
      *
      * @param params Parameters for the request
@@ -314,6 +344,35 @@ public abstract class CapsuleListActivity extends FragmentActivity implements
                 }
             }
         });
+    }
+
+    /**
+     * Updates the specified Capsule in the ListView's adapter and also the collection member
+     * variable
+     *
+     * @param capsule The Capsule to update
+     */
+    private void updateCapsule(Capsule capsule) {
+        // Get the matching Capsule
+        // TODO Collection of Capsules should be low overhead map, like LongSparseArray, but that is not Parcelable
+        Capsule capsuleMatch = null;
+        for (Capsule storedCapsule : this.mCapsules) {
+            if (storedCapsule.getSyncId() == capsule.getSyncId()) {
+                capsuleMatch = storedCapsule;
+            }
+        }
+        if (capsuleMatch == null) {
+            return;
+        }
+        // Get the adapter position and collection position
+        int adapterPosition = this.mAdapter.getPosition(capsuleMatch);
+        int collectionPosition = this.mCapsules.indexOf(capsuleMatch);
+        // Replace the updated Capsule with the Capsule match
+        this.mAdapter.remove(capsuleMatch);
+        this.mAdapter.insert(capsule, adapterPosition);
+        this.mCapsules.remove(collectionPosition);
+        this.mCapsules.add(collectionPosition, capsule);
+        this.mAdapter.notifyDataSetChanged();
     }
 
     /**

@@ -2,7 +2,6 @@ package com.brettnamba.capsules.fragments;
 
 import android.accounts.Account;
 import android.app.Activity;
-import android.graphics.PorterDuff;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
@@ -12,24 +11,20 @@ import android.widget.CompoundButton;
 import android.widget.ToggleButton;
 
 import com.brettnamba.capsules.R;
-import com.brettnamba.capsules.dataaccess.CapsuleDiscovery;
-import com.brettnamba.capsules.os.AsyncListenerTask;
-import com.brettnamba.capsules.os.UpdateDiscoveryTask;
-import com.brettnamba.capsules.provider.CapsuleContract;
-import com.brettnamba.capsules.provider.CapsuleOperations;
+import com.brettnamba.capsules.dataaccess.Capsule;
+import com.brettnamba.capsules.dataaccess.Discovery;
 import com.brettnamba.capsules.widget.RatingControl;
 
 /**
  * Fragment for a Discovery that allows for it to be viewed and updated
  */
 public class DiscoveryFragment extends Fragment implements
-        RatingControl.RatingListener,
-        AsyncListenerTask.UpdateDiscoveryTaskListener {
+        RatingControl.RatingListener {
 
     /**
      * The Capsule
      */
-    private CapsuleDiscovery mCapsule;
+    private Capsule mCapsule;
 
     /**
      * Listener that handles the callbacks
@@ -63,7 +58,8 @@ public class DiscoveryFragment extends Fragment implements
         try {
             this.mListener = (DiscoveryFragmentListener) activity;
         } catch (ClassCastException e) {
-            throw new ClassCastException(activity.toString() + " does not implement DiscoveryFragmentListener");
+            throw new ClassCastException(
+                    activity.toString() + " does not implement DiscoveryFragmentListener");
         }
     }
 
@@ -92,39 +88,32 @@ public class DiscoveryFragment extends Fragment implements
      * @return
      */
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+    public View onCreateView(LayoutInflater inflater, ViewGroup container,
+                             Bundle savedInstanceState) {
         // Inflate the layout View
         View view = inflater.inflate(R.layout.fragment_discovery, container, false);
 
         // Populate the Views
-        if (this.mCapsule != null && this.mAccount != null) {
-            // Rating control
+        if (this.mCapsule != null && this.mCapsule.isDiscovery() && this.mAccount != null) {
+            // Set up the Rating control
             this.mRatingControl = (RatingControl) view.findViewById(R.id.fragment_discovery_rating);
             this.mRatingControl.setListener(this);
-            if (this.mCapsule.getRating() >= 1) {
-                this.mRatingControl.setUpButtonChecked(true);
-            } else if (this.mCapsule.getRating() <= -1) {
-                this.mRatingControl.setDownButtonChecked(true);
-            }
-            // Favorite toggle
-            this.mFavoriteToggle = (ToggleButton) view.findViewById(R.id.fragment_discovery_favorite);
-            if (this.mCapsule.getFavorite() > 0) {
-                this.mFavoriteToggle.setChecked(true);
-                this.mFavoriteToggle.getBackground().setColorFilter(R.color.primary_color, PorterDuff.Mode.SRC_ATOP);
-            }
-            this.mFavoriteToggle.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-                @Override
-                public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                    if (isChecked) {
-                        DiscoveryFragment.this.mCapsule.setFavorite(1);
-                        buttonView.getBackground().setColorFilter(R.color.primary_color, PorterDuff.Mode.SRC_ATOP);
-                    } else {
-                        DiscoveryFragment.this.mCapsule.setFavorite(0);
-                        buttonView.getBackground().clearColorFilter();
-                    }
-                    new UpdateDiscoveryTask(DiscoveryFragment.this).execute(DiscoveryFragment.this.mCapsule);
-                }
-            });
+
+            // Set up the favorite toggle
+            this.mFavoriteToggle =
+                    (ToggleButton) view.findViewById(R.id.fragment_discovery_favorite);
+            this.mFavoriteToggle.setOnCheckedChangeListener(
+                    new CompoundButton.OnCheckedChangeListener() {
+                        @Override
+                        public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                            if (DiscoveryFragment.this.mListener != null) {
+                                DiscoveryFragment.this.mListener.onFavorite(isChecked);
+                            }
+                        }
+                    });
+
+            // Match the state of the inputs to the Discovery
+            this.matchStateToDiscovery(this.mCapsule.getDiscovery());
         }
 
         return view;
@@ -149,9 +138,8 @@ public class DiscoveryFragment extends Fragment implements
      */
     @Override
     public void onRateDown() {
-        if (this.mCapsule != null) {
-            this.mCapsule.setRating(-1);
-            new UpdateDiscoveryTask(this).execute(this.mCapsule);
+        if (this.mListener != null) {
+            this.mListener.onRateDown();
         }
     }
 
@@ -160,9 +148,8 @@ public class DiscoveryFragment extends Fragment implements
      */
     @Override
     public void onRateUp() {
-        if (this.mCapsule != null) {
-            this.mCapsule.setRating(1);
-            new UpdateDiscoveryTask(this).execute(this.mCapsule);
+        if (this.mListener != null) {
+            this.mListener.onRateUp();
         }
     }
 
@@ -171,51 +158,71 @@ public class DiscoveryFragment extends Fragment implements
      */
     @Override
     public void onRemoveRating() {
-        if (this.mCapsule != null) {
-            this.mCapsule.setRating(0);
-            new UpdateDiscoveryTask(this).execute(this.mCapsule);
+        if (this.mListener != null) {
+            this.mListener.onRemoveRating();
         }
     }
 
     /**
-     * Saves the updated Discovery on the background thread
+     * Matches the state of the inputs to the Discovery
      *
-     * @param params The Discovery to update
-     * @return The result of the update
+     * @param discovery The Discovery to match the inputs to
      */
-    @Override
-    public boolean duringUpdateDiscovery(CapsuleDiscovery... params) {
-        return CapsuleOperations.Discoveries.save(this.getActivity().getContentResolver(),
-                params[0], CapsuleContract.SyncStateAction.DIRTY);
+    public void matchStateToDiscovery(Discovery discovery) {
+        // Match the favorite state
+        this.mFavoriteToggle.setChecked(discovery.isFavorite());
+        // Match the rating
+        this.mRatingControl.setUpButtonChecked(false);
+        this.mRatingControl.setDownButtonChecked(false);
+        if (discovery.isRatedUp()) {
+            this.mRatingControl.setUpButtonChecked(true);
+        } else if (discovery.isRatedDown()) {
+            this.mRatingControl.setDownButtonChecked(true);
+        }
     }
 
     /**
-     * Disables the buttons before the Discovery is updated on the background thread
+     * Disables the buttons in this Fragment
      */
-    @Override
-    public void onPreUpdateDiscovery() {
-        this.mRatingControl.setButtonsEnabled(false);
-        this.mFavoriteToggle.setEnabled(false);
+    public void disableButtons() {
+        if (this.mRatingControl != null) {
+            this.mRatingControl.setButtonsEnabled(false);
+        }
+        if (this.mFavoriteToggle != null) {
+            this.mFavoriteToggle.setEnabled(false);
+        }
     }
 
     /**
-     * Re-enables the buttons after the background work has finished
+     * Enables the buttons in this Fragment
+     */
+    public void enableButtons() {
+        if (this.mRatingControl != null) {
+            this.mRatingControl.setButtonsEnabled(true);
+        }
+        if (this.mFavoriteToggle != null) {
+            this.mFavoriteToggle.setEnabled(true);
+        }
+    }
+
+    /**
+     * Instantiates a DiscoveryFragment given a Capsule and Account
      *
-     * @param result The result of the update
+     * @param capsule The Capsule that will populate the Fragment
+     * @param account The current Account
+     * @return The DiscoveryFragment instance
      */
-    @Override
-    public void onPostUpdateDiscovery(Boolean result) {
-        this.mRatingControl.setButtonsEnabled(true);
-        this.mFavoriteToggle.setEnabled(true);
-    }
+    public static DiscoveryFragment createInstance(Capsule capsule, Account account) {
+        DiscoveryFragment fragment = new DiscoveryFragment();
 
-    /**
-     * Re-enables the buttons if the background work was cancelled
-     */
-    @Override
-    public void onUpdateDiscoveryCancelled() {
-        this.mRatingControl.setButtonsEnabled(true);
-        this.mFavoriteToggle.setEnabled(true);
+        // Bundle the Fragment arguments
+        Bundle bundle = new Bundle();
+        bundle.putParcelable("capsule", capsule);
+        bundle.putParcelable("account", account);
+        // Set the arguments on the Fragment
+        fragment.setArguments(bundle);
+
+        return fragment;
     }
 
     /**
@@ -229,6 +236,28 @@ public class DiscoveryFragment extends Fragment implements
          * @param discoveryFragment The Fragment that is missing data
          */
         void onMissingData(DiscoveryFragment discoveryFragment);
+
+        /**
+         * Executes when the rate up button is clicked
+         */
+        void onRateUp();
+
+        /**
+         * Executes when the rate down button is clicked
+         */
+        void onRateDown();
+
+        /**
+         * Executes when the rating is removed from the RatingControl
+         */
+        void onRemoveRating();
+
+        /**
+         * Executes when the favorite ToggleButton is clicked
+         *
+         * @param isFavorite The state of the button
+         */
+        void onFavorite(boolean isFavorite);
 
     }
 
