@@ -11,7 +11,6 @@ import android.support.v4.app.NotificationCompat;
 
 import com.brettnamba.capsules.R;
 import com.brettnamba.capsules.dataaccess.Capsule;
-import com.brettnamba.capsules.dataaccess.CapsuleOwnership;
 import com.brettnamba.capsules.http.HttpUrlConnectionRequest;
 import com.brettnamba.capsules.http.HttpUrlMultiPartRequest;
 import com.brettnamba.capsules.http.HttpUrlWwwFormRequest;
@@ -36,7 +35,7 @@ public class SaveCapsuleService extends IntentService implements
     /**
      * The Capsule being edited
      */
-    private CapsuleOwnership mCapsule;
+    private Capsule mCapsule;
 
     /**
      * The current Account

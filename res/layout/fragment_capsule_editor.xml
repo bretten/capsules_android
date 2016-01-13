@@ -1,13 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:layout_width="match_parent"
-    android:layout_height="wrap_content">
+            xmlns:tools="http://schemas.android.com/tools"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:descendantFocusability="beforeDescendants"
+        android:focusableInTouchMode="true"
         android:orientation="vertical">
+
+        <Button
+            android:id="@+id/fragment_capsule_editor_location_button"
+            style="@style/AppTheme.Input.Button"
+            android:text="@string/label_update_location" />
+
+        <com.google.android.gms.maps.MapView
+            android:id="@+id/fragment_capsule_editor_map"
+            android:layout_width="match_parent"
+            android:layout_height="200dp" />
 
         <TextView
             style="@style/AppTheme.Input.Label"
@@ -54,5 +66,7 @@
             android:id="@+id/fragment_capsule_editor_save"
             style="@style/AppTheme.Input.Button"
             android:text="@string/label_save" />
+
     </LinearLayout>
+
 </ScrollView>

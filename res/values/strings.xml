@@ -72,6 +72,7 @@
     <string name="label_ok">OK</string>
     <string name="label_cancel">Cancel</string>
     <string name="label_choose_image">Choose an image&#8230;</string>
+    <string name="label_update_location">Update Location</string>
     <!-- Digits -->
     <string name="alphanumeric_digits">abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789</string>
 

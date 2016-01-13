@@ -14,7 +14,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.brettnamba.capsules.R;
-import com.brettnamba.capsules.dataaccess.CapsuleOwnership;
+import com.brettnamba.capsules.dataaccess.Capsule;
 import com.brettnamba.capsules.fragments.CapsuleEditorFragment;
 import com.brettnamba.capsules.util.Widgets;
 
@@ -27,11 +27,6 @@ import java.util.List;
  */
 public class CapsuleEditorActivity extends FragmentActivity implements
         CapsuleEditorFragment.CapsuleEditorFragmentListener {
-
-    /**
-     * The Capsule
-     */
-    private CapsuleOwnership mCapsule;
 
     /**
      * The Account that is editing
@@ -66,12 +61,11 @@ public class CapsuleEditorActivity extends FragmentActivity implements
         // Get the Intent extras
         Bundle extras = this.getIntent().getExtras();
         if (extras != null) {
-            this.mCapsule = extras.getParcelable("capsule");
             this.mAccount = extras.getParcelable("account");
         }
 
         // Close the Activity if required members are missing
-        if (this.mCapsule == null || this.mAccount == null) {
+        if (this.mAccount == null) {
             this.finish();
         }
 
@@ -79,13 +73,8 @@ public class CapsuleEditorActivity extends FragmentActivity implements
         FragmentManager fragmentManager = this.getSupportFragmentManager();
         // See if the Activity is being recreated
         if (savedInstanceState == null) {
-            // Bundle the Fragment arguments
-            Bundle bundle = new Bundle();
-            bundle.putParcelable("capsule", this.mCapsule);
-            bundle.putParcelable("account", this.mAccount);
-            // Fragment for editing Capsules
-            this.mEditorFragment = new CapsuleEditorFragment();
-            this.mEditorFragment.setArguments(bundle);
+            // Instantiate the Fragment for editing Capsules
+            this.mEditorFragment = CapsuleEditorFragment.createInstance(this.mAccount);
             // FragmentTransaction
             FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
             fragmentTransaction.add(R.id.fragment_capsule_editor, this.mEditorFragment,
@@ -98,7 +87,7 @@ public class CapsuleEditorActivity extends FragmentActivity implements
         }
 
         // Setup the Toolbar
-        Toolbar toolbar = Widgets.createToolbar(this, this.mCapsule.getName());
+        Toolbar toolbar = Widgets.createToolbar(this, this.getString(R.string.map_new_capsule));
         toolbar.setNavigationOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -148,7 +137,7 @@ public class CapsuleEditorActivity extends FragmentActivity implements
      * @param messages              The error messages
      */
     @Override
-    public void onInvalidCapsuleData(CapsuleEditorFragment capsuleEditorFragment, CapsuleOwnership capsule,
+    public void onInvalidCapsuleData(CapsuleEditorFragment capsuleEditorFragment, Capsule capsule,
                                      List<String> messages) {
         // Show the validation error messages
         this.setMessages(messages);
@@ -172,14 +161,12 @@ public class CapsuleEditorActivity extends FragmentActivity implements
      * @param capsule               The Capsule that was used to save
      */
     @Override
-    public void onSaveSuccess(CapsuleEditorFragment capsuleEditorFragment, CapsuleOwnership capsule) {
+    public void onSaveSuccess(CapsuleEditorFragment capsuleEditorFragment, Capsule capsule) {
         // Clear any validation messages
         this.clearMessages();
-        // Set the Capsule
-        this.mCapsule = capsule;
         // Place the saved Capsule in the Intent
         Intent intent = new Intent();
-        intent.putExtra("capsule", this.mCapsule);
+        intent.putExtra("capsule", capsule);
         // Set the result as OK and finish
         this.setResult(Activity.RESULT_OK, intent);
         this.finish();

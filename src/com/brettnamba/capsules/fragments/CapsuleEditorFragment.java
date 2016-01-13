@@ -7,6 +7,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.graphics.Bitmap;
+import android.location.Location;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
@@ -19,15 +20,28 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.Toast;
 
 import com.brettnamba.capsules.R;
-import com.brettnamba.capsules.dataaccess.CapsuleOwnership;
+import com.brettnamba.capsules.dataaccess.Capsule;
 import com.brettnamba.capsules.dataaccess.Memoir;
 import com.brettnamba.capsules.http.RequestContract;
 import com.brettnamba.capsules.services.SaveCapsuleService;
 import com.brettnamba.capsules.util.Files;
 import com.brettnamba.capsules.util.Images;
 import com.brettnamba.capsules.util.Intents;
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.location.LocationListener;
+import com.google.android.gms.location.LocationRequest;
+import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.maps.CameraUpdateFactory;
+import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.MapView;
+import com.google.android.gms.maps.OnMapReadyCallback;
+import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
+import com.google.android.gms.maps.model.MarkerOptions;
 
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
@@ -38,17 +52,16 @@ import java.util.List;
  *
  * @author Brett Namba
  */
-public class CapsuleEditorFragment extends Fragment {
+public class CapsuleEditorFragment extends Fragment implements
+        OnMapReadyCallback,
+        LocationListener,
+        GoogleApiClient.ConnectionCallbacks,
+        GoogleApiClient.OnConnectionFailedListener {
 
     /**
      * The Capsule being edited
      */
-    private CapsuleOwnership mCapsule;
-
-    /**
-     * Temporary Capsule that will hold the edited values until the save is a success
-     */
-    private CapsuleOwnership mCapsuleClone;
+    private Capsule mCapsule;
 
     /**
      * The current Account
@@ -59,6 +72,21 @@ public class CapsuleEditorFragment extends Fragment {
      * The save button
      */
     private Button mSaveButton;
+
+    /**
+     * The MapView
+     */
+    private MapView mMapView;
+
+    /**
+     * The underlying GoogleMap
+     */
+    private GoogleMap mMap;
+
+    /**
+     * The Marker that indicates the current location
+     */
+    private Marker mLocationMarker;
 
     /**
      * The Capsule name input
@@ -96,9 +124,34 @@ public class CapsuleEditorFragment extends Fragment {
     private SaveCapsuleReceiver mReceiver;
 
     /**
+     * The Google API client
+     */
+    private GoogleApiClient mGoogleApiClient;
+
+    /**
+     * Determines the accuracy of the location updates
+     */
+    private LocationRequest mLocationRequest;
+
+    /**
+     * The last Location that was retrieved
+     */
+    private Location mLastLocation;
+
+    /**
      * Request code for starting an Activity to choose an upload
      */
     private static final int REQUEST_CODE_CHOOSE_UPLOAD = 1;
+
+    /**
+     * The interval in ms of the location request service
+     */
+    private static final int LOCATION_REQUEST_INTERVAL = 10000;
+
+    /**
+     * The default zoom level for the GoogleMap when focused on a location
+     */
+    private static final int ZOOM = 15;
 
     /**
      * onAttach
@@ -112,7 +165,8 @@ public class CapsuleEditorFragment extends Fragment {
         try {
             this.mListener = (CapsuleEditorFragmentListener) activity;
         } catch (ClassCastException e) {
-            throw new ClassCastException(activity.toString() + " does not implement CapsuleEditorFragmentListener");
+            throw new ClassCastException(
+                    activity.toString() + " does not implement CapsuleEditorFragmentListener");
         }
     }
 
@@ -130,6 +184,9 @@ public class CapsuleEditorFragment extends Fragment {
             this.mCapsule = args.getParcelable("capsule");
             this.mAccount = args.getParcelable("account");
         }
+
+        // Setup the services required for requesting the device's location
+        this.setupLocationService();
     }
 
     /**
@@ -138,55 +195,19 @@ public class CapsuleEditorFragment extends Fragment {
      * @param inflater           The LayoutInflater used to inflate the layout View
      * @param container          The parent of the layout View
      * @param savedInstanceState State data if this Fragment is being recreated, otherwise null
-     * @return
+     * @return The inflated layout View
      */
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+    public View onCreateView(LayoutInflater inflater, ViewGroup container,
+                             Bundle savedInstanceState) {
         // Inflate the layout View
         View view = inflater.inflate(R.layout.fragment_capsule_editor, container, false);
 
-        // Get references to the EditTexts
-        this.mCapsuleNameEditText = (EditText) view.findViewById(
-                R.id.fragment_capsule_editor_name);
-        this.mMemoirTitleEditText = (EditText) view.findViewById(
-                R.id.fragment_capsule_editor_memoir_title);
-        this.mMemoirMessageEditText = (EditText) view.findViewById(
-                R.id.fragment_capsule_editor_memoir_message);
+        // Get references to the Views and set up any listeners
+        this.setupViews(view);
 
-        // Populate the Views
-        if (this.mCapsule != null && this.mAccount != null) {
-            // Clone the Capsule
-            this.mCapsuleClone = new CapsuleOwnership(this.mCapsule);
-            // Capsule name
-            if (this.mCapsule.getName() != null) {
-                this.mCapsuleNameEditText.setText(this.mCapsule.getName());
-            }
-            // Set the Memoir
-            Memoir memoir = this.mCapsule.getMemoir();
-            if (memoir != null) {
-                // Set the Memoir title
-                if (memoir.getTitle() != null) {
-                    this.mMemoirTitleEditText.setText(memoir.getTitle());
-                }
-                // Set the Memoir message
-                if (memoir.getMessage() != null) {
-                    this.mMemoirMessageEditText.setText(memoir.getMessage());
-                }
-            }
-        }
-
-        // Set the file chooser button listener
-        Button fileChooserButton = (Button) view.findViewById(
-                R.id.fragment_capsule_editor_file_chooser_button);
-        fileChooserButton.setOnClickListener(this.mFileButtonListener);
-
-        // Get a reference to the upload preview ImageView
-        this.mUploadImageView = (ImageView) view.findViewById(
-                R.id.fragment_capsule_editor_upload_image_view);
-
-        // Set the save button listener
-        this.mSaveButton = (Button) view.findViewById(R.id.fragment_capsule_editor_save);
-        this.mSaveButton.setOnClickListener(this.mSaveButtonListener);
+        // Forward onCreate to MapView
+        this.mMapView.onCreate(savedInstanceState);
 
         return view;
     }
@@ -200,7 +221,7 @@ public class CapsuleEditorFragment extends Fragment {
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
         // If the Fragment is missing any required data, delegate handling to the listener
-        if (this.mCapsule == null || this.mAccount == null) {
+        if (this.mAccount == null) {
             this.mListener.onMissingData(this);
         }
     }
@@ -213,12 +234,20 @@ public class CapsuleEditorFragment extends Fragment {
     @Override
     public void onViewStateRestored(Bundle savedInstanceState) {
         super.onViewStateRestored(savedInstanceState);
-        // See if the URI of the upload is in the state data
-        if (savedInstanceState != null && savedInstanceState.containsKey("image_uri")) {
-            // Get the URI from the state data
-            this.mUploadUri = savedInstanceState.getParcelable("image_uri");
-            // Preview the upload
-            this.setUploadImageView(this.mUploadUri);
+        // Check the state data
+        if (savedInstanceState != null) {
+            // See if the URI of the upload is in the state data
+            if (savedInstanceState.containsKey("image_uri")) {
+                // Get the URI from the state data
+                this.mUploadUri = savedInstanceState.getParcelable("image_uri");
+                // Preview the upload
+                this.setUploadImageView(this.mUploadUri);
+            }
+            // See if a location was stored in the state data
+            if (savedInstanceState.containsKey("location")) {
+                // Get the location
+                this.mLastLocation = savedInstanceState.getParcelable("location");
+            }
         }
     }
 
@@ -232,6 +261,14 @@ public class CapsuleEditorFragment extends Fragment {
         this.mReceiver = new SaveCapsuleReceiver();
         IntentFilter intentFilter = new IntentFilter(SaveCapsuleService.BROADCAST_ACTION);
         this.getActivity().registerReceiver(this.mReceiver, intentFilter);
+
+        // Reconnect the LocationClient
+        if (this.mGoogleApiClient != null && !this.mGoogleApiClient.isConnected()) {
+            this.mGoogleApiClient.connect();
+        }
+
+        // Forward onResume to MapView
+        this.mMapView.onResume();
     }
 
     /**
@@ -242,12 +279,35 @@ public class CapsuleEditorFragment extends Fragment {
         super.onPause();
         // Unregister the BroadcastReceiver
         this.getActivity().unregisterReceiver(this.mReceiver);
+
+        // Disconnect from the Google Play services location API
+        if (this.mGoogleApiClient != null && this.mGoogleApiClient.isConnected()) {
+            // Remove location listener updates
+            LocationServices.FusedLocationApi.removeLocationUpdates(this.mGoogleApiClient, this);
+            // Disconnect
+            this.mGoogleApiClient.disconnect();
+        }
+
+        // Forward onPause to MapView
+        this.mMapView.onPause();
+    }
+
+    /**
+     * onDestroy
+     */
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+
+        // Forward onDestroy to MapView
+        this.mMapView.onDestroy();
     }
 
     /**
      * onSaveInstanceState
      *
-     * @param outState State data that will be passed to the replacement Fragment when it is re-created
+     * @param outState State data that will be passed to the replacement Fragment when it is
+     *                 re-created
      */
     @Override
     public void onSaveInstanceState(Bundle outState) {
@@ -256,6 +316,24 @@ public class CapsuleEditorFragment extends Fragment {
         if (this.mUploadUri != null) {
             outState.putParcelable("image_uri", this.mUploadUri);
         }
+        // Save the last location in the state data
+        if (this.mLastLocation != null) {
+            outState.putParcelable("location", this.mLastLocation);
+        }
+
+        // Forward onSaveInstanceState to MapView
+        this.mMapView.onSaveInstanceState(outState);
+    }
+
+    /**
+     * onLowMemory
+     */
+    @Override
+    public void onLowMemory() {
+        super.onLowMemory();
+
+        // Forward onLowMemory to MapView
+        this.mMapView.onLowMemory();
     }
 
     /**
@@ -296,12 +374,175 @@ public class CapsuleEditorFragment extends Fragment {
     }
 
     /**
+     * Called when the GoogleMap is ready
+     *
+     * @param googleMap The GoogleMap
+     */
+    @Override
+    public void onMapReady(GoogleMap googleMap) {
+        this.mMap = googleMap;
+
+        // If there is a previous location, update the location Marker and the center of the GoogleMap
+        if (this.mLastLocation != null) {
+            this.updateLocation(this.mLastLocation);
+        }
+    }
+
+    /**
+     * Called after the Google API has been connected to
+     *
+     * @param bundle Data provided by the Google API services
+     */
+    @Override
+    public void onConnected(Bundle bundle) {
+        // Request location updates
+        LocationServices.FusedLocationApi
+                .requestLocationUpdates(this.mGoogleApiClient, this.mLocationRequest, this);
+    }
+
+    /**
+     * Called when the Google API connection has been suspended
+     *
+     * @param i The cause for the disconnection
+     */
+    @Override
+    public void onConnectionSuspended(int i) {
+
+    }
+
+    /**
+     * Called whenever the Location is updated
+     *
+     * @param location The updated Location
+     */
+    @Override
+    public void onLocationChanged(Location location) {
+
+    }
+
+    /**
+     * Called when a connection could not be established with the Google API service
+     *
+     * @param connectionResult A result indicating what caused the failure
+     */
+    @Override
+    public void onConnectionFailed(ConnectionResult connectionResult) {
+        // Notify the user the Google API services could not be reached
+        Toast.makeText(this.getActivity(), this.getString(R.string.error_google_api_cannot_connect),
+                Toast.LENGTH_SHORT).show();
+    }
+
+    /**
+     * Sets up the Capsule that will be edited
+     */
+    private void setupCapsule() {
+        // Instantiate the Capsule if it has not already been
+        if (this.mCapsule == null) {
+            this.mCapsule = new Capsule();
+        }
+        if (this.mCapsule.getMemoir() == null) {
+            this.mCapsule.setMemoir(new Memoir());
+        }
+    }
+
+    /**
+     * Sets the specified location on the Capsule being edited
+     *
+     * @param location The location
+     */
+    private void setLocationOnCapsule(Location location) {
+        // Setup the Capsule
+        this.setupCapsule();
+        // Set the location
+        this.mCapsule.setLatitude(location.getLatitude());
+        this.mCapsule.setLongitude(location.getLongitude());
+    }
+
+    /**
+     * Gets references to the Views in the layout View and sets up any listeners
+     *
+     * @param layout The layout View
+     */
+    private void setupViews(View layout) {
+        // Get references to the EditTexts
+        this.mCapsuleNameEditText = (EditText) layout.findViewById(
+                R.id.fragment_capsule_editor_name);
+        this.mMemoirTitleEditText = (EditText) layout.findViewById(
+                R.id.fragment_capsule_editor_memoir_title);
+        this.mMemoirMessageEditText = (EditText) layout.findViewById(
+                R.id.fragment_capsule_editor_memoir_message);
+
+        // Get a reference to the MapView
+        this.mMapView = (MapView) layout.findViewById(R.id.fragment_capsule_editor_map);
+        // Get the underlying GoogleMap
+        this.mMapView.getMapAsync(this);
+
+        // Set the location button listener
+        Button locationButton =
+                (Button) layout.findViewById(R.id.fragment_capsule_editor_location_button);
+        locationButton.setOnClickListener(this.mLocationButtonListener);
+
+        // Set the file chooser button listener
+        Button fileChooserButton = (Button) layout.findViewById(
+                R.id.fragment_capsule_editor_file_chooser_button);
+        fileChooserButton.setOnClickListener(this.mFileButtonListener);
+
+        // Get a reference to the upload preview ImageView
+        this.mUploadImageView = (ImageView) layout.findViewById(
+                R.id.fragment_capsule_editor_upload_image_view);
+
+        // Set the save button listener
+        this.mSaveButton = (Button) layout.findViewById(R.id.fragment_capsule_editor_save);
+        this.mSaveButton.setOnClickListener(this.mSaveButtonListener);
+    }
+
+    /**
+     * Maps the View values to the specified Capsule
+     *
+     * @param capsule The Capsule to map the View values to
+     * @return The Capsule with the newly mapped data
+     */
+    private Capsule mapViewsToCapsule(Capsule capsule) {
+        // Set the View values on the Capsule
+        if (this.mCapsuleNameEditText != null) {
+            capsule.setName(this.mCapsuleNameEditText.getText().toString().trim());
+        }
+        if (this.mMemoirTitleEditText != null) {
+            capsule.getMemoir().setTitle(this.mMemoirTitleEditText.getText().toString().trim());
+        }
+        if (this.mMemoirMessageEditText != null) {
+            capsule.getMemoir().setMessage(this.mMemoirMessageEditText.getText().toString().trim());
+        }
+
+        return capsule;
+    }
+
+    /**
+     * Sets up everything required for accessing the device's Location
+     */
+    private void setupLocationService() {
+        if (this.mGoogleApiClient == null) {
+            this.mGoogleApiClient = new GoogleApiClient.Builder(this.getActivity())
+                    .addApi(LocationServices.API)
+                    .addConnectionCallbacks(this)
+                    .addOnConnectionFailedListener(this)
+                    .build();
+        }
+        if (this.mLocationRequest == null) {
+            this.mLocationRequest = LocationRequest.create()
+                    .setInterval(LOCATION_REQUEST_INTERVAL)
+                    .setFastestInterval(LOCATION_REQUEST_INTERVAL)
+                    .setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
+        }
+    }
+
+    /**
      * Checks if the Capsule is valid
      *
      * @param capsule The Capsule being validated
      * @return True if it is valid, otherwise false
      */
-    private boolean isValid(CapsuleOwnership capsule) {
+    private boolean isValid(Capsule capsule) {
         // Will hold any errors from validation
         List<String> errors = new ArrayList<String>();
 
@@ -336,6 +577,50 @@ public class CapsuleEditorFragment extends Fragment {
             this.mListener.onInvalidCapsuleData(this, capsule, errors);
         }
         return isValid;
+    }
+
+    /**
+     * Updates the Fragment with the specified Location
+     *
+     * @param location The Location to update with
+     */
+    private void updateLocation(Location location) {
+        // Keep track of the location
+        this.mLastLocation = location;
+        // Center the MapView on the location
+        if (this.mMap != null) {
+            // Zoom to the location
+            this.mMap.moveCamera(CameraUpdateFactory
+                    .newLatLngZoom(new LatLng(location.getLatitude(), location.getLongitude()),
+                            ZOOM));
+            // Set the position of the location Marker
+            this.setLocationMarkerPosition(this.mMap, location);
+        }
+        // Set the location data on the Capsule
+        this.setLocationOnCapsule(location);
+    }
+
+    /**
+     * Sets the position of the location Marker using the specified Location.  If the Marker has
+     * not been instantiated, it will be added to the specified Map.
+     *
+     * @param map      The GoogleMap to add the Marker to if the Marker has not yet been
+     *                 instantiated
+     * @param location The new position of the Marker
+     */
+    private void setLocationMarkerPosition(GoogleMap map, Location location) {
+        if (map == null || location == null) {
+            return;
+        }
+
+        if (this.mLocationMarker != null) {
+            this.mLocationMarker
+                    .setPosition(new LatLng(location.getLatitude(), location.getLongitude()));
+        } else {
+            this.mLocationMarker = map.addMarker(new MarkerOptions()
+                    .position(new LatLng(location.getLatitude(), location.getLongitude()))
+                    .draggable(false));
+        }
     }
 
     /**
@@ -386,37 +671,66 @@ public class CapsuleEditorFragment extends Fragment {
     }
 
     /**
+     * Instantiates a new CapsuleEditorFragment instance given an Account
+     *
+     * @param account The current Account
+     * @return The new instance of CapsuleEditorFragment
+     */
+    public static CapsuleEditorFragment createInstance(Account account) {
+        CapsuleEditorFragment fragment = new CapsuleEditorFragment();
+
+        // Bundle the Fragment arguments
+        Bundle bundle = new Bundle();
+        bundle.putParcelable("account", account);
+        // Set the arguments on the Fragment
+        fragment.setArguments(bundle);
+
+        return fragment;
+    }
+
+    /**
      * Listener for the save button
      */
     private final OnClickListener mSaveButtonListener = new OnClickListener() {
         @Override
         public void onClick(View v) {
-            // Set the Capsule name
-            CapsuleEditorFragment.this.mCapsuleClone.setName(
-                    CapsuleEditorFragment.this.mCapsuleNameEditText.getText().toString()
-            );
-            // Instantiate new Memoir
-            Memoir memoir = new Memoir();
-            // Set the Memoir title
-            memoir.setTitle(CapsuleEditorFragment.this.mMemoirTitleEditText.getText().toString());
-            // Set the Memoir message
-            memoir.setMessage(
-                    CapsuleEditorFragment.this.mMemoirMessageEditText.getText().toString());
-            // Set the file content URI
-            memoir.setFileContentUri(CapsuleEditorFragment.this.mUploadUri);
-            // Set the Memoir on the Capsule
-            CapsuleEditorFragment.this.mCapsuleClone.setMemoir(memoir);
+            // Setup the Capsule
+            CapsuleEditorFragment.this.setupCapsule();
+            // Map the View values to the Capsule
+            CapsuleEditorFragment.this.mCapsule = CapsuleEditorFragment.this
+                    .mapViewsToCapsule(CapsuleEditorFragment.this.mCapsule);
+            CapsuleEditorFragment.this.mCapsule.getMemoir()
+                    .setFileContentUri(CapsuleEditorFragment.this.mUploadUri);
 
             // Validate the Capsule
-            if (CapsuleEditorFragment.this.isValid(CapsuleEditorFragment.this.mCapsuleClone)) {
+            if (CapsuleEditorFragment.this.isValid(CapsuleEditorFragment.this.mCapsule)) {
                 // Disable the save button
                 CapsuleEditorFragment.this.mSaveButton.setEnabled(false);
                 // Save the Capsule on the background thread
                 Intent saveIntent = new Intent(CapsuleEditorFragment.this.getActivity(),
                         SaveCapsuleService.class);
-                saveIntent.putExtra("capsule", CapsuleEditorFragment.this.mCapsuleClone);
+                saveIntent.putExtra("capsule", CapsuleEditorFragment.this.mCapsule);
                 saveIntent.putExtra("account", CapsuleEditorFragment.this.mAccount);
                 CapsuleEditorFragment.this.getActivity().startService(saveIntent);
+            }
+        }
+    };
+
+    /**
+     * Click listener for the location update Button
+     */
+    private final OnClickListener mLocationButtonListener = new OnClickListener() {
+        @Override
+        public void onClick(View v) {
+            if (CapsuleEditorFragment.this.mGoogleApiClient == null ||
+                    !CapsuleEditorFragment.this.mGoogleApiClient.isConnected()) {
+                return;
+            }
+            // Get the last location
+            Location location = LocationServices.FusedLocationApi
+                    .getLastLocation(CapsuleEditorFragment.this.mGoogleApiClient);
+            if (location != null) {
+                CapsuleEditorFragment.this.updateLocation(location);
             }
         }
     };
@@ -471,7 +785,7 @@ public class CapsuleEditorFragment extends Fragment {
             }
             // Check if there was a Capsule object
             if (extras.containsKey("capsule")) {
-                CapsuleOwnership capsule = extras.getParcelable("capsule");
+                Capsule capsule = extras.getParcelable("capsule");
                 if (capsule != null) {
                     if (CapsuleEditorFragment.this.mListener != null) {
                         // Delegates the handling of the success to the listener
@@ -487,7 +801,7 @@ public class CapsuleEditorFragment extends Fragment {
                 List<String> messages = extras.getStringArrayList("messages");
                 // Delegate the messages to the listener
                 CapsuleEditorFragment.this.mListener.onInvalidCapsuleData(
-                        CapsuleEditorFragment.this, CapsuleEditorFragment.this.mCapsuleClone,
+                        CapsuleEditorFragment.this, CapsuleEditorFragment.this.mCapsule,
                         messages);
             }
 
@@ -516,7 +830,7 @@ public class CapsuleEditorFragment extends Fragment {
          * @param capsule               The Capsule with invalid data
          * @param messages              The error messages
          */
-        void onInvalidCapsuleData(CapsuleEditorFragment capsuleEditorFragment, CapsuleOwnership capsule,
+        void onInvalidCapsuleData(CapsuleEditorFragment capsuleEditorFragment, Capsule capsule,
                                   List<String> messages);
 
         /**
@@ -532,7 +846,7 @@ public class CapsuleEditorFragment extends Fragment {
          * @param capsuleEditorFragment The Fragment that saved the data
          * @param capsule               The Capsule that was used to save
          */
-        void onSaveSuccess(CapsuleEditorFragment capsuleEditorFragment, CapsuleOwnership capsule);
+        void onSaveSuccess(CapsuleEditorFragment capsuleEditorFragment, Capsule capsule);
 
     }
 
