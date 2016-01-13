@@ -363,6 +363,7 @@ public class RequestHandler {
                 RequestContract.BASE_URL + RequestContract.Uri.VALIDATE_CAPSULE_URI,
                 account, Constants.AUTH_TOKEN_TYPE
         );
+        httpRequest.addRequestHeader("Accept", "application/json");
         // Add the listener
         if (onDataSentListener != null) {
             httpRequest.setListener(onDataSentListener);
@@ -395,6 +396,7 @@ public class RequestHandler {
                 RequestContract.BASE_URL + RequestContract.Uri.SAVE_CAPSULE_URI,
                 account, Constants.AUTH_TOKEN_TYPE
         );
+        httpRequest.addRequestHeader("Accept", "application/json");
         // Add the listener
         if (onDataSentListener != null) {
             httpRequest.setListener(onDataSentListener);
