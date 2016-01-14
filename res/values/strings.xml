@@ -33,7 +33,7 @@
     <!--
         Activities
     -->
-    <!-- MainActivity -->
+    <!-- MapActivity -->
     <string name="map_during_open_capsule">Discovering...</string>
     <string name="map_new_capsule_dialog_title">Add a Capsule?</string>
     <string name="map_new_capsule_dialog_message">After dropping a new Capsule, you may alter its position by holding and dragging it.  When you find the correct placement, you can click on the Capsule to finish creating it.</string>

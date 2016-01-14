@@ -1,4 +1,4 @@
-package com.brettnamba.capsules;
+package com.brettnamba.capsules.activities;
 
 import android.accounts.Account;
 import android.accounts.AccountManager;
@@ -23,9 +23,8 @@ import android.view.View;
 import android.widget.ImageView;
 import android.widget.Toast;
 
-import com.brettnamba.capsules.activities.CapsuleActivity;
-import com.brettnamba.capsules.activities.CapsuleEditorActivity;
-import com.brettnamba.capsules.activities.CapsuleListActivity;
+import com.brettnamba.capsules.Constants;
+import com.brettnamba.capsules.R;
 import com.brettnamba.capsules.authenticator.AccountDialogFragment;
 import com.brettnamba.capsules.authenticator.LoginActivity;
 import com.brettnamba.capsules.dataaccess.Capsule;
@@ -77,7 +76,7 @@ import java.util.Map;
  * @author Brett
  *
  */
-public class MainActivity extends FragmentActivity implements
+public class MapActivity extends FragmentActivity implements
         OnMapReadyCallback,
         LocationListener,
         GoogleApiClient.ConnectionCallbacks,
@@ -226,13 +225,13 @@ public class MainActivity extends FragmentActivity implements
     /**
      * The tag used for logging.
      */
-    private static final String TAG = "MainActivity";
+    private static final String TAG = "MapActivity";
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
         Log.i(TAG, "onCreate()");
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+        setContentView(R.layout.activity_map);
 
         // Fragment manager
         FragmentManager fragmentManager = this.getSupportFragmentManager();
@@ -272,7 +271,7 @@ public class MainActivity extends FragmentActivity implements
         drawerButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                MainActivity.this.mDrawerLayout.openDrawer(MainActivity.this.mDrawerView);
+                MapActivity.this.mDrawerLayout.openDrawer(MapActivity.this.mDrawerView);
             }
         });
 	}
@@ -1030,32 +1029,32 @@ public class MainActivity extends FragmentActivity implements
         @Override
         public void onInfoWindowClick(Marker marker) {
             // Check if this is the new Capsule Marker
-            if (marker.equals(MainActivity.this.mNewCapsuleMarker) && MainActivity.this.mAccount != null) {
+            if (marker.equals(MapActivity.this.mNewCapsuleMarker) && MapActivity.this.mAccount != null) {
                 // Get the latitude and longitude
-                LatLng latLng = MainActivity.this.mNewCapsuleMarker.getPosition();
+                LatLng latLng = MapActivity.this.mNewCapsuleMarker.getPosition();
                 // Instantiate a new Capsule to edit
                 CapsuleOwnership capsule = new CapsuleOwnership();
                 capsule.setLatitude(latLng.latitude);
                 capsule.setLongitude(latLng.longitude);
-                capsule.setAccountName(MainActivity.this.mAccount.name);
+                capsule.setAccountName(MapActivity.this.mAccount.name);
                 // Launch the editor Activity
-                Intent intent = new Intent(MainActivity.this.getApplicationContext(),
+                Intent intent = new Intent(MapActivity.this.getApplicationContext(),
                         CapsuleEditorActivity.class);
                 intent.putExtra("capsule", capsule);
-                intent.putExtra("account", MainActivity.this.mAccount);
-                MainActivity.this.startActivityForResult(intent, REQUEST_CODE_CAPSULE_EDITOR);
+                intent.putExtra("account", MapActivity.this.mAccount);
+                MapActivity.this.startActivityForResult(intent, REQUEST_CODE_CAPSULE_EDITOR);
                 return;
             }
 
             // Owned Marker
             if (mOwnedMarkers.containsKey(marker)) {
-                MainActivity.this.openCapsuleMarker(mOwnedMarkers.get(marker));
+                MapActivity.this.openCapsuleMarker(mOwnedMarkers.get(marker));
                 return;
             }
 
             // Discovered Marker
             if (mDiscoveredMarkers.containsKey(marker)) {
-                MainActivity.this.openCapsuleMarker(mDiscoveredMarkers.get(marker));
+                MapActivity.this.openCapsuleMarker(mDiscoveredMarkers.get(marker));
                 return;
             }
 
@@ -1069,18 +1068,18 @@ public class MainActivity extends FragmentActivity implements
                     );
                     if (distance < DISCOVERY_RADIUS) {
                         // Keep a reference to the Marker being opened
-                        MainActivity.this.mOpenedCapsuleMarker = marker;
+                        MapActivity.this.mOpenedCapsuleMarker = marker;
                         // Send a HTTP request to open the Capsule on the background thread
-                        MainActivity.this.mRetainedFragment.startCapsuleOpen(MainActivity.this,
-                                MainActivity.this.mAccount, MainActivity.this.mAuthToken, location,
-                                MainActivity.this.mUndiscoveredMarkers.get(marker));
+                        MapActivity.this.mRetainedFragment.startCapsuleOpen(MapActivity.this,
+                                MapActivity.this.mAccount, MapActivity.this.mAuthToken, location,
+                                MapActivity.this.mUndiscoveredMarkers.get(marker));
                     } else {
                         Toast.makeText(getApplicationContext(), getText(R.string.error_marker_too_far),
                                 Toast.LENGTH_SHORT).show();
                     }
                 } else {
-                    Toast.makeText(MainActivity.this.getApplicationContext(),
-                            MainActivity.this.getText(R.string.error_cannot_retrieve_location),
+                    Toast.makeText(MapActivity.this.getApplicationContext(),
+                            MapActivity.this.getText(R.string.error_cannot_retrieve_location),
                             Toast.LENGTH_SHORT).show();
                 }
             }
@@ -1098,7 +1097,7 @@ public class MainActivity extends FragmentActivity implements
         @Override
         public void onMapLongClick(final LatLng point) {
             // Build the Dialog
-            AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+            AlertDialog.Builder builder = new AlertDialog.Builder(MapActivity.this);
             builder.setTitle(getString(R.string.map_new_capsule_dialog_title)).setMessage(getString(R.string.map_new_capsule_dialog_message));
 
             // Confirm button

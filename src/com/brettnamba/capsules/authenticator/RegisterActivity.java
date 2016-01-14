@@ -6,7 +6,6 @@ import android.app.ProgressDialog;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.app.FragmentActivity;
-import android.support.v4.app.FragmentManager;
 import android.support.v7.widget.Toolbar;
 import android.text.TextUtils;
 import android.util.Patterns;
@@ -16,7 +15,7 @@ import android.widget.EditText;
 import android.widget.TextView;
 
 import com.brettnamba.capsules.Constants;
-import com.brettnamba.capsules.MainActivity;
+import com.brettnamba.capsules.activities.MapActivity;
 import com.brettnamba.capsules.R;
 import com.brettnamba.capsules.http.RequestHandler;
 import com.brettnamba.capsules.http.response.JsonResponse;
@@ -159,9 +158,10 @@ public class RegisterActivity extends FragmentActivity implements AsyncListenerT
             // Add the Account to the device and associate the authentication token to the new Account
             final Account account = new Account(username, Constants.ACCOUNT_TYPE);
             this.mAccountManager.addAccountExplicitly(account, null, null);
-            this.mAccountManager.setAuthToken(account, Constants.AUTH_TOKEN_TYPE, response.getAuthToken());
-            // Start the MainActivity as the beginning of the stack and finish
-            Intent intent = new Intent(this, MainActivity.class);
+            this.mAccountManager.setAuthToken(account, Constants.AUTH_TOKEN_TYPE,
+                    response.getAuthToken());
+            // Start the MapActivity as the beginning of the stack and finish
+            Intent intent = new Intent(this, MapActivity.class);
             intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
             this.startActivity(intent);
             this.finish();
