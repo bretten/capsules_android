@@ -435,7 +435,7 @@ public class CapsuleActivity extends FragmentActivity implements
      */
     private void setupToolbar() {
         // Setup the Toolbar
-        Toolbar toolbar = Widgets.createToolbar(this, this.mCapsule.getName());
+        Toolbar toolbar = Widgets.createToolbar(this, this.mCapsule.getName(), false);
         toolbar.setNavigationOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {

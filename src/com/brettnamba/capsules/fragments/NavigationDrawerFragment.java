@@ -2,11 +2,11 @@ package com.brettnamba.capsules.fragments;
 
 import android.accounts.Account;
 import android.app.Activity;
+import android.content.Intent;
 import android.content.res.Resources;
 import android.content.res.TypedArray;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
-import android.support.v4.widget.DrawerLayout;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -17,8 +17,10 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import com.brettnamba.capsules.R;
+import com.brettnamba.capsules.activities.CapsuleEditorActivity;
+import com.brettnamba.capsules.activities.CapsuleListActivity;
+import com.brettnamba.capsules.activities.MapActivity;
 import com.brettnamba.capsules.authenticator.AccountDialogFragment;
-import com.brettnamba.capsules.widget.HeaderDrawerItem;
 import com.brettnamba.capsules.widget.NavigationDrawerItem;
 import com.brettnamba.capsules.widget.NavigationItemArrayAdapter;
 import com.brettnamba.capsules.widget.NormalDrawerItem;
@@ -61,9 +63,11 @@ public class NavigationDrawerFragment extends Fragment {
      * @return
      */
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+    public View onCreateView(LayoutInflater inflater, ViewGroup container,
+                             Bundle savedInstanceState) {
         // Inflate the layout
-        RelativeLayout view = (RelativeLayout) inflater.inflate(R.layout.fragment_navigation_drawer, container, false);
+        RelativeLayout view = (RelativeLayout) inflater
+                .inflate(R.layout.fragment_navigation_drawer, container, false);
         // Find the View that holds the Account name
         this.mAccountTextView = (TextView) view.findViewById(R.id.navigation_drawer_account);
         // Find the ListView
@@ -82,13 +86,16 @@ public class NavigationDrawerFragment extends Fragment {
             @Override
             public void onClick(View v) {
                 AccountDialogFragment accountDialog = new AccountDialogFragment();
-                accountDialog.show(NavigationDrawerFragment.this.getFragmentManager(), "AccountDialogFragment");
+                accountDialog.show(NavigationDrawerFragment.this.getFragmentManager(),
+                        "AccountDialogFragment");
             }
         });
         // Add the ListView items
         this.mNavItems = this.createNavigationItemCollection();
         // Set the ListView Adapter
-        this.mListView.setAdapter(new NavigationItemArrayAdapter(this.getActivity().getApplicationContext(), R.layout.navigation_drawer_normal_item, this.mNavItems));
+        this.mListView.setAdapter(
+                new NavigationItemArrayAdapter(this.getActivity().getApplicationContext(),
+                        R.layout.navigation_drawer_normal_item, this.mNavItems));
         return view;
     }
 
@@ -106,7 +113,8 @@ public class NavigationDrawerFragment extends Fragment {
         try {
             this.mListener = (NavigationDrawerListener) activity;
         } catch (ClassCastException e) {
-            throw new ClassCastException(activity.toString() + " does not implement NavigationDrawerListener");
+            throw new ClassCastException(
+                    activity.toString() + " does not implement NavigationDrawerListener");
         }
     }
 
@@ -143,20 +151,10 @@ public class NavigationDrawerFragment extends Fragment {
         Resources resources = this.getResources();
         // Get the image drawables that will be used for each item
         // NOTE: The positions in the array need to be matched to the corresponding strings
-        TypedArray toggleIcons = resources.obtainTypedArray(R.array.navigation_drawer_toggle_icons);
         TypedArray linkIcons = resources.obtainTypedArray(R.array.navigation_drawer_link_icons);
 
         // Initialize the collection
         ArrayList<NavigationDrawerItem> items = new ArrayList<NavigationDrawerItem>();
-        // Add the toggle header item to the collection
-        items.add(new HeaderDrawerItem(resources.getString(R.string.navigation_drawer_header_toggles)));
-        // Add the toggle items to the collection
-        String[] toggles = resources.getStringArray(R.array.navigation_drawer_toggles);
-        for (int i = 0; i < toggles.length; i++) {
-            items.add(new NormalDrawerItem(toggles[i], /* isInGroup */ true).setDrawable(toggleIcons.getDrawable(i)));
-        }
-        // Add the link header item to the collection
-        items.add(new HeaderDrawerItem(resources.getString(R.string.navigation_drawer_header_links)));
         // Add the link items to the collection
         String[] links = resources.getStringArray(R.array.navigation_drawer_links);
         for (int i = 0; i < links.length; i++) {
@@ -164,7 +162,6 @@ public class NavigationDrawerFragment extends Fragment {
         }
 
         // Recycle the TypedArrays
-        toggleIcons.recycle();
         linkIcons.recycle();
 
         return items;
@@ -177,7 +174,61 @@ public class NavigationDrawerFragment extends Fragment {
      */
     private void clickItem(int position) {
         if (this.mNavItems != null && this.mListener != null) {
-            this.mListener.onNavigationDrawerItemClick(this, position, this.mNavItems.get(position));
+            this.mListener
+                    .onNavigationDrawerItemClick(this, position, this.mNavItems.get(position));
+        }
+    }
+
+    /**
+     * Handles functionality for drawer item clicks that is common among all top-level activities
+     *
+     * @param activity       The hosting Activity
+     * @param account        The current Account
+     * @param drawerFragment The NavigationDrawerFragment
+     * @param position       The position of the clicked item
+     * @param item           The clicked item
+     */
+    public static void handleItemClick(Activity activity, Account account,
+                                       NavigationDrawerFragment drawerFragment, int position,
+                                       NavigationDrawerItem item) {
+        Intent intent = null;
+        switch (position) {
+            case 0:
+                if (activity instanceof CapsuleListActivity.CapsulesListActivity) {
+                    break;
+                }
+                intent = new Intent(activity.getApplicationContext(),
+                        CapsuleListActivity.CapsulesListActivity.class);
+                intent.putExtra("account", account);
+                activity.startActivity(intent);
+                break;
+            case 1:
+                if (activity instanceof CapsuleListActivity.DiscoveriesListActivity) {
+                    break;
+                }
+                intent = new Intent(activity.getApplicationContext(),
+                        CapsuleListActivity.DiscoveriesListActivity.class);
+                intent.putExtra("account", account);
+                activity.startActivity(intent);
+                break;
+            case 2:
+                if (activity instanceof CapsuleEditorActivity) {
+                    break;
+                }
+                intent = new Intent(activity.getApplicationContext(), CapsuleEditorActivity.class);
+                intent.putExtra("account", account);
+                activity.startActivity(intent);
+                break;
+            case 3:
+                if (activity instanceof MapActivity) {
+                    break;
+                }
+                intent = new Intent(activity.getApplicationContext(), MapActivity.class);
+                intent.putExtra("account", account);
+                activity.startActivity(intent);
+                break;
+            default:
+                break;
         }
     }
 
@@ -189,10 +240,11 @@ public class NavigationDrawerFragment extends Fragment {
          * Should handle clicks on NavigationDrawerItems
          *
          * @param drawerFragment The NavigationDrawerFragment
-         * @param position The position of the item that was clicked
-         * @param item The item that was clicked
+         * @param position       The position of the item that was clicked
+         * @param item           The item that was clicked
          */
-        void onNavigationDrawerItemClick(NavigationDrawerFragment drawerFragment, int position, NavigationDrawerItem item);
+        void onNavigationDrawerItemClick(NavigationDrawerFragment drawerFragment, int position,
+                                         NavigationDrawerItem item);
     }
 
 }

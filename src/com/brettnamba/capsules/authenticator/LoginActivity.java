@@ -101,7 +101,7 @@ public class LoginActivity extends FragmentActivity implements AsyncListenerTask
                 RetainedTaskFragment.findOrCreate(this.getSupportFragmentManager());
 
         // Setup the Toolbar
-        Toolbar toolbar = Widgets.createToolbar(this, this.getString(R.string.title_login));
+        Toolbar toolbar = Widgets.createToolbar(this, this.getString(R.string.title_login), false);
         toolbar.setNavigationOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {

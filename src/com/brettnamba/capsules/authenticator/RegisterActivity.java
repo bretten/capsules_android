@@ -93,7 +93,8 @@ public class RegisterActivity extends FragmentActivity implements AsyncListenerT
                 RetainedTaskFragment.findOrCreate(this.getSupportFragmentManager());
 
         // Setup the Toolbar
-        Toolbar toolbar = Widgets.createToolbar(this, this.getString(R.string.title_register));
+        Toolbar toolbar =
+                Widgets.createToolbar(this, this.getString(R.string.title_register), false);
         toolbar.setNavigationOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {

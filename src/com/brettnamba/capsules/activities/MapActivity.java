@@ -729,29 +729,8 @@ public class MapActivity extends FragmentActivity implements
      */
     @Override
     public void onNavigationDrawerItemClick(NavigationDrawerFragment drawerFragment, int position, NavigationDrawerItem item) {
-        // Check if the selected item is in a group
-        if (item.isInGroup()) {
-            // See if the item is checked
-            if (drawerFragment.getListView().isItemChecked(position)) {
-                // TODO Perform the on-check action
-            } else {
-                // TODO Perform the un-check action
-            }
-        } else {
-            // Prevent items not in a group from remaining checked
-            drawerFragment.getListView().setItemChecked(position, false);
-            // TODO Consider adding an identifier to NavigationDrawerItem so don't have to rely on position
-            switch (position) {
-                case 5:
-                    Intent intent = new Intent(this.getApplicationContext(), CapsuleListActivity.class);
-                    intent.putExtra("account", this.mAccount);
-                    this.startActivityForResult(intent, REQUEST_CODE_CAPSULE_LIST);
-                    break;
-                default:
-                    break;
-            }
-
-        }
+        NavigationDrawerFragment.handleItemClick(this, this.mAccount, drawerFragment, position,
+                item);
 
         // Close the drawer
         if (this.mDrawerLayout != null && this.mDrawerView != null) {

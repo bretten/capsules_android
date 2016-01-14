@@ -7,6 +7,7 @@ import android.os.Bundle;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
+import android.support.v4.widget.DrawerLayout;
 import android.support.v7.widget.Toolbar;
 import android.text.TextUtils;
 import android.view.View;
@@ -16,7 +17,9 @@ import android.widget.Toast;
 import com.brettnamba.capsules.R;
 import com.brettnamba.capsules.dataaccess.Capsule;
 import com.brettnamba.capsules.fragments.CapsuleEditorFragment;
+import com.brettnamba.capsules.fragments.NavigationDrawerFragment;
 import com.brettnamba.capsules.util.Widgets;
+import com.brettnamba.capsules.widget.NavigationDrawerItem;
 
 import java.util.List;
 
@@ -26,7 +29,8 @@ import java.util.List;
  * @author Brett Namba
  */
 public class CapsuleEditorActivity extends FragmentActivity implements
-        CapsuleEditorFragment.CapsuleEditorFragmentListener {
+        CapsuleEditorFragment.CapsuleEditorFragmentListener,
+        NavigationDrawerFragment.NavigationDrawerListener {
 
     /**
      * The Account that is editing
@@ -42,6 +46,16 @@ public class CapsuleEditorActivity extends FragmentActivity implements
      * Displays messages to the user
      */
     private TextView mMessageView;
+
+    /**
+     * The DrawerLayout
+     */
+    private DrawerLayout mDrawerLayout;
+
+    /**
+     * The View for the navigation drawer
+     */
+    private View mDrawerView;
 
     /**
      * Key for the CapsuleEditorFragment to be used in transactions
@@ -86,13 +100,19 @@ public class CapsuleEditorActivity extends FragmentActivity implements
                     savedInstanceState, CapsuleEditorActivity.KEY_CAPSULE_EDITOR_FRAGMENT);
         }
 
+        // Get the NavigationDrawer Views
+        this.mDrawerLayout = (DrawerLayout) this.findViewById(R.id.drawer_layout);
+        this.mDrawerView = this.findViewById(R.id.navigation_drawer);
+
         // Setup the Toolbar
-        Toolbar toolbar = Widgets.createToolbar(this, this.getString(R.string.map_new_capsule));
+        Toolbar toolbar =
+                Widgets.createToolbar(this, this.getString(R.string.map_new_capsule), true);
         toolbar.setNavigationOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                // Close this Activity
-                CapsuleEditorActivity.this.finish();
+                // Open the drawer
+                CapsuleEditorActivity.this.mDrawerLayout
+                        .openDrawer(CapsuleEditorActivity.this.mDrawerView);
             }
         });
 
@@ -170,6 +190,25 @@ public class CapsuleEditorActivity extends FragmentActivity implements
         // Set the result as OK and finish
         this.setResult(Activity.RESULT_OK, intent);
         this.finish();
+    }
+
+    /**
+     * Handles clicks on NavigationDrawerFragment items
+     *
+     * @param drawerFragment The NavigationDrawerFragment
+     * @param position       The position of the item that was clicked
+     * @param item           The item that was clicked
+     */
+    @Override
+    public void onNavigationDrawerItemClick(NavigationDrawerFragment drawerFragment, int position,
+                                            NavigationDrawerItem item) {
+        NavigationDrawerFragment.handleItemClick(this, this.mAccount, drawerFragment, position,
+                item);
+
+        // Close the drawer
+        if (this.mDrawerLayout != null && this.mDrawerView != null) {
+            this.mDrawerLayout.closeDrawer(this.mDrawerView);
+        }
     }
 
     /**

@@ -147,9 +147,10 @@
     </string-array>
     <!-- Link Items -->
     <string-array name="navigation_drawer_links">
-        <item>@string/title_my_collection</item>
-        <item>Drop Capsule Here</item>
-        <item>Settings</item>
+        <item>Capsules</item>
+        <item>Discoveries</item>
+        <item>Bury a Capsule</item>
+        <item>Find a Capsule</item>
     </string-array>
 
     <!--

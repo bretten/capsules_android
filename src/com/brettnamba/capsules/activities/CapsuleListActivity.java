@@ -4,6 +4,7 @@ import android.accounts.Account;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.app.FragmentActivity;
+import android.support.v4.widget.DrawerLayout;
 import android.support.v7.widget.Toolbar;
 import android.view.MenuItem;
 import android.view.View;
@@ -13,6 +14,7 @@ import android.widget.ListView;
 
 import com.brettnamba.capsules.R;
 import com.brettnamba.capsules.dataaccess.Capsule;
+import com.brettnamba.capsules.fragments.NavigationDrawerFragment;
 import com.brettnamba.capsules.fragments.SortDialogFragment;
 import com.brettnamba.capsules.http.CapsuleRequestParameters;
 import com.brettnamba.capsules.http.RequestHandler;
@@ -22,6 +24,7 @@ import com.brettnamba.capsules.os.GetCapsulesTask;
 import com.brettnamba.capsules.os.RetainedTaskFragment;
 import com.brettnamba.capsules.util.Widgets;
 import com.brettnamba.capsules.widget.CapsuleArrayAdapter;
+import com.brettnamba.capsules.widget.NavigationDrawerItem;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -33,7 +36,8 @@ import java.util.List;
  */
 public abstract class CapsuleListActivity extends FragmentActivity implements
         AsyncListenerTask.GetCapsulesTaskListener,
-        SortDialogFragment.SortDialogListener {
+        SortDialogFragment.SortDialogListener,
+        NavigationDrawerFragment.NavigationDrawerListener {
 
     /**
      * The current Account
@@ -65,6 +69,16 @@ public abstract class CapsuleListActivity extends FragmentActivity implements
      * Collection of Capsules that are displayed in the ListView
      */
     private ArrayList<Capsule> mCapsules;
+
+    /**
+     * The DrawerLayout
+     */
+    protected DrawerLayout mDrawerLayout;
+
+    /**
+     * The View for the navigation drawer
+     */
+    protected View mDrawerView;
 
     /**
      * Tag for storing the collection of Capsules in state data
@@ -248,6 +262,25 @@ public abstract class CapsuleListActivity extends FragmentActivity implements
     }
 
     /**
+     * Handles clicks on NavigationDrawerFragment items
+     *
+     * @param drawerFragment The NavigationDrawerFragment
+     * @param position       The position of the item that was clicked
+     * @param item           The item that was clicked
+     */
+    @Override
+    public void onNavigationDrawerItemClick(NavigationDrawerFragment drawerFragment, int position,
+                                            NavigationDrawerItem item) {
+        NavigationDrawerFragment.handleItemClick(this, this.mAccount, drawerFragment, position,
+                item);
+
+        // Close the drawer
+        if (this.mDrawerLayout != null && this.mDrawerView != null) {
+            this.mDrawerLayout.closeDrawer(this.mDrawerView);
+        }
+    }
+
+    /**
      * Requests Capsules based on the specified request parameters
      *
      * @param params The Capsule request parameters
@@ -408,15 +441,19 @@ public abstract class CapsuleListActivity extends FragmentActivity implements
          */
         @Override
         protected void setupToolbar() {
+            // Get the NavigationDrawer Views
+            this.mDrawerLayout = (DrawerLayout) this.findViewById(R.id.drawer_layout);
+            this.mDrawerView = this.findViewById(R.id.navigation_drawer);
             // Setup the Toolbar
             Toolbar toolbar =
-                    Widgets.createToolbar(this, this.getString(R.string.title_my_collection));
+                    Widgets.createToolbar(this, this.getString(R.string.title_my_collection), true);
             toolbar.inflateMenu(R.menu.capsule_list_activity);
             toolbar.setNavigationOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    // Close this Activity
-                    CapsulesListActivity.this.finish();
+                    // Open the drawer
+                    CapsulesListActivity.this.mDrawerLayout
+                            .openDrawer(CapsulesListActivity.this.mDrawerView);
                 }
             });
             toolbar.setOnMenuItemClickListener(new Toolbar.OnMenuItemClickListener() {
@@ -471,15 +508,20 @@ public abstract class CapsuleListActivity extends FragmentActivity implements
          */
         @Override
         protected void setupToolbar() {
+            // Get the NavigationDrawer Views
+            this.mDrawerLayout = (DrawerLayout) this.findViewById(R.id.drawer_layout);
+            this.mDrawerView = this.findViewById(R.id.navigation_drawer);
             // Setup the Toolbar
             Toolbar toolbar =
-                    Widgets.createToolbar(this, this.getString(R.string.title_my_discoveries));
+                    Widgets.createToolbar(this, this.getString(R.string.title_my_discoveries),
+                            true);
             toolbar.inflateMenu(R.menu.capsule_list_activity);
             toolbar.setNavigationOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    // Close this Activity
-                    DiscoveriesListActivity.this.finish();
+                    // Open the drawer
+                    DiscoveriesListActivity.this.mDrawerLayout
+                            .openDrawer(DiscoveriesListActivity.this.mDrawerView);
                 }
             });
             toolbar.setOnMenuItemClickListener(new Toolbar.OnMenuItemClickListener() {
