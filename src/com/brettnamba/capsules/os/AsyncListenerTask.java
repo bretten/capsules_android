@@ -291,4 +291,37 @@ public abstract class AsyncListenerTask<Params, Progress, Result>
 
     }
 
+    /**
+     * Listener that handles callbacks for a request to the server to discover all Capsules
+     * nearby the device's location
+     */
+    public interface DiscoverCapsulesTaskListener extends TaskListener {
+
+        /**
+         * Should handle doInBackground() work
+         *
+         * @param params The latitude and longitude of the device's location
+         * @return The Capsules that were discovered
+         */
+        List<Capsule> duringDiscoverCapsules(Double... params);
+
+        /**
+         * Should handle onPreExecute() work
+         */
+        void onPreDiscoverCapsules();
+
+        /**
+         * Should handle onPostExecute() work
+         *
+         * @param capsules The Capsules that were discovered
+         */
+        void onPostDiscoverCapsules(List<Capsule> capsules);
+
+        /**
+         * Should handle onCancelled() work
+         */
+        void onDiscoverCapsulesCancelled();
+
+    }
+
 }
