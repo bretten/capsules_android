@@ -4,11 +4,6 @@ import android.accounts.Account;
 import android.accounts.AccountManager;
 import android.accounts.AuthenticatorException;
 import android.accounts.OperationCanceledException;
-import android.app.Activity;
-import android.app.AlertDialog;
-import android.content.DialogInterface;
-import android.content.Intent;
-import android.database.Cursor;
 import android.graphics.Color;
 import android.location.Location;
 import android.os.Build;
@@ -16,30 +11,22 @@ import android.os.Bundle;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.widget.DrawerLayout;
+import android.support.v7.widget.Toolbar;
 import android.util.Log;
-import android.view.Menu;
-import android.view.MenuItem;
 import android.view.View;
-import android.widget.ImageView;
 import android.widget.Toast;
 
 import com.brettnamba.capsules.Constants;
 import com.brettnamba.capsules.R;
 import com.brettnamba.capsules.authenticator.AccountDialogFragment;
-import com.brettnamba.capsules.authenticator.LoginActivity;
 import com.brettnamba.capsules.dataaccess.Capsule;
-import com.brettnamba.capsules.dataaccess.CapsuleDiscovery;
-import com.brettnamba.capsules.dataaccess.CapsuleOwnership;
 import com.brettnamba.capsules.fragments.NavigationDrawerFragment;
 import com.brettnamba.capsules.fragments.RetainedMapFragment;
-import com.brettnamba.capsules.http.HttpFactory;
 import com.brettnamba.capsules.http.RequestHandler;
-import com.brettnamba.capsules.http.response.CapsuleOpenResponse;
-import com.brettnamba.capsules.http.response.CapsulePingResponse;
+import com.brettnamba.capsules.http.response.JsonResponse;
 import com.brettnamba.capsules.os.AsyncListenerTask;
-import com.brettnamba.capsules.provider.CapsuleContract;
-import com.brettnamba.capsules.provider.CapsuleOperations;
 import com.brettnamba.capsules.util.Accounts;
+import com.brettnamba.capsules.util.Widgets;
 import com.brettnamba.capsules.widget.NavigationDrawerItem;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -48,33 +35,21 @@ import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
-import com.google.android.gms.maps.GoogleMap.OnInfoWindowClickListener;
-import com.google.android.gms.maps.GoogleMap.OnMapLongClickListener;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
-import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.Circle;
 import com.google.android.gms.maps.model.CircleOptions;
 import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
-import com.google.maps.android.SphericalUtil;
-
-import org.apache.http.HttpResponse;
-import org.apache.http.HttpStatus;
-import org.apache.http.client.HttpClient;
 
 import java.io.IOException;
-import java.util.Collection;
-import java.util.HashMap;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 /**
  * The main Activity that displays a GoogleMap and capsules to the user.
  *
  * @author Brett
- *
  */
 public class MapActivity extends FragmentActivity implements
         OnMapReadyCallback,
@@ -84,8 +59,7 @@ public class MapActivity extends FragmentActivity implements
         AccountDialogFragment.AccountDialogListener,
         NavigationDrawerFragment.NavigationDrawerListener,
         AsyncListenerTask.AuthTokenRetrievalTaskListener,
-        AsyncListenerTask.CapsulePingTaskListener,
-        AsyncListenerTask.CapsuleOpenTaskListener {
+        AsyncListenerTask.DiscoverCapsulesTaskListener {
 
     /**
      * Fragment used to retain the state of the Map and the user
@@ -101,6 +75,11 @@ public class MapActivity extends FragmentActivity implements
      * Reference to the Circle that surrounds the user's location, designating their "discovery" radius.
      */
     private Circle mUserCircle;
+
+    /**
+     * Collection of Discovery Capsules
+     */
+    private ArrayList<Capsule> mDiscoveryCapsules;
 
     /**
      * Reference to the GoogleApiClient.
@@ -123,21 +102,6 @@ public class MapActivity extends FragmentActivity implements
     private Account mAccount;
 
     /**
-     * Reference to the authentication token.
-     */
-    private String mAuthToken;
-
-    /**
-     * Reference to the HttpClient.
-     */
-    private HttpClient mHttpClient;
-
-    /**
-     * Reference to the HTTP RequestHandler.
-     */
-    private RequestHandler mRequestHandler;
-
-    /**
      * Navigation DrawerLayout
      */
     private DrawerLayout mDrawerLayout;
@@ -151,31 +115,6 @@ public class MapActivity extends FragmentActivity implements
      * The navigation drawer Fragment
      */
     private NavigationDrawerFragment mDrawerFragment;
-
-    /**
-     * Mapping of undiscovered Capsule sync id's to Marker.
-     */
-    private Map<Marker, Capsule> mUndiscoveredMarkers;
-
-    /**
-     * Mapping of all discovered Capsule to Marker.
-     */
-    private Map<Marker, Capsule> mDiscoveredMarkers;
-
-    /**
-     * Mapping of all owned Capsules to Markers.
-     */
-    private Map<Marker, Capsule> mOwnedMarkers;
-
-    /**
-     * Holds the Marker that is used to create new Capsules.
-     */
-    private Marker mNewCapsuleMarker;
-
-    /**
-     * Holds the Marker that is being opened.
-     */
-    private Marker mOpenedCapsuleMarker;
 
     /**
      * The radius around the user's location in which capsules can be opened (meters).
@@ -203,49 +142,25 @@ public class MapActivity extends FragmentActivity implements
     private static final int LOCATION_REQUEST_INTERVAL_FAST = 5000;
 
     /**
-     * Request code for CapsuleActivity
-     */
-    private static final int REQUEST_CODE_CAPSULE = 1;
-
-    /**
-     * Request code for CapsuleEditorActivity (creating a new Capsule)
-     */
-    private static final int REQUEST_CODE_CAPSULE_EDITOR = 2;
-
-    /**
-     * Request code for CapsuleListActivity
-     */
-    private static final int REQUEST_CODE_CAPSULE_LIST = 3;
-
-    /**
-     * Tag for the Fragment retaining state about this Activity
-     */
-    private static final String RETAINED_MAP_FRAGMENT_TAG = "retained_map";
-
-    /**
      * The tag used for logging.
      */
     private static final String TAG = "MapActivity";
 
-	@Override
-	protected void onCreate(Bundle savedInstanceState) {
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
         Log.i(TAG, "onCreate()");
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_map);
+        this.setContentView(R.layout.activity_map);
 
         // Fragment manager
         FragmentManager fragmentManager = this.getSupportFragmentManager();
 
-        // If the Activity is being recreated, see if the retained already Fragment exists
-        this.mRetainedFragment = ((RetainedMapFragment) fragmentManager.findFragmentByTag(RETAINED_MAP_FRAGMENT_TAG));
-        // If the Activity is being created for the first time, create the retainer Fragments
-        if (this.mRetainedFragment == null) {
-            this.mRetainedFragment = new RetainedMapFragment();
-            fragmentManager.beginTransaction().add(this.mRetainedFragment, RETAINED_MAP_FRAGMENT_TAG).commit();
-        }
+        // Get the Fragment that retains the background thread tasks
+        this.mRetainedFragment = RetainedMapFragment.findOrCreate(fragmentManager);
 
         // Set up the GoogleMap
-        SupportMapFragment mapFragment = ((SupportMapFragment) fragmentManager.findFragmentById(R.id.map));
+        SupportMapFragment mapFragment =
+                ((SupportMapFragment) fragmentManager.findFragmentById(R.id.map));
         mapFragment.getMapAsync(this);
 
         // Build the Google Play services API client
@@ -257,29 +172,40 @@ public class MapActivity extends FragmentActivity implements
         // AccountManager
         this.mAccountManager = AccountManager.get(this);
 
-        // HTTP client and request handler
-        mHttpClient = HttpFactory.getInstance();
-        mRequestHandler = new RequestHandler(mHttpClient);
+        // Check if there was any state data
+        if (savedInstanceState != null) {
+            // Recover the state data
+            this.mDiscoveryCapsules =
+                    savedInstanceState.getParcelableArrayList("discovery_capsules");
+        } else {
+            // Instantiate the Discovery Capsules collection
+            this.mDiscoveryCapsules = new ArrayList<Capsule>();
+        }
 
         // Navigation Drawer
-        this.mDrawerFragment = (NavigationDrawerFragment) fragmentManager.findFragmentById(R.id.navigation_drawer);
+        this.mDrawerFragment =
+                (NavigationDrawerFragment) fragmentManager.findFragmentById(R.id.navigation_drawer);
         this.mDrawerLayout = (DrawerLayout) this.findViewById(R.id.drawer_layout);
         this.mDrawerView = this.findViewById(R.id.navigation_drawer);
 
-        // Setup buttons to place over the GoogleMap
-        ImageView drawerButton = (ImageView) this.findViewById(R.id.map_drawer_button);
-        drawerButton.setOnClickListener(new View.OnClickListener() {
+        // Setup the Toolbar
+        Toolbar toolbar = Widgets.createToolbar(this, this.getString(R.string.app_name), true);
+        toolbar.setNavigationOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                // Open the drawer
                 MapActivity.this.mDrawerLayout.openDrawer(MapActivity.this.mDrawerView);
             }
         });
-	}
+    }
 
-	@Override
-	protected void onResume() {
-	    Log.i(TAG, "onResume()");
-	    super.onResume();
+    /**
+     * onResume
+     */
+    @Override
+    protected void onResume() {
+        Log.i(TAG, "onResume()");
+        super.onResume();
 
         // Switch to the last used or default Account if there is one
         Account lastUsedAccount = Accounts.getLastUsedOrFirstAccount(this);
@@ -287,16 +213,19 @@ public class MapActivity extends FragmentActivity implements
             this.switchAccount(lastUsedAccount);
         }
 
-	    // Reconnect the LocationClient
-	    if (mGoogleApiClient != null && !mGoogleApiClient.isConnected()) {
-	        mGoogleApiClient.connect();
-	    }
-	}
+        // Reconnect the LocationClient
+        if (this.mGoogleApiClient != null && !this.mGoogleApiClient.isConnected()) {
+            this.mGoogleApiClient.connect();
+        }
+    }
 
-	@Override
-	public void onPause() {
-	    Log.i(TAG, "onPause()");
-	    super.onPause();
+    /**
+     * onPause
+     */
+    @Override
+    public void onPause() {
+        Log.i(TAG, "onPause()");
+        super.onPause();
 
         // Store the last used Account
         if (this.mAccount != null) {
@@ -308,14 +237,29 @@ public class MapActivity extends FragmentActivity implements
         }
 
         // Disconnect from the Google Play services location API
-	    if (this.mGoogleApiClient != null && this.mGoogleApiClient.isConnected()) {
+        if (this.mGoogleApiClient != null && this.mGoogleApiClient.isConnected()) {
             // Remove location listener updates
             LocationServices.FusedLocationApi.removeLocationUpdates(this.mGoogleApiClient, this);
             // Disconnect
-	        this.mGoogleApiClient.disconnect();
-	    }
-	}
+            this.mGoogleApiClient.disconnect();
+        }
+    }
 
+    /**
+     * onSaveInstanceState
+     *
+     * @param outState
+     */
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        // Save the Capsule collection
+        outState.putParcelableArrayList("discovery_capsules", this.mDiscoveryCapsules);
+    }
+
+    /**
+     * onStop
+     */
     @Override
     protected void onStop() {
         Log.i(TAG, "onStop()");
@@ -334,152 +278,68 @@ public class MapActivity extends FragmentActivity implements
         }
     }
 
-    @Override
-	public boolean onCreateOptionsMenu(Menu menu) {
-	    Log.i(TAG, "onCreateOptionsMenu()");
-		// Inflate the menu; this adds items to the action bar if it is present.
-		getMenuInflater().inflate(R.menu.main, menu);
-		return true;
-	}
-
-	@Override
-	public boolean onOptionsItemSelected(MenuItem item) {
-	    Log.i(TAG, "onOptionsItemSelected()");
-		int id = item.getItemId();
-		if (id == R.id.action_settings) {
-			return true;
-		} else if (id == R.id.action_collection) {
-            Intent intent = new Intent(getApplicationContext(), CapsuleListActivity.class);
-            intent.putExtra("account_name", mAccount.name);
-            startActivityForResult(intent, REQUEST_CODE_CAPSULE_LIST);
-		} else if (item.isCheckable()) {
-		    item.setChecked(!item.isChecked());
-		    // The toggle for displaying capsules created by the user
-		    if (id == R.id.action_created) {
-		        if (item.isChecked()) {
-		            // TODO Add created capsule markers
-		        } else {
-		            // TODO Remove created capsule markers
-		        }
-		    }
-		    // The toggle for displaying the user's discovered capsules
-		    if (id == R.id.action_discovered) {
-		        if (item.isChecked()) {
-                    for (Marker marker : mDiscoveredMarkers.keySet()) {
-                        marker.setVisible(true);
-                    }
-		        } else {
-		            for (Marker marker : mDiscoveredMarkers.keySet()) {
-		                marker.setVisible(false);
-		            }
-		        }
-		    }
-		    // The toggle for showing satellite view
-		    if (id == R.id.action_satellite) {
-	            if (item.isChecked()) {
-	                mMap.setMapType(GoogleMap.MAP_TYPE_SATELLITE);
-	            } else {
-	                mMap.setMapType(GoogleMap.MAP_TYPE_NORMAL);
-	            }
-		    }
-		}
-		return super.onOptionsItemSelected(item);
-	}
-
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-
-        switch (requestCode) {
-
-        case (REQUEST_CODE_CAPSULE) :
-            if (resultCode == Activity.RESULT_OK) {
-                Capsule capsule = data.getParcelableExtra("capsule");
-                // Replace the old Capsule Marker
-                if (mOwnedMarkers.containsValue(capsule)) {
-                    for (Map.Entry<Marker, Capsule> entry : mOwnedMarkers.entrySet()) {
-                        if (capsule.equals(entry.getValue())) {
-                            entry.getKey().setTitle(capsule.getName());
-                            // Hide and show the info window to refresh it
-                            entry.getKey().hideInfoWindow();
-                            entry.getKey().showInfoWindow();
-                            mOwnedMarkers.put(entry.getKey(), capsule);
-                        }
-                    }
-                }
-            }
-            break;
-
-        case (REQUEST_CODE_CAPSULE_EDITOR) :
-            if (resultCode == Activity.RESULT_OK) {
-                Capsule capsule = data.getParcelableExtra("capsule");
-                // Remove the new Capsule Marker
-                if (mNewCapsuleMarker != null) {
-                    mNewCapsuleMarker.remove();
-                    mNewCapsuleMarker = null;
-                }
-                // Create a Marker for the new Capsule data
-                Marker marker = mMap.addMarker(new MarkerOptions()
-                    .position(new LatLng(capsule.getLatitude(), capsule.getLongitude()))
-                    .title(capsule.getName())
-                    .draggable(false)
-                    .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_YELLOW))
-                );
-                // Add the Marker to the Owned Capsule collection
-                mOwnedMarkers.put(marker, capsule);
-            }
-            break;
-
-        case (REQUEST_CODE_CAPSULE_LIST) :
-            // TODO Reload any Capsules that were modified
-            break;
-
-        default:
-            break;
-
-        }
-
-    }
-
+    /**
+     * Called when the GoogleMap is ready
+     *
+     * @param map The GoogleMap
+     */
     @Override
     public void onMapReady(GoogleMap map) {
         Log.i(TAG, "onMapReady()");
-        mMap = map;
+        this.mMap = map;
 
         // Specify map settings
-        mMap.setMyLocationEnabled(true);
+        this.mMap.setMyLocationEnabled(true);
         // Create the circle
-        mUserCircle = mMap.addCircle(new CircleOptions()
+        this.mUserCircle = this.mMap.addCircle(new CircleOptions()
                         .center(new LatLng(0, 0))
                         .radius(DISCOVERY_RADIUS)
                         .strokeWidth(0)
                         .fillColor(USER_CIRCLE_COLOR)
         );
-        // Create the info window listener
-        mMap.setOnInfoWindowClickListener(new InfoWindowListener());
-        // Create the long click listener
-        mMap.setOnMapLongClickListener(new MapLongClickListener());
+        // Add any stored Capsules
+        if (this.mDiscoveryCapsules != null && this.mDiscoveryCapsules.size() > 0) {
+            this.addCapsulesAsMarkers(this.mDiscoveryCapsules);
+        }
     }
 
+    /**
+     * Called when a connection could not be established with the Google API service
+     *
+     * @param result A result indicating what caused the failure
+     */
     @Override
     public void onConnectionFailed(ConnectionResult result) {
         Log.i(TAG, "onConnectionFailed()");
         // Notify the user the Google API services could not be reached
-        Toast.makeText(this, this.getString(R.string.error_google_api_cannot_connect), Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, this.getString(R.string.error_google_api_cannot_connect),
+                Toast.LENGTH_SHORT).show();
     }
 
+    /**
+     * Called after the Google API has been connected to
+     *
+     * @param connectionHint Data provided by the Google API services
+     */
     @Override
     public void onConnected(Bundle connectionHint) {
         Log.i(TAG, "onConnected()");
         // Request location updates
-        LocationServices.FusedLocationApi.requestLocationUpdates(this.mGoogleApiClient, this.mLocationRequest, this);
+        LocationServices.FusedLocationApi.requestLocationUpdates(this.mGoogleApiClient,
+                this.mLocationRequest, this);
         // If the user's last known location is known, move there
-        Location location = LocationServices.FusedLocationApi.getLastLocation(this.mGoogleApiClient);
+        Location location =
+                LocationServices.FusedLocationApi.getLastLocation(this.mGoogleApiClient);
         if (location != null) {
             this.focusOnLocation(location);
         }
     }
 
+    /**
+     * Called when the Google API connection has been suspended
+     *
+     * @param i The cause for the disconnection
+     */
     @Override
     public void onConnectionSuspended(int i) {
         Log.i(TAG, "onConnectionSuspended()");
@@ -489,16 +349,22 @@ public class MapActivity extends FragmentActivity implements
         }
     }
 
+    /**
+     * Called whenever the Location is updated
+     *
+     * @param location The updated Location
+     */
     @Override
     public void onLocationChanged(Location location) {
         Log.i(TAG, "onLocationChanged()");
         // Update the circle around the user location
-        if (mUserCircle != null) {
-            mUserCircle.setCenter(new LatLng(location.getLatitude(), location.getLongitude()));
+        if (this.mUserCircle != null && this.isUserCirclePositionDifferent(location)) {
+            this.mUserCircle.setCenter(new LatLng(location.getLatitude(), location.getLongitude()));
         }
-
-        // Request undiscovered Capsules
-        this.requestUndiscoveredCapsules(location);
+        // Discover any nearby Capsules
+        if (this.mRetainedFragment != null) {
+            this.mRetainedFragment.startDiscoverCapsules(this, this.mAccount, location);
+        }
     }
 
     /**
@@ -512,7 +378,8 @@ public class MapActivity extends FragmentActivity implements
         Log.i(TAG, "duringAuthTokenRetrieval()");
         if (this.mAccountManager != null & this.mAccount != null) {
             try {
-                return this.mAccountManager.blockingGetAuthToken(this.mAccount, Constants.AUTH_TOKEN_TYPE, true);
+                return this.mAccountManager
+                        .blockingGetAuthToken(this.mAccount, Constants.AUTH_TOKEN_TYPE, true);
             } catch (OperationCanceledException | IOException | AuthenticatorException e) {
                 // Cancel the auth token background task
                 if (this.mRetainedFragment != null) {
@@ -543,11 +410,9 @@ public class MapActivity extends FragmentActivity implements
     @Override
     public void onPostAuthTokenRetrieval(String authToken) {
         Log.i(TAG, "onPostAuthTokenRetrieval()");
-        this.mAuthToken = authToken;
         if (this.mRetainedFragment != null) {
             this.mRetainedFragment.hideProgress();
         }
-        this.populateStoredMarkers();
     }
 
     /**
@@ -562,173 +427,72 @@ public class MapActivity extends FragmentActivity implements
     }
 
     /**
-     * Handles CapsulePingTask doInBackground()
+     * Should handle doInBackground() work
      *
-     * Sends HTTP request to API to get undiscovered Capsules
-     *
-     * @param params Authentication token, latitude, longitude
-     * @return HTTP response object
+     * @param params The latitude and longitude of the device's location
+     * @return The Capsules that were discovered
      */
     @Override
-    public CapsulePingResponse duringCapsulePing(String... params) {
-        try {
-            // Get the parameters for the HTTP request
-            final String authToken = params[0];
-            final String lat = params[1];
-            final String lng = params[2];
-            HttpResponse response = this.mRequestHandler.requestUndiscoveredCapsules(authToken, lat, lng);
-            return new CapsulePingResponse(response);
-        } catch (IOException e) {
-            // Cancel the task
-            if (this.mRetainedFragment != null) {
-                this.mRetainedFragment.cancelCapsulePing();
-            }
-            return null;
+    public List<Capsule> duringDiscoverCapsules(Double... params) {
+        Log.i(TAG, "duringDiscoverCapsules()");
+        Double lat = params[0];
+        Double lng = params[1];
+        if (!lat.isNaN() && !lng.isNaN()) {
+            JsonResponse response = RequestHandler
+                    .requestDiscoverCapsules(this.getApplicationContext(), this.mAccount, lat, lng);
+            return response.getCapsules();
         }
+        return null;
     }
 
     /**
-     * Handles CapsulePingTask onPreExecute()
+     * Should handle onPreExecute() work
      */
     @Override
-    public void onPreCapsulePing() {
-        Log.i(TAG, "onPreCapsulePing()");
+    public void onPreDiscoverCapsules() {
+        Log.i(TAG, "onPreDiscoverCapsules()");
         // Set the LocationServices fastest interval to a slower value during the network request
         this.setLocationRequestFastestInterval(LOCATION_REQUEST_INTERVAL_SLOW);
     }
 
     /**
-     * Handles CapsulePingTask onPostExecute()
+     * Should handle onPostExecute() work
      *
-     * @param response HTTP response object for a Capsule ping
+     * @param capsules The Capsules that were discovered
      */
     @Override
-    public void onPostCapsulePing(CapsulePingResponse response) {
-        if (response != null) {
-            if (response.isClientError() || response.isServerError()) {
-                // If unauthenticated, prompt for credentials
-                if (response.getResponse().getStatusLine().getStatusCode() == HttpStatus.SC_UNAUTHORIZED) {
-                    final Intent intent = new Intent(this, LoginActivity.class);
-                    this.startActivity(intent);
-                }
-                Toast.makeText(this, this.getString(R.string.error_cannot_retrieve_undiscovered), Toast.LENGTH_SHORT).show();
-            } else {
-                this.populateUndiscoveredMarkers(response.getCapsules());
-            }
+    public void onPostDiscoverCapsules(List<Capsule> capsules) {
+        Log.i(TAG, "onPostDiscoverCapsules()");
+        if (capsules != null && capsules.size() > 0) {
+            // Add the Capsules to the collection
+            this.mDiscoveryCapsules.addAll(capsules);
+            // Add them as Markers
+            this.addCapsulesAsMarkers(capsules);
         }
         // Set the LocationRequest fastest interval back to a quicker value now that the request is done
         this.setLocationRequestFastestInterval(LOCATION_REQUEST_INTERVAL_FAST);
     }
 
     /**
-     * Handles CapsulePingTask onCancelled()
+     * Should handle onCancelled() work
      */
     @Override
-    public void onCapsulePingCancelled() {
-        Log.i(TAG, "onCapsulePingCancelled()");
+    public void onDiscoverCapsulesCancelled() {
+        Log.i(TAG, "onDiscoverCapsulesCancelled()");
         // Set the LocationRequest fastest interval back to a faster value
         this.setLocationRequestFastestInterval(LOCATION_REQUEST_INTERVAL_FAST);
-    }
-
-    /**
-     * Handles CapsuleOpenTask doInBackground() and sends HTTP request to the API to try and
-     * open a Capsule given a user's authentication token and their location
-     *
-     * @param params User's authentication, location and the Capsule being opened
-     * @return HTTP response object representing the result of the request
-     */
-    @Override
-    public CapsuleOpenResponse duringCapsuleOpen(String... params) {
-        Log.i(TAG, "duringCapsuleOpen()");
-        try {
-            final String authToken = params[0];
-            final String syncId = params[1];
-            final String lat = params[2];
-            final String lng = params[3];
-            HttpResponse response = this.mRequestHandler.requestOpenCapsule(authToken, syncId, lat, lng);
-            return new CapsuleOpenResponse(response);
-        } catch (IOException e) {
-            // Cancel the task
-            if (this.mRetainedFragment != null) {
-                this.mRetainedFragment.cancelCapsuleOpen();
-            }
-            return null;
-        }
-    }
-
-    /**
-     * Handles CapsuleOpenTask's onPreExecute()
-     */
-    @Override
-    public void onPreCapsuleOpen() {
-        Log.i(TAG, "onPreCapsuleOpen()");
-        // Set the LocationServices fastest interval to a slower value during the network request
-        this.setLocationRequestFastestInterval(LOCATION_REQUEST_INTERVAL_SLOW);
-    }
-
-    /**
-     * Handles CapsuleOpenTask's onPostExecute()
-     *
-     * @param response HTTP response object from opening the Capsule
-     */
-    @Override
-    public void onPostCapsuleOpen(CapsuleOpenResponse response) {
-        Log.i(TAG, "onPostCapsuleOpen()");
-        if (response != null) {
-            if (response.isClientError() || response.isServerError()) {
-                Toast.makeText(this, this.getString(R.string.error_cannot_open_capsule), Toast.LENGTH_SHORT).show();
-            } else {
-                // Get the opened Capsule
-                CapsuleDiscovery capsule = (CapsuleDiscovery) response.getCapsule();
-                // Set the Account name
-                capsule.setAccountName(this.mAccount.name);
-                // Save the new Capsule
-                // TODO Move to background thread?
-                CapsuleOperations.Discoveries.save(this.getContentResolver(), capsule,
-                        CapsuleContract.SyncStateAction.CLEAN);
-                // Remove the old Capsule and Marker
-                this.mUndiscoveredMarkers.remove(this.mOpenedCapsuleMarker);
-                this.mOpenedCapsuleMarker.remove();
-                // Add a new Discovery Marker
-                Marker marker = mMap.addMarker(new MarkerOptions()
-                                .position(new LatLng(capsule.getLatitude(), capsule.getLongitude()))
-                                .title(capsule.getName())
-                                .draggable(false)
-                                .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE))
-                );
-                // Add the Discovery Marker to the collection
-                this.mDiscoveredMarkers.put(marker, capsule);
-                // Open the Capsule
-                this.openCapsuleMarker(capsule);
-            }
-        }
-        // Set the LocationRequest fastest interval back to a faster value
-        this.setLocationRequestFastestInterval(LOCATION_REQUEST_INTERVAL_FAST);
-        // Unset the reference to the opened Capsule
-        this.mOpenedCapsuleMarker = null;
-    }
-
-    /**
-     * Handles CapsuleOpenTask's onCancelled()
-     */
-    @Override
-    public void onCapsuleOpenCancelled() {
-        Log.i(TAG, "onCapsuleOpenCancelled()");
-        // Set the LocationRequest fastest interval back to a faster value
-        this.setLocationRequestFastestInterval(LOCATION_REQUEST_INTERVAL_FAST);
-        // Unset the reference to the opened Capsule
-        this.mOpenedCapsuleMarker = null;
     }
 
     /**
      * Handles clicks on the navigation drawer
      *
      * @param drawerFragment The NavigationDrawerFragment
-     * @param position The position of the item that was clicked
-     * @param item The item that was clicked
+     * @param position       The position of the item that was clicked
+     * @param item           The item that was clicked
      */
     @Override
-    public void onNavigationDrawerItemClick(NavigationDrawerFragment drawerFragment, int position, NavigationDrawerItem item) {
+    public void onNavigationDrawerItemClick(NavigationDrawerFragment drawerFragment, int position,
+                                            NavigationDrawerItem item) {
         NavigationDrawerFragment.handleItemClick(this, this.mAccount, drawerFragment, position,
                 item);
 
@@ -741,7 +505,7 @@ public class MapActivity extends FragmentActivity implements
     /**
      * Handles choosing an Account in the account switcher
      *
-     * @param dialog The DialogFragment containing the switcher
+     * @param dialog  The DialogFragment containing the switcher
      * @param account The Account that was at the selected position
      */
     @Override
@@ -791,33 +555,8 @@ public class MapActivity extends FragmentActivity implements
             // Set the fastest interval
             this.mLocationRequest.setFastestInterval(ms);
             // Request location updates with the new parameters
-            LocationServices.FusedLocationApi.requestLocationUpdates(this.mGoogleApiClient, this.mLocationRequest, this);
-        }
-    }
-
-    /**
-     * Tries to make a request for undiscovered Capsules for the specified Location
-     *
-     * @param location The location object for the Capsule ping network request to the API
-     */
-    private void requestUndiscoveredCapsules(Location location) {
-        // If there is an auth token, get undiscovered Capsules in the new location
-        if (this.mMap != null && this.mRetainedFragment != null) {
-            // Make sure there is an auth token
-            if (this.mAuthToken != null) {
-                // Make sure there is a connection to the Google API
-                if (this.mGoogleApiClient.isConnected()) {
-                    // Start the Capsule ping
-                    this.mRetainedFragment.startCapsulePing(this, this.mAccount, this.mAuthToken, location);
-                } else {
-                    Toast.makeText(this, this.getString(R.string.error_google_api_cannot_connect), Toast.LENGTH_SHORT).show();
-                }
-            } else {
-                // There is no auth token, so get it on the background thread
-                if (this.mAccount != null) {
-                    this.mRetainedFragment.startAuthTokenRetrieval(this, this.mAccount);
-                }
-            }
+            LocationServices.FusedLocationApi.requestLocationUpdates(this.mGoogleApiClient,
+                    this.mLocationRequest, this);
         }
     }
 
@@ -828,152 +567,43 @@ public class MapActivity extends FragmentActivity implements
      */
     private void focusOnLocation(Location location) {
         if (location != null && this.mMap != null) {
-            this.mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(location.getLatitude(), location.getLongitude()), ZOOM));
+            this.mMap.moveCamera(CameraUpdateFactory
+                    .newLatLngZoom(new LatLng(location.getLatitude(), location.getLongitude()),
+                            ZOOM));
         }
     }
 
     /**
-     * Opens a Capsule
+     * Determines if the user Circle is in a centered on a different location than the one specified
      *
-     * @param capsule The Capsule being opened
+     * @param location The location to compare the Circle's center to
+     * @return True if the location is different, otherwise false
      */
-    private void openCapsuleMarker(Capsule capsule) {
-        if (this.mAccount != null) {
-            Toast.makeText(this.getApplicationContext(), this.getString(R.string.result_opened_capsule),
-                    Toast.LENGTH_SHORT).show();
-            Intent intent = new Intent(this.getApplicationContext(), CapsuleActivity.class);
-            intent.putExtra("capsule", capsule);
-            intent.putExtra("account", this.mAccount);
-            this.startActivityForResult(intent, REQUEST_CODE_CAPSULE);
-        } else {
-            Toast.makeText(this.getApplicationContext(), this.getString(R.string.error_no_account),
-                    Toast.LENGTH_SHORT).show();
+    private boolean isUserCirclePositionDifferent(Location location) {
+        if (this.mUserCircle == null) {
+            return false;
         }
+
+        // Get the Circle's position
+        LatLng circleLatLng = this.mUserCircle.getCenter();
+
+        return circleLatLng.latitude != location.getLatitude() ||
+                circleLatLng.longitude != location.getLongitude();
     }
 
     /**
-     * Populates the Map with stored Capsule Markers.
-     */
-    private void populateStoredMarkers() {
-        // Remove any previous Markers
-        this.removeStoredMarkers();
-        // (Re)initialize the collections
-        mDiscoveredMarkers = new HashMap<Marker, Capsule>();
-        mOwnedMarkers = new HashMap<Marker, Capsule>();
-
-        // Populate the Discovery Markers
-        Cursor c = getApplicationContext().getContentResolver().query(
-                CapsuleContract.Discoveries.CONTENT_URI.buildUpon()
-                        .appendQueryParameter(CapsuleContract.Query.Parameters.INNER_JOIN, CapsuleContract.Capsules.TABLE_NAME)
-                        .build(),
-                CapsuleContract.Discoveries.CAPSULE_JOIN_PROJECTION,
-                CapsuleContract.Discoveries.ACCOUNT_NAME + " = ?",
-                new String[]{mAccount.name},
-                null
-        );
-        while (c.moveToNext()) {
-            Capsule capsule = new CapsuleDiscovery(c);
-            // Add the new Discovery Marker
-            Marker marker = mMap.addMarker(new MarkerOptions()
-                .position(new LatLng(capsule.getLatitude(), capsule.getLongitude()))
-                .title(capsule.getName())
-                .draggable(false)
-                .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE))
-            );
-            // Maintain a mapping of the Capsule to the Marker
-            mDiscoveredMarkers.put(marker, capsule);
-        }
-        c.close();
-
-        // Populate the Ownership Markers
-        c = getApplicationContext().getContentResolver().query(
-                CapsuleContract.Ownerships.CONTENT_URI.buildUpon()
-                        .appendQueryParameter(CapsuleContract.Query.Parameters.INNER_JOIN, CapsuleContract.Capsules.TABLE_NAME)
-                        .build(),
-                CapsuleContract.Ownerships.CAPSULE_JOIN_PROJECTION,
-                CapsuleContract.Ownerships.ACCOUNT_NAME + " = ?",
-                new String[]{mAccount.name},
-                null
-        );
-        while (c.moveToNext()) {
-            Capsule capsule = new CapsuleOwnership(c);
-            // Add the new Owned Marker
-            Marker marker = mMap.addMarker(new MarkerOptions()
-                .position(new LatLng(capsule.getLatitude(), capsule.getLongitude()))
-                .title(capsule.getName())
-                .draggable(false)
-                .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_YELLOW))
-            );
-            // Maintain a mapping of the Capsule to the Marker
-            mOwnedMarkers.put(marker, capsule);
-        }
-        c.close();
-    }
-
-    /**
-     * Adds Undiscovered Markers to the map given a collection
+     * Adds the specified Capsules as Markers to the GoogleMap
      *
-     * Will keep track of Markers using a data structure so duplicates are not added.
-     *
-     * TODO This function needs to be rewritten so that it:
-     *  - Removes Markers that are no longer in the VISIBLE radius
-     *  - Adds new Markers that have come into the VISIBLE radius
-     *  - Leaves Markers already in the VISIBLE radius if they remain in it, but also updates the data
-     *
-     * @param List<Capsule> capsules
+     * @param capsules The collection of Capsules
      */
-    private void populateUndiscoveredMarkers(List<Capsule> capsules) {
-        // Remove all the old Markers
-        this.removeUndiscoveredMarkers();
-        // (Re)initialize the collection
-        mUndiscoveredMarkers = new HashMap<Marker, Capsule>();
-
-        // Add updated Markers from the server response
-        for (int i = 0; i < capsules.size(); i++) {
-            // The current capsule
-            Capsule capsule = capsules.get(i);
-            // Create the marker
-            Marker marker = mMap.addMarker(new MarkerOptions()
-                .position(new LatLng(capsule.getLatitude(), capsule.getLongitude()))
-                .title(capsule.getName())
-                .draggable(false)
-            );
-            // Maintain a mapping of the Capsule to the Marker
-            mUndiscoveredMarkers.put(marker, capsule);
+    private void addCapsulesAsMarkers(List<Capsule> capsules) {
+        if (this.mMap == null || capsules == null || capsules.size() < 1) {
+            return;
         }
-    }
 
-    /**
-     * Removes stored Capsule Markers from the Map
-     */
-    private void removeStoredMarkers() {
-        if (this.mDiscoveredMarkers != null) {
-            this.removeMarkers(this.mDiscoveredMarkers.keySet());
-        }
-        if (this.mOwnedMarkers != null) {
-            this.removeMarkers(this.mOwnedMarkers.keySet());
-        }
-    }
-
-    /**
-     * Removes undiscovered Capsule Markers from the Map
-     */
-    private void removeUndiscoveredMarkers() {
-        if (this.mUndiscoveredMarkers != null) {
-            this.removeMarkers(this.mUndiscoveredMarkers.keySet());
-        }
-    }
-
-    /**
-     * Given a colleciton of Markers, removes them from the Map
-     *
-     * @param markers Collection of markers to remove
-     */
-    private void removeMarkers(Collection<Marker> markers) {
-        if (markers != null && markers.size() > 0) {
-            for (Marker marker : markers) {
-                marker.remove();
-            }
+        for (Capsule capsule : capsules) {
+            this.mMap.addMarker(new MarkerOptions()
+                    .position(new LatLng(capsule.getLatitude(), capsule.getLongitude())));
         }
     }
 
@@ -983,129 +613,12 @@ public class MapActivity extends FragmentActivity implements
      * @param account The Account to switch to
      */
     private void switchAccount(Account account) {
-        // Clear out all the Markers
-        this.removeStoredMarkers();
-        this.removeUndiscoveredMarkers();
         // Set the new Account
         this.mAccount = account;
-        // Clear out the auth token
-        this.mAuthToken = null;
-        // Get the auth token for the Account
-        if (this.mRetainedFragment != null) {
-            this.mRetainedFragment.startAuthTokenRetrieval(this, account);
-        }
         // Update the drawer Fragment
         if (this.mDrawerFragment != null) {
             this.mDrawerFragment.switchAccount(account);
         }
-    }
-
-    /**
-     * Handler for clicks on the info window
-     */
-    private class InfoWindowListener implements OnInfoWindowClickListener {
-
-        @Override
-        public void onInfoWindowClick(Marker marker) {
-            // Check if this is the new Capsule Marker
-            if (marker.equals(MapActivity.this.mNewCapsuleMarker) && MapActivity.this.mAccount != null) {
-                // Get the latitude and longitude
-                LatLng latLng = MapActivity.this.mNewCapsuleMarker.getPosition();
-                // Instantiate a new Capsule to edit
-                CapsuleOwnership capsule = new CapsuleOwnership();
-                capsule.setLatitude(latLng.latitude);
-                capsule.setLongitude(latLng.longitude);
-                capsule.setAccountName(MapActivity.this.mAccount.name);
-                // Launch the editor Activity
-                Intent intent = new Intent(MapActivity.this.getApplicationContext(),
-                        CapsuleEditorActivity.class);
-                intent.putExtra("capsule", capsule);
-                intent.putExtra("account", MapActivity.this.mAccount);
-                MapActivity.this.startActivityForResult(intent, REQUEST_CODE_CAPSULE_EDITOR);
-                return;
-            }
-
-            // Owned Marker
-            if (mOwnedMarkers.containsKey(marker)) {
-                MapActivity.this.openCapsuleMarker(mOwnedMarkers.get(marker));
-                return;
-            }
-
-            // Discovered Marker
-            if (mDiscoveredMarkers.containsKey(marker)) {
-                MapActivity.this.openCapsuleMarker(mDiscoveredMarkers.get(marker));
-                return;
-            }
-
-            // Undiscovered Marker
-            if (mUndiscoveredMarkers.containsKey(marker)) {
-                Location location = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
-                if (location != null) {
-                    double distance = SphericalUtil.computeDistanceBetween(
-                            new LatLng(location.getLatitude(), location.getLongitude()),
-                            marker.getPosition()
-                    );
-                    if (distance < DISCOVERY_RADIUS) {
-                        // Keep a reference to the Marker being opened
-                        MapActivity.this.mOpenedCapsuleMarker = marker;
-                        // Send a HTTP request to open the Capsule on the background thread
-                        MapActivity.this.mRetainedFragment.startCapsuleOpen(MapActivity.this,
-                                MapActivity.this.mAccount, MapActivity.this.mAuthToken, location,
-                                MapActivity.this.mUndiscoveredMarkers.get(marker));
-                    } else {
-                        Toast.makeText(getApplicationContext(), getText(R.string.error_marker_too_far),
-                                Toast.LENGTH_SHORT).show();
-                    }
-                } else {
-                    Toast.makeText(MapActivity.this.getApplicationContext(),
-                            MapActivity.this.getText(R.string.error_cannot_retrieve_location),
-                            Toast.LENGTH_SHORT).show();
-                }
-            }
-        }
-
-    }
-
-    /**
-     * Handler for GoogleMap long clicks.
-     *
-     * Currently long clicks allow for creating new Capsules.
-     */
-    private class MapLongClickListener implements OnMapLongClickListener {
-
-        @Override
-        public void onMapLongClick(final LatLng point) {
-            // Build the Dialog
-            AlertDialog.Builder builder = new AlertDialog.Builder(MapActivity.this);
-            builder.setTitle(getString(R.string.map_new_capsule_dialog_title)).setMessage(getString(R.string.map_new_capsule_dialog_message));
-
-            // Confirm button
-            builder.setPositiveButton(getString(android.R.string.ok), new DialogInterface.OnClickListener() {
-
-                @Override
-                public void onClick(DialogInterface dialog, int which) {
-                    if (mNewCapsuleMarker != null) {
-                        mNewCapsuleMarker.remove();
-                    }
-                    mNewCapsuleMarker = mMap.addMarker(new MarkerOptions()
-                        .position(point)
-                        .title(getString(R.string.map_new_capsule))
-                        .snippet(getString(R.string.map_new_capsule_marker_infowindow_snippet))
-                        .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN))
-                        .draggable(true)
-                    );
-                }
-
-            });
-
-            // Negative button
-            builder.setNegativeButton(getString(android.R.string.cancel), null);
-
-            // Create and show the Dialog
-            AlertDialog dialog = builder.create();
-            dialog.show();
-        }
-
     }
 
 }

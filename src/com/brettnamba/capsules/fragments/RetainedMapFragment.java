@@ -7,6 +7,7 @@ import android.location.Location;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentManager;
 import android.util.Log;
 
 import com.brettnamba.capsules.R;
@@ -15,6 +16,7 @@ import com.brettnamba.capsules.os.AsyncListenerTask;
 import com.brettnamba.capsules.os.AuthTokenRetrievalTask;
 import com.brettnamba.capsules.os.CapsuleOpenTask;
 import com.brettnamba.capsules.os.CapsulePingTask;
+import com.brettnamba.capsules.os.DiscoverCapsulesTask;
 
 /**
  * Fragment to be retained along with the main Activity that displays the map
@@ -40,6 +42,11 @@ public class RetainedMapFragment extends Fragment {
      * AsyncTask that opens an undiscovered Capsule on the background thread
      */
     private CapsuleOpenTask mCapsuleOpenTask;
+
+    /**
+     * AsyncTask that discovers Capsules on the background thread
+     */
+    private DiscoverCapsulesTask mDiscoverCapsulesTask;
 
     /**
      * Progress indicator to show when a background task is running
@@ -96,6 +103,9 @@ public class RetainedMapFragment extends Fragment {
             // Set the newly attached Activity as the listener
             this.mCapsuleOpenTask.setListener((AsyncListenerTask.TaskListener) activity);
         }
+        if (this.mDiscoverCapsulesTask != null) {
+            this.mDiscoverCapsulesTask.setListener((AsyncListenerTask.TaskListener) activity);
+        }
     }
 
     /**
@@ -119,6 +129,9 @@ public class RetainedMapFragment extends Fragment {
         }
         if (this.mCapsuleOpenTask != null) {
             this.mCapsuleOpenTask.removeListener();
+        }
+        if (this.mDiscoverCapsulesTask != null) {
+            this.mDiscoverCapsulesTask.removeListener();
         }
     }
 
@@ -150,6 +163,7 @@ public class RetainedMapFragment extends Fragment {
         this.cancelAuthTokenRetrieval();
         this.cancelCapsulePing();
         this.cancelCapsuleOpen();
+        this.cancelDiscoverCapsules();
     }
 
     /**
@@ -170,7 +184,8 @@ public class RetainedMapFragment extends Fragment {
         // If authentication is not already happening, do it on the background thread
         if (!this.isRetrievingAuthToken()) {
             // Get the auth token on the background thread
-            this.mAuthTokenTask = new AuthTokenRetrievalTask((AsyncListenerTask.TaskListener) activity);
+            this.mAuthTokenTask =
+                    new AuthTokenRetrievalTask((AsyncListenerTask.TaskListener) activity);
             this.mAuthTokenTask.execute(account);
         }
     }
@@ -180,7 +195,8 @@ public class RetainedMapFragment extends Fragment {
      */
     public void cancelAuthTokenRetrieval() {
         Log.i(TAG, "cancelAuthTokenRetrieval()");
-        if (this.mAuthTokenTask != null && this.mAuthTokenTask.getStatus() == AsyncTask.Status.RUNNING) {
+        if (this.mAuthTokenTask != null &&
+                this.mAuthTokenTask.getStatus() == AsyncTask.Status.RUNNING) {
             this.mAuthTokenTask.cancel(true);
             this.mAuthTokenTask = null;
         }
@@ -192,7 +208,8 @@ public class RetainedMapFragment extends Fragment {
      * @return True if it is, false if it is not
      */
     public boolean isRetrievingAuthToken() {
-        return this.mAuthTokenTask != null && this.mAuthTokenTask.getStatus() == AsyncTask.Status.RUNNING;
+        return this.mAuthTokenTask != null &&
+                this.mAuthTokenTask.getStatus() == AsyncTask.Status.RUNNING;
     }
 
     /**
@@ -203,7 +220,8 @@ public class RetainedMapFragment extends Fragment {
      * @param authToken The authentication token
      * @param location  Location object containing the user's location
      */
-    public void startCapsulePing(Activity activity, Account account, String authToken, Location location) {
+    public void startCapsulePing(Activity activity, Account account, String authToken,
+                                 Location location) {
         Log.i(TAG, "startCapsulePing()");
         if (this.isAccountDifferent(account)) {
             // Cancel any running tasks
@@ -214,7 +232,8 @@ public class RetainedMapFragment extends Fragment {
             // Send a request for the undiscovered Capsules on the background thread
             if (!this.isPingingCapsules()) {
                 Log.i(TAG, "Looking for new capsules...");
-                this.mCapsulePingTask = new CapsulePingTask((AsyncListenerTask.TaskListener) activity);
+                this.mCapsulePingTask =
+                        new CapsulePingTask((AsyncListenerTask.TaskListener) activity);
                 String lat = Double.toString(location.getLatitude());
                 String lng = Double.toString(location.getLongitude());
                 this.mCapsulePingTask.execute(authToken, lat, lng);
@@ -239,7 +258,8 @@ public class RetainedMapFragment extends Fragment {
      * @return True if it is running, false if it is not
      */
     public boolean isPingingCapsules() {
-        return this.mCapsulePingTask != null && this.mCapsulePingTask.getStatus() == AsyncTask.Status.RUNNING;
+        return this.mCapsulePingTask != null &&
+                this.mCapsulePingTask.getStatus() == AsyncTask.Status.RUNNING;
     }
 
     /**
@@ -251,7 +271,8 @@ public class RetainedMapFragment extends Fragment {
      * @param location  Location object containing the user's location
      * @param capsule   The Capsule to open
      */
-    public void startCapsuleOpen(Activity activity, Account account, String authToken, Location location, Capsule capsule) {
+    public void startCapsuleOpen(Activity activity, Account account, String authToken,
+                                 Location location, Capsule capsule) {
         Log.i(TAG, "startCapsuleOpen()");
         if (this.isAccountDifferent(account)) {
             // Cancel any running tasks
@@ -262,7 +283,8 @@ public class RetainedMapFragment extends Fragment {
             // Send a request on the background thread to open the Capsule
             if (!this.isOpeningCapsule()) {
                 Log.i(TAG, "Opening capsule...");
-                this.mCapsuleOpenTask = new CapsuleOpenTask((AsyncListenerTask.TaskListener) activity);
+                this.mCapsuleOpenTask =
+                        new CapsuleOpenTask((AsyncListenerTask.TaskListener) activity);
                 String lat = Double.toString(location.getLatitude());
                 String lng = Double.toString(location.getLongitude());
                 String syncId = Long.toString(capsule.getSyncId());
@@ -288,7 +310,50 @@ public class RetainedMapFragment extends Fragment {
      * @return True if it is running, otherwise false
      */
     public boolean isOpeningCapsule() {
-        return this.mCapsuleOpenTask != null && this.mCapsuleOpenTask.getStatus() == AsyncTask.Status.RUNNING;
+        return this.mCapsuleOpenTask != null &&
+                this.mCapsuleOpenTask.getStatus() == AsyncTask.Status.RUNNING;
+    }
+
+    /**
+     * Starts the background thread task to discover Capsules
+     *
+     * @param activity The current Activity
+     * @param account  The current Account
+     * @param location The location used in the discovery request to the server
+     */
+    public void startDiscoverCapsules(Activity activity, Account account, Location location) {
+        if (this.isAccountDifferent(account)) {
+            // Cancel any running tasks
+            this.cancelTasks();
+            // Retain the new Account
+            this.setAccount(account);
+        } else {
+            if (!this.isDiscoveringCapsules()) {
+                this.mDiscoverCapsulesTask = new DiscoverCapsulesTask(
+                        (AsyncListenerTask.DiscoverCapsulesTaskListener) activity);
+                this.mDiscoverCapsulesTask.execute(location.getLatitude(), location.getLongitude());
+            }
+        }
+    }
+
+    /**
+     * Cancels the background thread task that discovers the Capsules
+     */
+    public void cancelDiscoverCapsules() {
+        if (this.isDiscoveringCapsules()) {
+            this.mDiscoverCapsulesTask.cancel(true);
+            this.mDiscoverCapsulesTask = null;
+        }
+    }
+
+    /**
+     * Determines if the background thread task for discovering Capsules is running
+     *
+     * @return True if it is running
+     */
+    public boolean isDiscoveringCapsules() {
+        return this.mDiscoverCapsulesTask != null &&
+                this.mDiscoverCapsulesTask.getStatus() == AsyncTask.Status.RUNNING;
     }
 
     /**
@@ -317,6 +382,23 @@ public class RetainedMapFragment extends Fragment {
      */
     private boolean isAccountDifferent(Account account) {
         return this.mAccount == null || !account.name.equals(this.mAccount.name);
+    }
+
+    /**
+     * Using the specified FragmentManager, will find the already added instance of
+     * RetainedMapFragment by its tag.  If it does not exist, will instantiate it and add it to
+     * the FragmentManager.
+     *
+     * @param fm The FragmentManager
+     * @return The RetainedMapFragment found in the FragmentManager or a new instance
+     */
+    public static RetainedMapFragment findOrCreate(FragmentManager fm) {
+        RetainedMapFragment fragment = (RetainedMapFragment) fm.findFragmentByTag(TAG);
+        if (fragment == null) {
+            fragment = new RetainedMapFragment();
+            fm.beginTransaction().add(fragment, TAG).commit();
+        }
+        return fragment;
     }
 
 }
