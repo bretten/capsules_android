@@ -344,6 +344,35 @@ public class RequestHandler {
     }
 
     /**
+     * Requests to discover all the Capsules near the specified latitude and longitude
+     *
+     * @param context The current Context
+     * @param account The Account to be used for authentication
+     * @param lat     The latitude of the device
+     * @param lng     The longitude of the device
+     * @return HTTP response object
+     */
+    public static JsonResponse requestDiscoverCapsules(Context context, Account account, Double lat,
+                                                       Double lng) {
+        // Initialize the request
+        HttpUrlWwwFormRequest request = new HttpUrlWwwFormRequest(context,
+                RequestContract.BASE_URL + RequestContract.Uri.DISCOVERIES_URI, account,
+                Constants.AUTH_TOKEN_TYPE);
+        request.addRequestHeader("Accept", "application/json");
+        // Add the request parameters
+        request.addRequestParameter(
+                String.format("data[%1$s]", RequestContract.Field.CAPSULE_LATITUDE),
+                String.valueOf(lat));
+        request.addRequestParameter(
+                String.format("data[%1$s]", RequestContract.Field.CAPSULE_LONGITUDE),
+                String.valueOf(lng));
+        // Send the request
+        request.send();
+
+        return new JsonResponse(request);
+    }
+
+    /**
      * Sends a Capsule validation request and returns HTTP request object also containing the
      * request data
      *

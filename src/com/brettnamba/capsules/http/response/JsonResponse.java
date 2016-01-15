@@ -137,7 +137,7 @@ public class JsonResponse extends HttpUrlResponse {
     private void parseResponseBody(HttpUrlConnectionRequest request) {
         try {
             this.mJsonObject = new JSONObject(request.getResponseBody());
-        } catch (JSONException e) {
+        } catch (NullPointerException | JSONException e) {
             this.mJsonObject = new JSONObject();
         }
     }
