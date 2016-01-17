@@ -110,7 +110,7 @@ public class SaveCapsuleService extends IntentService implements
         this.mNotificationBuilder = new NotificationCompat.Builder(this);
         this.mNotificationBuilder.setContentTitle(this.getString(R.string.progress_saving_capsule))
                 .setContentText(this.getString(R.string.progress_please_wait))
-                .setSmallIcon(R.drawable.ic_pin_drop_black);
+                .setSmallIcon(R.drawable.ic_place_black_24dp);
     }
 
     /**

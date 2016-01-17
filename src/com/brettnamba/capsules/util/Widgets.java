@@ -29,9 +29,9 @@ public final class Widgets {
         toolbar.setTitle(activity.getString(R.string.app_name));
         toolbar.setSubtitle(subtitle);
         if (isTopLevel) {
-            toolbar.setNavigationIcon(R.drawable.ic_menu_grey);
+            toolbar.setNavigationIcon(R.drawable.ic_menu_white_24dp);
         } else {
-            toolbar.setNavigationIcon(R.drawable.ic_chevron_left_white);
+            toolbar.setNavigationIcon(R.drawable.ic_chevron_left_white_24dp);
         }
         toolbar.setLogo(R.drawable.ic_launcher);
         return toolbar;

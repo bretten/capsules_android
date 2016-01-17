@@ -10,9 +10,9 @@
         android:layout_alignParentEnd="true"
         android:layout_alignParentRight="true"
         android:layout_margin="10dp"
-        android:drawableLeft="@drawable/ic_person_grey"
+        android:drawableLeft="@drawable/ic_account_circle_black_24dp"
         android:drawablePadding="2dp"
-        android:drawableStart="@drawable/ic_person_grey" />
+        android:drawableStart="@drawable/ic_account_circle_black_24dp" />
 
     <TextView
         android:id="@+id/capsule_list_item_title"
@@ -39,9 +39,9 @@
             android:id="@+id/capsule_list_item_total_rating"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:drawableLeft="@drawable/ic_whatshot_grey"
+            android:drawableLeft="@drawable/ic_whatshot_black_24dp"
             android:drawablePadding="2dp"
-            android:drawableStart="@drawable/ic_whatshot_grey"
+            android:drawableStart="@drawable/ic_whatshot_black_24dp"
             android:gravity="center_vertical"
             android:padding="10dp" />
 
@@ -54,9 +54,9 @@
             android:id="@+id/capsule_list_item_discovery_count"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:drawableLeft="@drawable/ic_pin_drop_grey"
+            android:drawableLeft="@drawable/ic_place_black_24dp"
             android:drawablePadding="2dp"
-            android:drawableStart="@drawable/ic_pin_drop_grey"
+            android:drawableStart="@drawable/ic_place_black_24dp"
             android:gravity="center_vertical"
             android:padding="10dp" />
 
@@ -69,9 +69,9 @@
             android:id="@+id/capsule_list_item_favorite_count"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:drawableLeft="@drawable/ic_star_grey"
+            android:drawableLeft="@drawable/ic_star_rate_black_24dp"
             android:drawablePadding="2dp"
-            android:drawableStart="@drawable/ic_star_grey"
+            android:drawableStart="@drawable/ic_star_rate_black_24dp"
             android:gravity="center_vertical"
             android:padding="10dp" />
 
