@@ -10,6 +10,10 @@ import com.brettnamba.capsules.dataaccess.CapsuleOwnership;
 import com.brettnamba.capsules.dataaccess.Discovery;
 import com.brettnamba.capsules.dataaccess.Memoir;
 import com.brettnamba.capsules.http.response.JsonResponse;
+import com.brettnamba.tomoeame.http.HttpUrlConnectionRequest;
+import com.brettnamba.tomoeame.http.HttpUrlGetRequest;
+import com.brettnamba.tomoeame.http.HttpUrlMultiPartRequest;
+import com.brettnamba.tomoeame.http.HttpUrlWwwFormRequest;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;

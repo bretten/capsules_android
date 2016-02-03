@@ -3,6 +3,8 @@ package com.brettnamba.capsules.os;
 import android.accounts.Account;
 import android.util.Log;
 
+import com.brettnamba.tomoeame.os.AsyncListenerTask;
+
 /**
  * AsyncTask to handle retrieving the authentication token from the AccountManager
  */
@@ -11,7 +13,7 @@ public class AuthTokenRetrievalTask extends AsyncListenerTask<Account, Void, Str
     /**
      * The listener that handles the callbacks
      */
-    private AuthTokenRetrievalTaskListener mListener;
+    private AsyncTaskListeners.AuthTokenRetrievalTaskListener mListener;
 
     /**
      * Logging tag
@@ -35,9 +37,10 @@ public class AuthTokenRetrievalTask extends AsyncListenerTask<Account, Void, Str
     @Override
     public void setListener(TaskListener listener) {
         try {
-            this.mListener = (AuthTokenRetrievalTaskListener) listener;
+            this.mListener = (AsyncTaskListeners.AuthTokenRetrievalTaskListener) listener;
         } catch (ClassCastException e) {
-            throw new ClassCastException(listener.toString() + " does not implement AuthTokenRetrievalTaskListener");
+            throw new ClassCastException(
+                    listener.toString() + " does not implement AuthTokenRetrievalTaskListener");
         }
     }
 

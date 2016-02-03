@@ -1,0 +1,2 @@
+include ':tomoeame'
+project(':tomoeame').projectDir = new File(settingsDir, '../tomoeame/tomoeame')

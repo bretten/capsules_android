@@ -6,6 +6,8 @@ import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 
+import com.brettnamba.tomoeame.os.AsyncListenerTask;
+
 /**
  * Fragment that is used to retain a reference to an AsyncTask.  The state is retained
  * by setting setRetainInstance(true).  When this Fragment is attached to an Activity it sets

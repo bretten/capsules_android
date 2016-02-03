@@ -24,7 +24,7 @@ import com.brettnamba.capsules.fragments.NavigationDrawerFragment;
 import com.brettnamba.capsules.fragments.RetainedMapFragment;
 import com.brettnamba.capsules.http.RequestHandler;
 import com.brettnamba.capsules.http.response.JsonResponse;
-import com.brettnamba.capsules.os.AsyncListenerTask;
+import com.brettnamba.capsules.os.AsyncTaskListeners;
 import com.brettnamba.capsules.util.Accounts;
 import com.brettnamba.capsules.util.Widgets;
 import com.brettnamba.capsules.widget.NavigationDrawerItem;
@@ -58,8 +58,8 @@ public class MapActivity extends FragmentActivity implements
         GoogleApiClient.OnConnectionFailedListener,
         AccountDialogFragment.AccountDialogListener,
         NavigationDrawerFragment.NavigationDrawerListener,
-        AsyncListenerTask.AuthTokenRetrievalTaskListener,
-        AsyncListenerTask.DiscoverCapsulesTaskListener {
+        AsyncTaskListeners.AuthTokenRetrievalTaskListener,
+        AsyncTaskListeners.DiscoverCapsulesTaskListener {
 
     /**
      * Fragment used to retain the state of the Map and the user

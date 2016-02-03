@@ -7,7 +7,6 @@ import android.app.ProgressDialog;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.app.FragmentActivity;
-import android.support.v4.app.FragmentManager;
 import android.support.v7.widget.Toolbar;
 import android.text.TextUtils;
 import android.view.MenuItem;
@@ -20,7 +19,7 @@ import com.brettnamba.capsules.Constants;
 import com.brettnamba.capsules.R;
 import com.brettnamba.capsules.http.RequestHandler;
 import com.brettnamba.capsules.http.response.JsonResponse;
-import com.brettnamba.capsules.os.AsyncListenerTask;
+import com.brettnamba.capsules.os.AsyncTaskListeners;
 import com.brettnamba.capsules.os.AuthenticationTask;
 import com.brettnamba.capsules.os.RetainedTaskFragment;
 import com.brettnamba.capsules.util.Widgets;
@@ -33,7 +32,8 @@ import java.util.List;
  * Activity to handle authenticating users against the Web API and adding corresponding
  * Accounts to the Android AccountManager
  */
-public class LoginActivity extends FragmentActivity implements AsyncListenerTask.AuthenticationTaskListener {
+public class LoginActivity extends FragmentActivity implements
+        AsyncTaskListeners.AuthenticationTaskListener {
 
     /**
      * Handles adding Accounts to the device

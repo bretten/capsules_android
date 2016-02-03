@@ -1,6 +1,7 @@
 package com.brettnamba.capsules.os;
 
 import com.brettnamba.capsules.dataaccess.Discovery;
+import com.brettnamba.tomoeame.os.AsyncListenerTask;
 
 /**
  * AsyncTask that handles updating a Discovery on the background thread
@@ -10,7 +11,7 @@ public class UpdateDiscoveryTask extends AsyncListenerTask<Discovery, Void, Bool
     /**
      * Listener that will handle callbacks
      */
-    private UpdateDiscoveryTaskListener mListener;
+    private AsyncTaskListeners.UpdateDiscoveryTaskListener mListener;
 
     /**
      * Constructor that sets the listener
@@ -29,7 +30,7 @@ public class UpdateDiscoveryTask extends AsyncListenerTask<Discovery, Void, Bool
     @Override
     public void setListener(TaskListener listener) {
         try {
-            this.mListener = (UpdateDiscoveryTaskListener) listener;
+            this.mListener = (AsyncTaskListeners.UpdateDiscoveryTaskListener) listener;
         } catch (ClassCastException e) {
             throw new ClassCastException(
                     listener.toString() + " does not implement UpdateDiscoveryTaskListener");

@@ -19,15 +19,15 @@ import com.brettnamba.capsules.dataaccess.Capsule;
 import com.brettnamba.capsules.dataaccess.Discovery;
 import com.brettnamba.capsules.fragments.CapsuleFragment;
 import com.brettnamba.capsules.fragments.DiscoveryFragment;
-import com.brettnamba.capsules.http.HttpUrlGetRequest;
 import com.brettnamba.capsules.http.RequestHandler;
-import com.brettnamba.capsules.os.AsyncListenerTask;
+import com.brettnamba.capsules.os.AsyncTaskListeners;
 import com.brettnamba.capsules.os.GetMemoirBitmapTask;
 import com.brettnamba.capsules.os.RetainedBitmapCacheFragment;
 import com.brettnamba.capsules.os.RetainedTaskFragment;
 import com.brettnamba.capsules.os.UpdateDiscoveryTask;
-import com.brettnamba.capsules.util.Images;
 import com.brettnamba.capsules.util.Widgets;
+import com.brettnamba.tomoeame.http.HttpUrlGetRequest;
+import com.brettnamba.tomoeame.util.Images;
 
 /**
  * Activity that displays a Capsule and other Fragments depending on the type of the Capsule
@@ -37,8 +37,8 @@ import com.brettnamba.capsules.util.Widgets;
 public class CapsuleActivity extends FragmentActivity implements
         CapsuleFragment.CapsuleFragmentListener,
         DiscoveryFragment.DiscoveryFragmentListener,
-        AsyncListenerTask.GetMemoirBitmapTaskListener,
-        AsyncListenerTask.UpdateDiscoveryTaskListener {
+        AsyncTaskListeners.GetMemoirBitmapTaskListener,
+        AsyncTaskListeners.UpdateDiscoveryTaskListener {
 
     /**
      * The Capsule for this Activity

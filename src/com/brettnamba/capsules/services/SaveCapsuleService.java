@@ -11,11 +11,11 @@ import android.support.v4.app.NotificationCompat;
 
 import com.brettnamba.capsules.R;
 import com.brettnamba.capsules.dataaccess.Capsule;
-import com.brettnamba.capsules.http.HttpUrlConnectionRequest;
-import com.brettnamba.capsules.http.HttpUrlMultiPartRequest;
-import com.brettnamba.capsules.http.HttpUrlWwwFormRequest;
 import com.brettnamba.capsules.http.RequestHandler;
 import com.brettnamba.capsules.util.JSONParser;
+import com.brettnamba.tomoeame.http.HttpUrlConnectionRequest;
+import com.brettnamba.tomoeame.http.HttpUrlMultiPartRequest;
+import com.brettnamba.tomoeame.http.HttpUrlWwwFormRequest;
 
 import org.json.JSONException;
 import org.json.JSONObject;

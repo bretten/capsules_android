@@ -1,6 +1,7 @@
 package com.brettnamba.capsules.os;
 
 import com.brettnamba.capsules.dataaccess.CapsuleOwnership;
+import com.brettnamba.tomoeame.os.AsyncListenerTask;
 
 /**
  * AsyncTask that handles saving a owned Capsule
@@ -10,7 +11,7 @@ public class OwnershipSaveTask extends AsyncListenerTask<CapsuleOwnership, Void,
     /**
      * The listener that handles the callbacks
      */
-    private OwnershipSaveTaskListener mListener;
+    private AsyncTaskListeners.OwnershipSaveTaskListener mListener;
 
     /**
      * Constructor that sets the listener
@@ -29,9 +30,10 @@ public class OwnershipSaveTask extends AsyncListenerTask<CapsuleOwnership, Void,
     @Override
     public void setListener(TaskListener listener) {
         try {
-            this.mListener = (OwnershipSaveTaskListener) listener;
+            this.mListener = (AsyncTaskListeners.OwnershipSaveTaskListener) listener;
         } catch (ClassCastException e) {
-            throw new ClassCastException(listener.toString() + " does not implement OwnershipSaveTaskListener");
+            throw new ClassCastException(
+                    listener.toString() + " does not implement OwnershipSaveTaskListener");
         }
     }
 

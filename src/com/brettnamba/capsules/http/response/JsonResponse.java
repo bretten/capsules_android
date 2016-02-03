@@ -1,8 +1,9 @@
 package com.brettnamba.capsules.http.response;
 
 import com.brettnamba.capsules.dataaccess.Capsule;
-import com.brettnamba.capsules.http.HttpUrlConnectionRequest;
 import com.brettnamba.capsules.util.JSONParser;
+import com.brettnamba.tomoeame.http.HttpUrlConnectionRequest;
+import com.brettnamba.tomoeame.http.HttpUrlResponse;
 
 import org.json.JSONException;
 import org.json.JSONObject;

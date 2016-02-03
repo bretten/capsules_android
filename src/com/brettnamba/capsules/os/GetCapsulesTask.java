@@ -2,6 +2,7 @@ package com.brettnamba.capsules.os;
 
 import com.brettnamba.capsules.dataaccess.Capsule;
 import com.brettnamba.capsules.http.CapsuleRequestParameters;
+import com.brettnamba.tomoeame.os.AsyncListenerTask;
 
 import java.util.List;
 
@@ -15,14 +16,14 @@ public class GetCapsulesTask
     /**
      * Listener that will handle the callbacks
      */
-    private GetCapsulesTaskListener mListener;
+    private AsyncTaskListeners.GetCapsulesTaskListener mListener;
 
     /**
      * Constructor that sets the listener
      *
      * @param listener Listener that will handle the callbacks
      */
-    public GetCapsulesTask(GetCapsulesTaskListener listener) {
+    public GetCapsulesTask(AsyncTaskListeners.GetCapsulesTaskListener listener) {
         this.setListener(listener);
     }
 
@@ -34,7 +35,7 @@ public class GetCapsulesTask
     @Override
     public void setListener(TaskListener listener) {
         try {
-            this.mListener = (GetCapsulesTaskListener) listener;
+            this.mListener = (AsyncTaskListeners.GetCapsulesTaskListener) listener;
         } catch (ClassCastException e) {
             throw new ClassCastException(
                     listener.toString() + " does not implement GetCapsulesTaskListener");

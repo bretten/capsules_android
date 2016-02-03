@@ -19,7 +19,7 @@ import com.brettnamba.capsules.fragments.SortDialogFragment;
 import com.brettnamba.capsules.http.CapsuleRequestParameters;
 import com.brettnamba.capsules.http.RequestHandler;
 import com.brettnamba.capsules.http.response.JsonResponse;
-import com.brettnamba.capsules.os.AsyncListenerTask;
+import com.brettnamba.capsules.os.AsyncTaskListeners;
 import com.brettnamba.capsules.os.GetCapsulesTask;
 import com.brettnamba.capsules.os.RetainedTaskFragment;
 import com.brettnamba.capsules.util.Widgets;
@@ -35,7 +35,7 @@ import java.util.List;
  * @author Brett Namba
  */
 public abstract class CapsuleListActivity extends FragmentActivity implements
-        AsyncListenerTask.GetCapsulesTaskListener,
+        AsyncTaskListeners.GetCapsulesTaskListener,
         SortDialogFragment.SortDialogListener,
         NavigationDrawerFragment.NavigationDrawerListener {
 

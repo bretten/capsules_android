@@ -2,6 +2,8 @@ package com.brettnamba.capsules.os;
 
 import android.graphics.Bitmap;
 
+import com.brettnamba.tomoeame.os.AsyncListenerTask;
+
 /**
  * Background thread task to get a Memoir's image file from the server and convert it to a
  * Bitmap object.
@@ -11,14 +13,14 @@ public class GetMemoirBitmapTask extends AsyncListenerTask<Long, Void, Bitmap> {
     /**
      * Listener that will handle the callbacks
      */
-    private GetMemoirBitmapTaskListener mListener;
+    private AsyncTaskListeners.GetMemoirBitmapTaskListener mListener;
 
     /**
      * Constructor that sets the listener
      *
      * @param listener Listener that will handle the callbacks
      */
-    public GetMemoirBitmapTask(GetMemoirBitmapTaskListener listener) {
+    public GetMemoirBitmapTask(AsyncTaskListeners.GetMemoirBitmapTaskListener listener) {
         this.setListener(listener);
     }
 
@@ -30,7 +32,7 @@ public class GetMemoirBitmapTask extends AsyncListenerTask<Long, Void, Bitmap> {
     @Override
     public void setListener(TaskListener listener) {
         try {
-            this.mListener = (GetMemoirBitmapTaskListener) listener;
+            this.mListener = (AsyncTaskListeners.GetMemoirBitmapTaskListener) listener;
         } catch (ClassCastException e) {
             throw new ClassCastException(
                     listener.toString() + " does not implement GetMemoirBitmapTaskListener");

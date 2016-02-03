@@ -15,11 +15,11 @@ import android.widget.EditText;
 import android.widget.TextView;
 
 import com.brettnamba.capsules.Constants;
-import com.brettnamba.capsules.activities.MapActivity;
 import com.brettnamba.capsules.R;
+import com.brettnamba.capsules.activities.MapActivity;
 import com.brettnamba.capsules.http.RequestHandler;
 import com.brettnamba.capsules.http.response.JsonResponse;
-import com.brettnamba.capsules.os.AsyncListenerTask;
+import com.brettnamba.capsules.os.AsyncTaskListeners;
 import com.brettnamba.capsules.os.AuthenticationTask;
 import com.brettnamba.capsules.os.RetainedTaskFragment;
 import com.brettnamba.capsules.util.Widgets;
@@ -32,7 +32,8 @@ import java.util.List;
  * Activity to handle registering new accounts via the Web API and adding corresponding Accounts
  * to the Android AccountManager
  */
-public class RegisterActivity extends FragmentActivity implements AsyncListenerTask.AuthenticationTaskListener {
+public class RegisterActivity extends FragmentActivity implements
+        AsyncTaskListeners.AuthenticationTaskListener {
 
     /**
      * AccountManager to handle adding Accounts
@@ -121,7 +122,8 @@ public class RegisterActivity extends FragmentActivity implements AsyncListenerT
         this.mUsernameInput = (EditText) this.findViewById(R.id.activity_register_username);
         this.mEmailInput = (EditText) this.findViewById(R.id.activity_register_email);
         this.mPasswordInput = (EditText) this.findViewById(R.id.activity_register_password);
-        this.mPasswordConfirmInput = (EditText) this.findViewById(R.id.activity_register_confirm_password);
+        this.mPasswordConfirmInput =
+                (EditText) this.findViewById(R.id.activity_register_confirm_password);
         this.mMessageView = (TextView) this.findViewById(R.id.messages);
     }
 
@@ -183,7 +185,8 @@ public class RegisterActivity extends FragmentActivity implements AsyncListenerT
      * @param passwordConfirm The value from the password confirmation input
      * @return boolean True if all the values are valid, false if they are not
      */
-    private boolean isValid(String username, String email, String password, String passwordConfirm) {
+    private boolean isValid(String username, String email, String password,
+                            String passwordConfirm) {
         // Will hold any errors from validation
         List<String> errors = new ArrayList<String>();
 

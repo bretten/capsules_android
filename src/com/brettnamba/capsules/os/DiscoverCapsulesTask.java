@@ -1,6 +1,7 @@
 package com.brettnamba.capsules.os;
 
 import com.brettnamba.capsules.dataaccess.Capsule;
+import com.brettnamba.tomoeame.os.AsyncListenerTask;
 
 import java.util.List;
 
@@ -12,14 +13,14 @@ public class DiscoverCapsulesTask extends AsyncListenerTask<Double, Void, List<C
     /**
      * Listener that will handle the callbacks
      */
-    private DiscoverCapsulesTaskListener mListener;
+    private AsyncTaskListeners.DiscoverCapsulesTaskListener mListener;
 
     /**
      * Constructor that sets the listener
      *
      * @param listener Listener that will handle the callbacks
      */
-    public DiscoverCapsulesTask(DiscoverCapsulesTaskListener listener) {
+    public DiscoverCapsulesTask(AsyncTaskListeners.DiscoverCapsulesTaskListener listener) {
         this.setListener(listener);
     }
 
@@ -31,7 +32,7 @@ public class DiscoverCapsulesTask extends AsyncListenerTask<Double, Void, List<C
     @Override
     public void setListener(TaskListener listener) {
         try {
-            this.mListener = (DiscoverCapsulesTaskListener) listener;
+            this.mListener = (AsyncTaskListeners.DiscoverCapsulesTaskListener) listener;
         } catch (ClassCastException e) {
             throw new ClassCastException(
                     listener.toString() + " does not implement DiscoverCapsulesTaskListener");

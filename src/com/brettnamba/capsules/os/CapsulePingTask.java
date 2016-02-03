@@ -1,6 +1,7 @@
 package com.brettnamba.capsules.os;
 
 import com.brettnamba.capsules.http.response.CapsulePingResponse;
+import com.brettnamba.tomoeame.os.AsyncListenerTask;
 
 /**
  * AsyncTask that gets undiscovered Capsules near the user's location
@@ -10,7 +11,7 @@ public class CapsulePingTask extends AsyncListenerTask<String, Void, CapsulePing
     /**
      * Listener that will handle the callbacks
      */
-    private CapsulePingTaskListener mListener;
+    private AsyncTaskListeners.CapsulePingTaskListener mListener;
 
     /**
      * Constructor that sets the listener
@@ -29,9 +30,10 @@ public class CapsulePingTask extends AsyncListenerTask<String, Void, CapsulePing
     @Override
     public void setListener(TaskListener listener) {
         try {
-            this.mListener = (CapsulePingTaskListener) listener;
+            this.mListener = (AsyncTaskListeners.CapsulePingTaskListener) listener;
         } catch (ClassCastException e) {
-            throw new ClassCastException(listener.toString() + " does not implement CapsulePingTaskListener");
+            throw new ClassCastException(
+                    listener.toString() + " does not implement CapsulePingTaskListener");
         }
     }
 

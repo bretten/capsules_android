@@ -1,6 +1,7 @@
 package com.brettnamba.capsules.os;
 
 import com.brettnamba.capsules.http.response.CapsuleOpenResponse;
+import com.brettnamba.tomoeame.os.AsyncListenerTask;
 
 /**
  * AsyncTask that opens an undiscovered Capsule
@@ -10,7 +11,7 @@ public class CapsuleOpenTask extends AsyncListenerTask<String, Void, CapsuleOpen
     /**
      * Listener that will handle the callbacks
      */
-    private CapsuleOpenTaskListener mListener;
+    private AsyncTaskListeners.CapsuleOpenTaskListener mListener;
 
     /**
      * Constructor that sets the listener
@@ -29,9 +30,10 @@ public class CapsuleOpenTask extends AsyncListenerTask<String, Void, CapsuleOpen
     @Override
     public void setListener(TaskListener listener) {
         try {
-            this.mListener = (CapsuleOpenTaskListener) listener;
+            this.mListener = (AsyncTaskListeners.CapsuleOpenTaskListener) listener;
         } catch (ClassCastException e) {
-            throw new ClassCastException(listener.toString() + " does not implement CapsuleOpenTaskListener");
+            throw new ClassCastException(
+                    listener.toString() + " does not implement CapsuleOpenTaskListener");
         }
     }
 

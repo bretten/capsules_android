@@ -2,7 +2,6 @@ package com.brettnamba.capsules.os;
 
 import android.accounts.Account;
 import android.graphics.Bitmap;
-import android.os.AsyncTask;
 
 import com.brettnamba.capsules.dataaccess.Capsule;
 import com.brettnamba.capsules.dataaccess.CapsuleOwnership;
@@ -11,45 +10,22 @@ import com.brettnamba.capsules.http.CapsuleRequestParameters;
 import com.brettnamba.capsules.http.response.CapsuleOpenResponse;
 import com.brettnamba.capsules.http.response.CapsulePingResponse;
 import com.brettnamba.capsules.http.response.JsonResponse;
+import com.brettnamba.tomoeame.os.AsyncListenerTask;
 
 import java.util.List;
 
 /**
- * Abstraction of AsyncTask that is meant to use listeners when the
- * standard AsyncTask's methods are invoked
- * <p/>
- * In order to allow an Activity implement multiple listeners, a listener interface
- * is created for each Task so the callbacks can be differentiated.
+ * Listener interfaces that outline the events on background thread tasks and allow other classes
+ * to handle their events.
  *
- * @param <Params>
- * @param <Progress>
- * @param <Result>
+ * @author Brett Namba
  */
-public abstract class AsyncListenerTask<Params, Progress, Result>
-        extends AsyncTask<Params, Progress, Result> {
-
-    /**
-     * Sets the listener for the AsyncTask
-     *
-     * @param listener The listener that handles the callbacks
-     */
-    public abstract void setListener(TaskListener listener);
-
-    /**
-     * Removes the listener that handles the callbacks
-     */
-    public abstract void removeListener();
-
-    /**
-     * Base TaskListener interface that all listeners should extend from
-     */
-    public interface TaskListener {
-    }
+public class AsyncTaskListeners {
 
     /**
      * Listener for any AsyncTasks that perform authentication using AuthenticationResponse
      */
-    public interface AuthenticationTaskListener extends TaskListener {
+    public interface AuthenticationTaskListener extends AsyncListenerTask.TaskListener {
         /**
          * Should handle doInBackground() work
          *
@@ -79,7 +55,7 @@ public abstract class AsyncListenerTask<Params, Progress, Result>
     /**
      * Listener for an AsyncTask that will retrieve an authentication token
      */
-    public interface AuthTokenRetrievalTaskListener extends TaskListener {
+    public interface AuthTokenRetrievalTaskListener extends AsyncListenerTask.TaskListener {
         /**
          * Should handle doInBackground() work
          *
@@ -109,7 +85,7 @@ public abstract class AsyncListenerTask<Params, Progress, Result>
     /**
      * Listener for AsyncTask that will request undiscovered Capsules from the API
      */
-    public interface CapsulePingTaskListener extends TaskListener {
+    public interface CapsulePingTaskListener extends AsyncListenerTask.TaskListener {
         /**
          * Should handle doInBackground() work
          *
@@ -139,7 +115,7 @@ public abstract class AsyncListenerTask<Params, Progress, Result>
     /**
      * Listener for AsyncTask that will make an HTTP request to open a Capsule
      */
-    public interface CapsuleOpenTaskListener extends TaskListener {
+    public interface CapsuleOpenTaskListener extends AsyncListenerTask.TaskListener {
         /**
          * Should handle doInBackground() work
          *
@@ -169,7 +145,7 @@ public abstract class AsyncListenerTask<Params, Progress, Result>
     /**
      * Listener for AsyncTask that handles updating a Discovery
      */
-    public interface UpdateDiscoveryTaskListener extends TaskListener {
+    public interface UpdateDiscoveryTaskListener extends AsyncListenerTask.TaskListener {
         /**
          * Should handle doInBackground() work
          *
@@ -199,7 +175,7 @@ public abstract class AsyncListenerTask<Params, Progress, Result>
     /**
      * Listener for AsyncTask that handles saving a Capsule ownership
      */
-    public interface OwnershipSaveTaskListener extends TaskListener {
+    public interface OwnershipSaveTaskListener extends AsyncListenerTask.TaskListener {
         /**
          * Should handle doInBackground() work
          *
@@ -230,7 +206,7 @@ public abstract class AsyncListenerTask<Params, Progress, Result>
      * Listener for AsyncTask that handles requesting Capsules from the server and parsing
      * the results
      */
-    public interface GetCapsulesTaskListener extends TaskListener {
+    public interface GetCapsulesTaskListener extends AsyncListenerTask.TaskListener {
 
         /**
          * Should handle doInBackground() work
@@ -262,7 +238,7 @@ public abstract class AsyncListenerTask<Params, Progress, Result>
     /**
      * Listener that handles requesting a Memoir's image data from the server and building a Bitmap
      */
-    public interface GetMemoirBitmapTaskListener extends TaskListener {
+    public interface GetMemoirBitmapTaskListener extends AsyncListenerTask.TaskListener {
 
         /**
          * Should handle doInBackground() work
@@ -295,7 +271,7 @@ public abstract class AsyncListenerTask<Params, Progress, Result>
      * Listener that handles callbacks for a request to the server to discover all Capsules
      * nearby the device's location
      */
-    public interface DiscoverCapsulesTaskListener extends TaskListener {
+    public interface DiscoverCapsulesTaskListener extends AsyncListenerTask.TaskListener {
 
         /**
          * Should handle doInBackground() work

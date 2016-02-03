@@ -27,9 +27,9 @@ import com.brettnamba.capsules.dataaccess.Capsule;
 import com.brettnamba.capsules.dataaccess.Memoir;
 import com.brettnamba.capsules.http.RequestContract;
 import com.brettnamba.capsules.services.SaveCapsuleService;
-import com.brettnamba.capsules.util.Files;
-import com.brettnamba.capsules.util.Images;
-import com.brettnamba.capsules.util.Intents;
+import com.brettnamba.tomoeame.util.Files;
+import com.brettnamba.tomoeame.util.Images;
+import com.brettnamba.tomoeame.util.Intents;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.LocationListener;
@@ -743,7 +743,8 @@ public class CapsuleEditorFragment extends Fragment implements
         public void onClick(View v) {
             // Get an Intent that allows for choosing between the camera and the gallery
             Pair<Intent, Uri> intentUriPair = Intents.getCameraAndGalleryIntentChooser(
-                    CapsuleEditorFragment.this.getActivity());
+                    CapsuleEditorFragment.this.getActivity(), CapsuleEditorFragment.this.getString(
+                            R.string.title_upload_source_chooser));
             // Get the Intent and the camera file URI (will be null if the camera was not used)
             Intent chooseIntent = intentUriPair.first;
             CapsuleEditorFragment.this.mUploadUri = intentUriPair.second;

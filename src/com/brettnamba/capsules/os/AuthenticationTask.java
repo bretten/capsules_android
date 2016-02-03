@@ -1,6 +1,7 @@
 package com.brettnamba.capsules.os;
 
 import com.brettnamba.capsules.http.response.JsonResponse;
+import com.brettnamba.tomoeame.os.AsyncListenerTask;
 
 /**
  * AsyncTask to handle registering a new user via the API
@@ -10,7 +11,7 @@ public class AuthenticationTask extends AsyncListenerTask<String, Void, JsonResp
     /**
      * The listener that handles the callbacks
      */
-    private AuthenticationTaskListener mListener;
+    private AsyncTaskListeners.AuthenticationTaskListener mListener;
 
     /**
      * Constructor to be passed the listener
@@ -29,7 +30,7 @@ public class AuthenticationTask extends AsyncListenerTask<String, Void, JsonResp
     @Override
     public void setListener(TaskListener listener) {
         try {
-            this.mListener = (AuthenticationTaskListener) listener;
+            this.mListener = (AsyncTaskListeners.AuthenticationTaskListener) listener;
         } catch (ClassCastException e) {
             throw new ClassCastException(
                     listener.toString() + " does not implement AuthenticationTaskListener");

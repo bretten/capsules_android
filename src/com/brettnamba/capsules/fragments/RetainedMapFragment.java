@@ -12,11 +12,12 @@ import android.util.Log;
 
 import com.brettnamba.capsules.R;
 import com.brettnamba.capsules.dataaccess.Capsule;
-import com.brettnamba.capsules.os.AsyncListenerTask;
+import com.brettnamba.capsules.os.AsyncTaskListeners;
 import com.brettnamba.capsules.os.AuthTokenRetrievalTask;
 import com.brettnamba.capsules.os.CapsuleOpenTask;
 import com.brettnamba.capsules.os.CapsulePingTask;
 import com.brettnamba.capsules.os.DiscoverCapsulesTask;
+import com.brettnamba.tomoeame.os.AsyncListenerTask;
 
 /**
  * Fragment to be retained along with the main Activity that displays the map
@@ -330,7 +331,7 @@ public class RetainedMapFragment extends Fragment {
         } else {
             if (!this.isDiscoveringCapsules()) {
                 this.mDiscoverCapsulesTask = new DiscoverCapsulesTask(
-                        (AsyncListenerTask.DiscoverCapsulesTaskListener) activity);
+                        (AsyncTaskListeners.DiscoverCapsulesTaskListener) activity);
                 this.mDiscoverCapsulesTask.execute(location.getLatitude(), location.getLongitude());
             }
         }
